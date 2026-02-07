@@ -11,13 +11,14 @@ import java.util.logging.Logger;
  * 密码存储管理器
  * 负责密码文件的读写、加密解密、查询操作
  *
- * 密码文件格式：
- * uid=encryptedPassword
- * 每行一个映射，使用 = 分隔
+ * 支持两种密码文件格式：
+ * 1. 本地文件格式（三字段）：数据库:用户名:加密密码
+ *    按项目维度，单个文件多行，每行对应一个连接
+ *    示例：mysql_prod:root:[16]r7X9k3mP8nQ2vL5wY1zA4cD6eF8gH0iJ=
  *
- * 示例：
- * userdb_prod=[16]r7X9k3mP8nQ2vL5wY1zA4cD6eF8gH0iJ=
- * analytics_prod=[32]aBcDeFgHiJkLmNoPqRsTuVwXyZ012345=
+ * 2. 配置中心格式（两字段）：username:encryptedPassword
+ *    按数据库用户维度管理，每个文件只保存单个数据库+用户名+密码
+ *    示例：root:[16]r7X9k3mP8nQ2vL5wY1zA4cD6eF8gH0iJ=
  */
 public class PasswordStorageManager {
 
@@ -56,6 +57,9 @@ public class PasswordStorageManager {
             throw new FileNotFoundException("密码文件不存在: " + filePath);
         }
 
+        // 判断文件类型：本地文件（三字段）还是配置中心文件（两字段）
+        boolean isLocalFile = filePath.endsWith(".600") || filePath.contains(".600");
+
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(file), PASSWORD_FILE_CHARSET))) {
             String line;
@@ -69,24 +73,68 @@ public class PasswordStorageManager {
                     continue;
                 }
 
-                // 解析 uid=encryptedPassword 格式
-                int equalPos = line.indexOf('=');
-                if (equalPos <= 0) {
-                    logger.warning("密码文件第 " + lineNumber + " 行格式错误: " + line);
-                    continue;
-                }
-
-                String uid = line.substring(0, equalPos).trim();
-                String encryptedPassword = line.substring(equalPos + 1).trim();
-
-                if (!uid.isEmpty() && !encryptedPassword.isEmpty()) {
-                    map.put(uid, encryptedPassword);
+                if (isLocalFile) {
+                    // 本地文件格式：database:username:encryptedPassword
+                    parseLocalFileLine(line, lineNumber, map);
+                } else {
+                    // 配置中心格式：username:encryptedPassword
+                    parseConfigCenterLine(line, lineNumber, map);
                 }
             }
         }
 
         logger.info("密码文件加载成功: " + filePath + ", 共 " + map.size() + " 个密码映射");
         return new PasswordStorageManager(map);
+    }
+
+    /**
+     * 解析本地文件行（三字段格式）
+     *
+     * @param line 行内容
+     * @param lineNumber 行号
+     * @param map 密码映射
+     */
+    private static void parseLocalFileLine(String line, int lineNumber, Map<String, String> map) {
+        // 三字段格式：database:username:encryptedPassword
+        String[] parts = line.split(":");
+        if (parts.length == 3) {
+            String database = parts[0].trim();
+            String username = parts[1].trim();
+            String encryptedPassword = parts[2].trim();
+
+            if (!database.isEmpty() && !username.isEmpty() && !encryptedPassword.isEmpty()) {
+                // 使用 composite key：database:username
+                String key = database + ":" + username;
+                map.put(key, encryptedPassword);
+            } else {
+                logger.warning("密码文件第 " + lineNumber + " 行格式错误（字段为空）: " + line);
+            }
+        } else {
+            logger.warning("密码文件第 " + lineNumber + " 行格式错误（应为三字段 database:username:password）: " + line);
+        }
+    }
+
+    /**
+     * 解析配置中心行（两字段格式）
+     *
+     * @param line 行内容
+     * @param lineNumber 行号
+     * @param map 密码映射
+     */
+    private static void parseConfigCenterLine(String line, int lineNumber, Map<String, String> map) {
+        // 两字段格式：username:encryptedPassword
+        int colonPos = line.indexOf(':');
+        if (colonPos <= 0) {
+            logger.warning("密码文件第 " + lineNumber + " 行格式错误: " + line);
+            return;
+        }
+
+        String username = line.substring(0, colonPos).trim();
+        String encryptedPassword = line.substring(colonPos + 1).trim();
+
+        if (!username.isEmpty() && !encryptedPassword.isEmpty()) {
+            map.put(username, encryptedPassword);
+        }
     }
 
     /**
@@ -108,17 +156,56 @@ public class PasswordStorageManager {
                 continue;
             }
 
-            // 解析 uid=encryptedPassword 格式
-            int equalPos = line.indexOf('=');
-            if (equalPos <= 0) {
+            // 判断是三字段还是两字段格式
+            String[] parts = line.split(":");
+            if (parts.length == 3) {
+                // 本地文件格式：database:username:encryptedPassword
+                String database = parts[0].trim();
+                String username = parts[1].trim();
+                String encryptedPassword = parts[2].trim();
+
+                if (!database.isEmpty() && !username.isEmpty() && !encryptedPassword.isEmpty()) {
+                    String key = database + ":" + username;
+                    map.put(key, encryptedPassword);
+                }
+            } else if (parts.length == 2) {
+                // 配置中心格式：username:encryptedPassword
+                String username = parts[0].trim();
+                String encryptedPassword = parts[1].trim();
+
+                if (!username.isEmpty() && !encryptedPassword.isEmpty()) {
+                    map.put(username, encryptedPassword);
+                }
+            }
+        }
+
+        return new PasswordStorageManager(map);
+    }
+
+    /**
+     * 从字符串内容加载密码映射（指定文件类型）
+     *
+     * @param content 密码文件内容
+     * @param isLocalFile 是否为本地文件（三字段格式）
+     * @return PasswordStorageManager 实例
+     * @throws IOException 读取异常
+     */
+    public static PasswordStorageManager loadFromString(String content, boolean isLocalFile) throws IOException {
+        Map<String, String> map = new HashMap<>();
+
+        String[] lines = content.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+
+            // 跳过空行和注释行
+            if (line.isEmpty() || line.startsWith("#") || line.startsWith(";")) {
                 continue;
             }
 
-            String uid = line.substring(0, equalPos).trim();
-            String encryptedPassword = line.substring(equalPos + 1).trim();
-
-            if (!uid.isEmpty() && !encryptedPassword.isEmpty()) {
-                map.put(uid, encryptedPassword);
+            if (isLocalFile) {
+                parseLocalFileLine(line, i + 1, map);
+            } else {
+                parseConfigCenterLine(line, i + 1, map);
             }
         }
 
@@ -132,6 +219,17 @@ public class PasswordStorageManager {
      * @throws IOException 写入异常
      */
     public void save(String filePath) throws IOException {
+        save(filePath, filePath.endsWith(".600") || filePath.contains(".600"));
+    }
+
+    /**
+     * 保存密码映射到文件（指定文件类型）
+     *
+     * @param filePath 文件路径
+     * @param isLocalFile 是否为本地文件（三字段格式）
+     * @throws IOException 写入异常
+     */
+    public void save(String filePath, boolean isLocalFile) throws IOException {
         File file = new File(filePath);
         File parentDir = file.getParentFile();
         if (parentDir != null && !parentDir.exists()) {
@@ -142,12 +240,38 @@ public class PasswordStorageManager {
                 new OutputStreamWriter(new FileOutputStream(file), PASSWORD_FILE_CHARSET))) {
 
             writer.println("# Druid Database Password Storage");
-            writer.println("# Format: uid=encryptedPassword");
+            if (isLocalFile) {
+                writer.println("# Format: database:username:encryptedPassword");
+                writer.println("# Local file format (multi-line file per project)");
+            } else {
+                writer.println("# Format: username:encryptedPassword");
+                writer.println("# Config center format (single file per database user)");
+            }
             writer.println("# Generated: " + new java.util.Date());
             writer.println();
 
-            for (Map.Entry<String, String> entry : passwordMap.entrySet()) {
-                writer.println(entry.getKey() + "=" + entry.getValue());
+            if (isLocalFile) {
+                // 保存三字段格式（假设 key 是 database:username）
+                for (Map.Entry<String, String> entry : passwordMap.entrySet()) {
+                    String key = entry.getKey();
+                    String encryptedPassword = entry.getValue();
+
+                    // 如果 key 包含冒号，拆分为 database 和 username
+                    int colonPos = key.indexOf(':');
+                    if (colonPos > 0) {
+                        String database = key.substring(0, colonPos);
+                        String username = key.substring(colonPos + 1);
+                        writer.println(database + ":" + username + ":" + encryptedPassword);
+                    } else {
+                        // 无法拆分，作为 username 处理
+                        writer.println(key + ":" + encryptedPassword);
+                    }
+                }
+            } else {
+                // 保存两字段格式
+                for (Map.Entry<String, String> entry : passwordMap.entrySet()) {
+                    writer.println(entry.getKey() + ":" + entry.getValue());
+                }
             }
         }
 
@@ -180,13 +304,43 @@ public class PasswordStorageManager {
     }
 
     /**
-     * 获取加密密码
+     * 获取加密密码（单参数）
      *
-     * @param uid 数据库唯一标识符
+     * @param key 密码键（可能是 username 或 database:username）
      * @return 加密后的密码，如果不存在返回 null
      */
-    public String getPassword(String uid) {
-        return passwordMap.get(uid);
+    public String getPassword(String key) {
+        return passwordMap.get(key);
+    }
+
+    /**
+     * 获取加密密码（按数据库和用户名）
+     *
+     * @param database 数据库标识
+     * @param username 用户名
+     * @return 加密后的密码，如果不存在返回 null
+     */
+    public String getPassword(String database, String username) {
+        if (database == null || database.isEmpty()) {
+            // 回退到单字段查询
+            return passwordMap.get(username);
+        }
+        // 复合 key 查询
+        return passwordMap.get(database + ":" + username);
+    }
+
+    /**
+     * 检查是否存在指定数据库和用户名的密码
+     *
+     * @param database 数据库标识
+     * @param username 用户名
+     * @return 是否存在
+     */
+    public boolean contains(String database, String username) {
+        if (database == null || database.isEmpty()) {
+            return passwordMap.containsKey(username);
+        }
+        return passwordMap.containsKey(database + ":" + username);
     }
 
     /**

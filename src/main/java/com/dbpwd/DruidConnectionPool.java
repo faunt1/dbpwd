@@ -1,6 +1,8 @@
 package com.dbpwd;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.dbpwd.configcenter.ConfigCenterFallbackManager;
+import com.dbpwd.universal.PasswordPropertiesInterceptor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,11 +14,15 @@ import java.util.Properties;
 /**
  * Druid连接池工厂类
  * 用于创建和管理Druid数据源
+ *
+ * 支持配置中心下载优先、本地文件兜底的策略
  */
 public class DruidConnectionPool {
 
     private DruidDataSource dataSource;
     private String configFilePath;
+    private ConfigCenterFallbackManager fallbackManager;
+    private PasswordPropertiesInterceptor interceptor;
 
     /**
      * 默认构造函数
@@ -29,7 +35,7 @@ public class DruidConnectionPool {
      */
     public DruidConnectionPool(String configFilePath) throws Exception {
         this.configFilePath = configFilePath;
-        initialize(configFilePath);
+        initializeWithFallback(configFilePath);
     }
 
     /**
@@ -47,10 +53,49 @@ public class DruidConnectionPool {
     }
 
     /**
+     * 使用配置文件路径和回退管理器构造
+     *
+     * @param configFilePath 配置文件路径
+     * @param fallbackManager 回退管理器
+     * @throws Exception 初始化异常
+     */
+    public DruidConnectionPool(String configFilePath, ConfigCenterFallbackManager fallbackManager) throws Exception {
+        this.fallbackManager = fallbackManager;
+        this.interceptor = new PasswordPropertiesInterceptor(fallbackManager);
+        this.configFilePath = configFilePath;
+        initializeWithFallback(configFilePath);
+    }
+
+    /**
+     * 使用配置中心和本地文件路径构造
+     *
+     * @param configCenterUrl 配置中心 URL
+     * @param apiKey API 密钥
+     * @param baseDirectory 基础目录
+     * @param localPasswordFilePath 本地密码文件路径（.600 文件）
+     * @param templateFilePath 配置模板文件路径
+     * @throws Exception 初始化异常
+     */
+    public DruidConnectionPool(String configCenterUrl, String apiKey, String baseDirectory,
+                               String localPasswordFilePath, String templateFilePath) throws Exception {
+        this.fallbackManager = new ConfigCenterFallbackManager(configCenterUrl, apiKey, baseDirectory, localPasswordFilePath);
+        this.interceptor = new PasswordPropertiesInterceptor(fallbackManager);
+        this.configFilePath = templateFilePath;
+        initializeWithFallback(templateFilePath);
+    }
+
+    /**
      * 使用配置文件初始化
      */
     public void initialize(String configFilePath) throws Exception {
         this.configFilePath = configFilePath;
+        initializeWithFallback(configFilePath);
+    }
+
+    /**
+     * 使用配置文件初始化（带占位符解析）
+     */
+    private void initializeWithFallback(String configFilePath) throws Exception {
         Properties props = new Properties();
 
         File configFile = new File(configFilePath);
@@ -61,6 +106,11 @@ public class DruidConnectionPool {
         try (FileInputStream fis = new FileInputStream(configFile);
              InputStreamReader reader = new InputStreamReader(fis, "UTF-8")) {
             props.load(reader);
+        }
+
+        // 使用拦截器处理占位符
+        if (interceptor != null) {
+            props = interceptor.intercept(props);
         }
 
         initialize(props);
@@ -229,7 +279,12 @@ public class DruidConnectionPool {
             throw new IllegalStateException("未设置配置文件路径，无法重新加载");
         }
         close();
-        initialize(configFilePath);
+        if (interceptor != null && fallbackManager != null) {
+            fallbackManager.refresh();
+            initializeWithFallback(configFilePath);
+        } else {
+            initializeWithFallback(configFilePath);
+        }
     }
 
     /**
@@ -338,6 +393,36 @@ public class DruidConnectionPool {
 
         public DruidConnectionPool build() throws Exception {
             return new DruidConnectionPool(generator);
+        }
+    }
+
+    // ==================== 回退管理器支持 ====================
+
+    /**
+     * 设置回退管理器
+     *
+     * @param fallbackManager 配置中心回退管理器
+     */
+    public void setFallbackManager(ConfigCenterFallbackManager fallbackManager) {
+        this.fallbackManager = fallbackManager;
+        this.interceptor = new PasswordPropertiesInterceptor(fallbackManager);
+    }
+
+    /**
+     * 获取回退管理器
+     *
+     * @return 配置中心回退管理器
+     */
+    public ConfigCenterFallbackManager getFallbackManager() {
+        return fallbackManager;
+    }
+
+    /**
+     * 刷新配置中心
+     */
+    public void refreshConfigCenter() {
+        if (fallbackManager != null) {
+            fallbackManager.refresh();
         }
     }
 }

@@ -210,26 +210,27 @@ public class Sm4Cipher {
      */
     public static String generateForConfigCenter(String uid, String plainPassword, String key) throws Exception {
         String encryptedPassword = encrypt(plainPassword, key);
-        return uid + "=" + encryptedPassword;
+        return uid + ":" + encryptedPassword;
     }
 
     /**
      * 解析配置中心格式的密码
      *
-     * @param configString 格式：uid=encryptedPassword
+     * @param configString 格式：uid:encryptedPassword
      * @param key 解密密钥
      * @return 明文密码
      * @throws Exception 解密失败
      */
     public static String decryptFromConfigCenter(String configString, String key) throws Exception {
-        int equalPos = configString.indexOf('=');
-        if (equalPos <= 0) {
-            throw new IllegalArgumentException("配置格式错误，应为 uid=encryptedPassword");
+        int colonPos = configString.indexOf(':');
+        if (colonPos <= 0) {
+            throw new IllegalArgumentException("配置格式错误，应为 uid:encryptedPassword");
         }
 
-        String uid = configString.substring(0, equalPos).trim();
-        String encryptedPassword = configString.substring(equalPos + 1).trim();
+        String uid = configString.substring(0, colonPos).trim();
+        String encryptedPassword = configString.substring(colonPos + 1).trim();
 
+        logger.fine("解析配置中心密码 (uid: " + uid + ")");
         return decrypt(encryptedPassword, key);
     }
 }
