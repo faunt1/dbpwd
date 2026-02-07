@@ -1,0 +1,71 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn clean compile
+
+      - name: Run unit tests
+        run: mvn test
+        env:
+          # If you want to run integration tests, set environment variables here
+          # TEST_DB_URL: jdbc:mysql://localhost:3306/test
+          # TEST_DB_USERNAME: root
+          # TEST_DB_PASSWORD: password
+          # TEST_DB_DRIVER: com.mysql.cj.jdbc.Driver
+
+      - name: Package application
+        run: mvn package -DskipTests
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: druid-db-pwd-jar
+          path: target/*.jar
+          retention-days: 7
+
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Run OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'druid-db-pwd'
+          path: '.'
+          format: 'HTML'
+          out: 'reports'
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: reports/dependency-check-report.html

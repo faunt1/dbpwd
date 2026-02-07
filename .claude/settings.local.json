@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn:*)",
+      "Bash(javac:*)",
+      "Bash(java:*)",
+      "Bash(del:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
