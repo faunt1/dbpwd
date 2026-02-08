@@ -1,5 +1,7 @@
 package com.dbpwd.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -196,6 +198,7 @@ public class DatabaseEntry {
     /**
      * 获取JDBC URL（如果未设置，从其他字段生成）
      */
+    @JsonIgnore
     public String getJdbcUrl() {
         if (url != null && !url.isEmpty()) {
             return url;

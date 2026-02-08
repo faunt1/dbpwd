@@ -1,5 +1,7 @@
 package com.dbpwd.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -230,6 +232,7 @@ public class PasswordFile {
     /**
      * 检查是否为空
      */
+    @JsonIgnore
     public boolean isEmpty() {
         return databases.isEmpty();
     }
