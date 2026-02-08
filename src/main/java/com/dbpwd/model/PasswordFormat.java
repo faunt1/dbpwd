@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  *
  * 支持的密码格式：
  * 1. SM4标准格式：[16]Base64(IV+Ciphertext)
- * 2. Druid加密格式：ENC_xxxxxxxxxxxxx
+ * 2. Druid加密格式：ENC(xxxxxxxxxxxxx)
  * 3. 明文格式：PLAIN_xxxxxxx
  *
  * @author Druid DB Password Manager
@@ -21,10 +21,10 @@ public enum PasswordFormat {
     SM4_STANDARD("\\[\\d+\\][A-Za-z0-9+/]+=*", "SM4标准格式"),
 
     /**
-     * Druid加密格式：ENC_xxxxxxxxxxxxx
-     * 示例：ENC_r7X9k3mP8nQ2vL5wY1zA4cD6eF8gH0iJ=
+     * Druid加密格式：ENC(xxxxxxxxxxxxx)
+     * 示例：ENC(r7X9k3mP8nQ2vL5wY1zA4cD6eF8gH0iJ=)
      */
-    DRUID_ENCRYPTED("ENC_[A-Za-z0-9+/]+=*_?", "Druid加密格式"),
+    DRUID_ENCRYPTED("ENC\\([A-Za-z0-9+/]+={0,2}\\)", "Jasypt风格ENC格式"),
 
     /**
      * 明文格式：PLAIN_xxxxxxx
@@ -61,10 +61,10 @@ public enum PasswordFormat {
             // 转换为标准格式
             return "[" + keyLength + "]" + encryptedPassword;
         } else if (this == DRUID_ENCRYPTED) {
-            if (encryptedPassword.startsWith("ENC_")) {
+            if (encryptedPassword.startsWith("ENC(")) {
                 return encryptedPassword;
             }
-            return "ENC_" + encryptedPassword;
+            return "ENC(" + encryptedPassword + ")";
         } else if (this == PLAIN) {
             if (encryptedPassword.startsWith("PLAIN_")) {
                 return encryptedPassword;
@@ -92,8 +92,8 @@ public enum PasswordFormat {
             }
             return passwordWithFormat;
         } else if (this == DRUID_ENCRYPTED) {
-            if (passwordWithFormat.startsWith("ENC_")) {
-                return passwordWithFormat.substring(4);
+            if (passwordWithFormat.startsWith("ENC(") && passwordWithFormat.endsWith(")")) {
+                return passwordWithFormat.substring(4, passwordWithFormat.length() - 1);
             }
             return passwordWithFormat;
         } else if (this == PLAIN) {
