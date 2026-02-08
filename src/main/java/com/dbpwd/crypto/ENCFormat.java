@@ -1,10 +1,10 @@
-package com.dbpwd.model;
+package com.dbpwd.crypto;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * ENC 格式解析器
+ * ENC格式解析器
  *
  * 支持格式：ENC(算法:密文)
  * 示例：ENC(SM4:AABBCCDD1234567890ABCDEF12345678)
@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  */
 public class ENCFormat {
 
-    private static final Pattern ENC_PATTERN = Pattern.compile("ENC\\(([A-Z0-9]+):([^)]+)\\)");
+    private static final Pattern ENC_PREFIX_PATTERN = Pattern.compile("^ENC\\(([A-Z0-9]+):(.*)\\)$", Pattern.DOTALL);
 
     /**
      * 检查密码是否为加密格式
@@ -40,7 +40,7 @@ public class ENCFormat {
             return null;
         }
 
-        Matcher matcher = ENC_PATTERN.matcher(password);
+        Matcher matcher = ENC_PREFIX_PATTERN.matcher(password);
         if (matcher.matches()) {
             return matcher.group(1);
         }
@@ -58,7 +58,7 @@ public class ENCFormat {
             return null;
         }
 
-        Matcher matcher = ENC_PATTERN.matcher(password);
+        Matcher matcher = ENC_PREFIX_PATTERN.matcher(password);
         if (matcher.matches()) {
             return matcher.group(2);
         }
@@ -100,63 +100,15 @@ public class ENCFormat {
     }
 
     /**
-     * 解析加密格式
-     *
-     * @param password 密码字符串
-     * @return 加密信息对象，密码字符串
-     */
-    public static EncryptedInfo parse(String password) {
-        if (password == null || password.isEmpty()) {
-            return null;
-        }
-
-        Matcher matcher = ENC_PATTERN.matcher(password);
-        if (matcher.matches()) {
-            return new EncryptedInfo(matcher.group(1), matcher.group(2));
-        }
-        return null;
-    }
-
-    /**
-     * 加密信息封装类
-     */
-    public static class EncryptedInfo {
-        private final String algorithm;
-        private final String cipherText;
-
-        public EncryptedInfo(String algorithm, String cipherText) {
-            this.algorithm = algorithm;
-            this.cipherText = cipherText;
-        }
-
-        public String getAlgorithm() {
-            return algorithm;
-        }
-
-        public String getCipherText() {
-            return cipherText;
-        }
-
-        public String toEncryptedFormat() {
-            return formatEncrypted(algorithm, cipherText);
-        }
-
-        @Override
-        public String toString() {
-            return "EncryptedInfo{" +
-                    "algorithm='" + algorithm + '\'' +
-                    ", cipherText='" + cipherText + '\'' +
-                    '}';
-        }
-    }
-
-    /**
      * 验证加密格式是否有效
      *
      * @param password 密码字符串
      * @return 是否有效
      */
     public static boolean isValid(String password) {
-        return parse(password) != null;
+        if (password == null || password.isEmpty()) {
+            return false;
+        }
+        return ENC_PREFIX_PATTERN.matcher(password).matches();
     }
 }

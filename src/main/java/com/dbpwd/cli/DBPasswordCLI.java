@@ -8,7 +8,7 @@ import com.dbpwd.crypto.PasswordDecryptor;
 import com.dbpwd.crypto.PasswordEncryptor;
 import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.model.DatabaseEntry;
-import com.dbpwd.model.ENCFormat;
+import com.dbpwd.crypto.ENCFormat;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Files;
@@ -167,7 +167,7 @@ public class DBPasswordCLI {
             String choice = scanner.nextLine().trim().toLowerCase();
 
             if ("y".equals(choice) || "yes".equals(choice)) {
-                String newKey = Sm4Cipher.generateKey();
+                String newKey = Sm4Cipher.generateRandomHexKey();
                 Files.write(Paths.get(keyFile), newKey.getBytes());
 
                 // 设置权限（Unix-like系统）
@@ -234,14 +234,16 @@ public class DBPasswordCLI {
             System.out.print("用户名: ");
             String username = scanner.nextLine().trim();
 
-            String plainPassword = PasswordEncryptor.readPasswordInteractive("密码: ");
+            System.out.print("密码: ");
+            String plainPassword = scanner.nextLine().trim();
 
-            // 验证密码强度
-            PasswordEncryptor.PasswordStrength strength = PasswordEncryptor.validatePassword(plainPassword);
-            System.out.println("密码强度: " + strength);
+            // 简单验证密码强度
+            if (plainPassword.length() < 6) {
+                System.out.println("警告: 密码长度少于6位，建议使用更强的密码");
+            }
 
             // 加密密码
-            String encryptedPassword = PasswordEncryptor.encryptSM4ENC(plainPassword, sm4Key);
+            String encryptedPassword = PasswordEncryptor.encrypt(plainPassword, sm4Key);
             System.out.println("加密后的密码: " + encryptedPassword);
 
             // 创建数据库条目
@@ -295,14 +297,16 @@ public class DBPasswordCLI {
             String choice = scanner.nextLine().trim().toLowerCase();
 
             if ("y".equals(choice) || "yes".equals(choice)) {
-                String plainPassword = PasswordEncryptor.readPasswordInteractive("新密码: ");
+                System.out.print("新密码: ");
+                String plainPassword = scanner.nextLine().trim();
 
-                // 验证密码强度
-                PasswordEncryptor.PasswordStrength strength = PasswordEncryptor.validatePassword(plainPassword);
-                System.out.println("密码强度: " + strength);
+                // 简单验证密码强度
+                if (plainPassword.length() < 6) {
+                    System.out.println("警告: 密码长度少于6位，建议使用更强的密码");
+                }
 
                 // 加密密码
-                String encryptedPassword = PasswordEncryptor.encryptSM4ENC(plainPassword, sm4Key);
+                String encryptedPassword = PasswordEncryptor.encrypt(plainPassword, sm4Key);
                 entry.setPassword(encryptedPassword);
                 entry.setEncrypted(true);
                 System.out.println("密码已更新");
@@ -376,9 +380,10 @@ public class DBPasswordCLI {
             System.out.println("加密密码");
             System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 30));
 
-            String plainPassword = PasswordEncryptor.readPasswordInteractive("要加密的密码: ");
+            System.out.print("要加密的密码: ");
+            String plainPassword = scanner.nextLine().trim();
 
-            String encryptedPassword = PasswordEncryptor.encryptSM4ENC(plainPassword, sm4Key);
+            String encryptedPassword = PasswordEncryptor.encrypt(plainPassword, sm4Key);
 
             System.out.println();
             System.out.println("ENC格式: " + encryptedPassword);

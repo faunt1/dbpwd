@@ -1,8 +1,8 @@
 package com.dbpwd.core;
 
 import com.dbpwd.core.Sm4KeyLoader.InvalidKeyException;
+import com.dbpwd.crypto.ENCFormat;
 import com.dbpwd.model.DatabaseEntry;
-import com.dbpwd.model.ENCFormat;
 import com.dbpwd.model.PasswordFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -14,7 +14,9 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -353,15 +355,6 @@ public class PasswordFileManager {
     }
 
     /**
-     * 获取最后的加载时间
-     *
-     * @return 最后加载时间戳（毫秒）
-     */
-    public long getLastLoadedTime() {
-        return lastLoadedTime;
-    }
-
-    /**
      * 获取文件路径
      *
      * @return 文件路径
@@ -402,8 +395,7 @@ public class PasswordFileManager {
             Set<java.nio.file.attribute.PosixFilePermission> permissions =
                 Files.getPosixFilePermissions(path);
 
-            Set<java.nio.file.attribute.PosixFilePermission> requiredPermissions =
-                new java.util.HashSet<>();
+            Set<java.nio.file.attribute.PosixFilePermission> requiredPermissions = new HashSet<>();
             requiredPermissions.add(java.nio.file.attribute.PosixFilePermission.OWNER_READ);
             requiredPermissions.add(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE);
 

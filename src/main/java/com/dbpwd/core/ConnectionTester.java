@@ -184,7 +184,7 @@ public class ConnectionTester {
         }
 
         try {
-            String decryptedPwd = PasswordFileManager.getDecryptedPassword(sm4Key, entry.getPassword());
+            String decryptedPwd = com.dbpwd.crypto.PasswordDecryptor.autoDecrypt(entry.getPassword(), sm4Key);
             return test(entry, decryptedPwd);
         } catch (Exception e) {
             return new TestResult(false, "解密密码失败: " + e.getMessage(), 0, e);
