@@ -8,8 +8,6 @@ import com.dbpwd.crypto.PasswordDecryptor;
 import com.dbpwd.crypto.PasswordEncryptor;
 import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.model.DatabaseEntry;
-import com.dbpwd.crypto.ENCFormat;
-import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;

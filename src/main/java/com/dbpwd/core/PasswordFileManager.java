@@ -1,6 +1,5 @@
 package com.dbpwd.core;
 
-import com.dbpwd.core.Sm4KeyLoader.InvalidKeyException;
 import com.dbpwd.crypto.ENCFormat;
 import com.dbpwd.model.DatabaseEntry;
 import com.dbpwd.model.PasswordFile;

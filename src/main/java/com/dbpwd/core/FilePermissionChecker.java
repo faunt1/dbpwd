@@ -117,47 +117,13 @@ public class FilePermissionChecker {
     }
 
     /**
-     * 验证文件权限，不符合要求时抛出异常
+     * 验证文件权限（已废弃，请使用isPermission600）
      *
-     * @param filePath 文件路径
-     * @param throwException 是否抛出异常
-     * @return 权限是否符合要求
-     * @throws IOException 权限不符合要求
+     * @deprecated 请使用 {@link #isPermission600(String)}
      */
-    public static boolean verifyPermission600(String filePath, boolean throwException) throws IOException {
-        File file = new File(filePath);
-
-        if (!file.exists()) {
-            String msg = "文件不存在: " + filePath;
-            if (throwException) {
-                throw new IOException(msg);
-            }
-            logger.severe(msg);
-            return false;
-        }
-
-        boolean valid = isPermission600(file);
-
-        if (!valid) {
-            String msg = "文件权限不符合600要求: " + filePath;
-            if (throwException) {
-                throw new IOException(msg + "。请运行: chmod 600 " + filePath);
-            }
-            logger.warning(msg);
-        }
-
-        return valid;
-    }
-
-    /**
-     * 验证文件权限，不符合要求时抛出异常
-     *
-     * @param filePath 文件路径
-     * @return 权限是否符合要求
-     * @throws IOException 权限不符合要求
-     */
+    @Deprecated
     public static boolean verifyPermission600(String filePath) throws IOException {
-        return verifyPermission600(filePath, true);
+        return isPermission600(filePath);
     }
 
     /**
