@@ -12,16 +12,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 数据库连接测试工具
+ * 数据库连接验证器
  *
- * 用于测试数据库连接是否有效
+ * 用于验证数据库连接是否有效
  *
  * @author Druid DB Password Manager
- * @version 3.0
+ * @version 3.1
  */
-public class ConnectionTester {
+public class ConnectionValidator {
 
-    private static final Logger logger = Logger.getLogger(ConnectionTester.class.getName());
+    private static final Logger logger = Logger.getLogger(ConnectionValidator.class.getName());
 
     private static final int DEFAULT_TIMEOUT = 5; // 默认5秒超时
     private static final int DEFAULT_QUERY_TIMEOUT = 3; // 查询验证超时
@@ -43,15 +43,15 @@ public class ConnectionTester {
     }
 
     /**
-     * 连接测试结果
+     * 连接验证结果
      */
-    public static class TestResult {
+    public static class ValidationResult {
         private final boolean success;
         private final String message;
         private final long duration;
         private final Throwable error;
 
-        public TestResult(boolean success, String message, long duration, Throwable error) {
+        public ValidationResult(boolean success, String message, long duration, Throwable error) {
             this.success = success;
             this.message = message;
             this.duration = duration;
@@ -85,35 +85,35 @@ public class ConnectionTester {
     }
 
     /**
-     * 测试数据库连接
+     * 验证数据库连接
      *
      * @param entry 数据库条目
-     * @return 测试结果
+     * @return 验证结果
      */
-    public static TestResult test(DatabaseEntry entry) {
-        return test(entry, null);
+    public static ValidationResult validate(DatabaseEntry entry) {
+        return validate(entry, null);
     }
 
     /**
-     * 测试数据库连接
+     * 验证数据库连接
      *
      * @param entry 数据库条目
      * @param password 明文密码（如果已解密）
-     * @return 测试结果
+     * @return 验证结果
      */
-    public static TestResult test(DatabaseEntry entry, String password) {
-        return test(entry, password, DEFAULT_TIMEOUT);
+    public static ValidationResult validate(DatabaseEntry entry, String password) {
+        return validate(entry, password, DEFAULT_TIMEOUT);
     }
 
     /**
-     * 测试数据库连接
+     * 验证数据库连接
      *
      * @param entry 数据库条目
      * @param password 明文密码（如果已解密）
      * @param timeoutSeconds 超时时间（秒）
-     * @return 测试结果
+     * @return 验证结果
      */
-    public static TestResult test(DatabaseEntry entry, String password, int timeoutSeconds) {
+    public static ValidationResult validate(DatabaseEntry entry, String password, int timeoutSeconds) {
         long startTime = System.currentTimeMillis();
 
         try {
@@ -123,17 +123,17 @@ public class ConnectionTester {
             String pwd = password != null ? password : entry.getPassword();
 
             if (url == null || url.isEmpty()) {
-                return new TestResult(false, "JDBC URL为空",
+                return new ValidationResult(false, "JDBC URL为空",
                     System.currentTimeMillis() - startTime, null);
             }
 
             if (username == null || username.isEmpty()) {
-                return new TestResult(false, "用户名为空",
+                return new ValidationResult(false, "用户名为空",
                     System.currentTimeMillis() - startTime, null);
             }
 
             if (pwd == null || pwd.isEmpty()) {
-                return new TestResult(false, "密码为空",
+                return new ValidationResult(false, "密码为空",
                     System.currentTimeMillis() - startTime, null);
             }
 
@@ -150,60 +150,60 @@ public class ConnectionTester {
                     long duration = System.currentTimeMillis() - startTime;
                     String databaseName = conn.getMetaData().getDatabaseProductName();
                     String message = "连接成功 - 数据库: " + databaseName;
-                    return new TestResult(true, message, duration, null);
+                    return new ValidationResult(true, message, duration, null);
                 } else {
                     long duration = System.currentTimeMillis() - startTime;
-                    return new TestResult(false, "连接验证失败",
+                    return new ValidationResult(false, "连接验证失败",
                         duration, null);
                 }
             }
         } catch (SQLException e) {
             long duration = System.currentTimeMillis() - startTime;
-            return new TestResult(false, "SQL异常: " + e.getMessage(), duration, e);
+            return new ValidationResult(false, "SQL异常: " + e.getMessage(), duration, e);
         } catch (ClassNotFoundException e) {
             long duration = System.currentTimeMillis() - startTime;
-            return new TestResult(false, "驱动类未找到: " + e.getMessage(), duration, e);
+            return new ValidationResult(false, "驱动类未找到: " + e.getMessage(), duration, e);
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
-            return new TestResult(false, "异常: " + e.getMessage(), duration, e);
+            return new ValidationResult(false, "异常: " + e.getMessage(), duration, e);
         }
     }
 
     /**
-     * 通过ID测试数据库连接
+     * 通过ID验证数据库连接
      *
      * @param manager 密码文件管理器
      * @param sm4Key SM4密钥
      * @param dbId 数据库ID
-     * @return 测试结果
+     * @return 验证结果
      */
-    public static TestResult test(PasswordFileManager manager, String sm4Key, String dbId) {
+    public static ValidationResult validate(PasswordFileManager manager, String sm4Key, String dbId) {
         DatabaseEntry entry = manager.getById(dbId);
         if (entry == null) {
-            return new TestResult(false, "未找到数据库条目: " + dbId, 0, null);
+            return new ValidationResult(false, "未找到数据库条目: " + dbId, 0, null);
         }
 
         try {
             String decryptedPwd = com.dbpwd.crypto.PasswordDecryptor.autoDecrypt(entry.getPassword(), sm4Key);
-            return test(entry, decryptedPwd);
+            return validate(entry, decryptedPwd);
         } catch (Exception e) {
-            return new TestResult(false, "解密密码失败: " + e.getMessage(), 0, e);
+            return new ValidationResult(false, "解密密码失败: " + e.getMessage(), 0, e);
         }
     }
 
     /**
-     * 测试所有数据库连接
+     * 验证所有数据库连接
      *
      * @param manager 密码文件管理器
      * @param sm4Key SM4密钥
-     * @return 测试结果映射（数据库ID -> 测试结果）
+     * @return 验证结果映射（数据库ID -> 验证结果）
      */
-    public static Map<String, TestResult> testAll(PasswordFileManager manager, String sm4Key) {
-        Map<String, TestResult> results = new HashMap<>();
+    public static Map<String, ValidationResult> validateAll(PasswordFileManager manager, String sm4Key) {
+        Map<String, ValidationResult> results = new HashMap<>();
 
         for (DatabaseEntry entry : manager.getAllDatabases()) {
             String dbId = entry.getId();
-            TestResult result = test(manager, sm4Key, dbId);
+            ValidationResult result = validate(manager, sm4Key, dbId);
             results.put(dbId, result);
         }
 
@@ -211,25 +211,25 @@ public class ConnectionTester {
     }
 
     /**
-     * 批量测试数据库连接，返回汇总信息
+     * 批量验证数据库连接，返回汇总信息
      *
      * @param manager 密码文件管理器
      * @param sm4Key SM4密钥
      * @return 汇总信息
      */
-    public static String testAllWithSummary(PasswordFileManager manager, String sm4Key) {
-        Map<String, TestResult> results = testAll(manager, sm4Key);
+    public static String validateAllWithSummary(PasswordFileManager manager, String sm4Key) {
+        Map<String, ValidationResult> results = validateAll(manager, sm4Key);
 
         StringBuilder summary = new StringBuilder();
-        summary.append("数据库连接测试汇总:\n");
+        summary.append("数据库连接验证汇总:\n");
         summary.append(org.apache.commons.lang3.StringUtils.repeat("-", 60)).append("\n");
 
         int successCount = 0;
         int failCount = 0;
 
-        for (Map.Entry<String, TestResult> entry : results.entrySet()) {
+        for (Map.Entry<String, ValidationResult> entry : results.entrySet()) {
             String dbId = entry.getKey();
-            TestResult result = entry.getValue();
+            ValidationResult result = entry.getValue();
 
             DatabaseEntry dbEntry = manager.getById(dbId);
             String dbName = dbEntry != null ? dbEntry.getName() : dbId;

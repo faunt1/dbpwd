@@ -53,7 +53,7 @@
 - [x] 实现DatabaseEntry数据模型（17个字段）
 - [x] 实现PasswordFile数据模型（版本和时间戳）
 - [x] 实现PasswordFileManager文件管理器
-- [x] 实现ConnectionTester连接测试工具
+- [x] 实现ConnectionValidator连接验证器
 - [x] 实现JSON文件读写和序列化（Jackson）
 - [x] 实现addDatabase/updateDatabase/removeDatabase方法
 - [x] 实现连接池驱动自动加载

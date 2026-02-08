@@ -1,6 +1,6 @@
 package com.dbpwd.cli;
 
-import com.dbpwd.core.ConnectionTester;
+import com.dbpwd.core.ConnectionValidator;
 import com.dbpwd.core.FilePermissionChecker;
 import com.dbpwd.core.PasswordFileManager;
 import com.dbpwd.core.Sm4KeyLoader;
@@ -24,7 +24,7 @@ import java.util.logging.SimpleFormatter;
  * 数据库密码管理命令行工具
  *
  * @author Druid DB Password Manager
- * @version 3.0
+ * @version 3.1
  */
 public class DBPasswordCLI {
 
@@ -357,11 +357,11 @@ public class DBPasswordCLI {
             PasswordFileManager manager = PasswordFileManager.loadFromFile(passwordFile);
 
             if ("all".equalsIgnoreCase(input)) {
-                String summary = ConnectionTester.testAllWithSummary(manager, sm4Key);
+                String summary = ConnectionValidator.validateAllWithSummary(manager, sm4Key);
                 System.out.println();
                 System.out.println(summary);
             } else {
-                ConnectionTester.TestResult result = ConnectionTester.test(manager, sm4Key, input);
+                ConnectionValidator.ValidationResult result = ConnectionValidator.validate(manager, sm4Key, input);
                 System.out.println(result.toString());
 
                 if (!result.isSuccess() && result.getError() != null) {

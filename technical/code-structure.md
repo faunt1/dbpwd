@@ -7,15 +7,15 @@ src/main/java/com/dbpwd/
 ├── model/                           # 数据模型
 │   ├── PasswordFile.java           # 密码文件数据模型
 │   ├── DatabaseEntry.java          # 数据库条目模型
-│   ├── ENCFormat.java              # ENC格式解析
 │   └── PasswordFormat.java         # 密码格式枚举
 ├── core/                                 # 核心模块
 │   ├── PasswordFileManager.java    # 密码文件管理器
 │   ├── Sm4KeyLoader.java           # SM4密钥加载器
 │   ├── FilePermissionChecker.java  # 文件权限检查
-│   └── ConnectionTester.java       # 数据库连接测试工具
+│   └── ConnectionValidator.java    # 数据库连接验证器
 ├── crypto/                               # 加密解密
 │   ├── Sm4Cipher.java              # SM4国密算法
+│   ├── ENCFormat.java              # ENC格式解析
 │   ├── PasswordEncryptor.java      # 密码加密器
 │   └── PasswordDecryptor.java      # 密码解密器
 └── cli/                                  # 命令行工具
@@ -40,7 +40,7 @@ src/main/java/com/dbpwd/
 | PasswordFileManager | 密码文件读写、增删改查、合并操作 |
 | Sm4KeyLoader | SM4密钥文件加载，hex格式和600权限验证 |
 | FilePermissionChecker | 文件权限检查，支持Linux/Unix系统 |
-| ConnectionTester | 数据库连接测试，支持多种数据库类型 |
+| ConnectionValidator | 数据库连接验证，支持多种数据库类型 |
 
 ### crypto/ - 加密解密层
 
