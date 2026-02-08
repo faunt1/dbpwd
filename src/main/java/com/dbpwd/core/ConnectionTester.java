@@ -184,7 +184,7 @@ public class ConnectionTester {
         }
 
         try {
-            String decryptedPwd = PasswordFileManager.decryptPassword(sm4Key, entry.getPassword());
+            String decryptedPwd = PasswordFileManager.getDecryptedPassword(sm4Key, entry.getPassword());
             return test(entry, decryptedPwd);
         } catch (Exception e) {
             return new TestResult(false, "解密密码失败: " + e.getMessage(), 0, e);
@@ -222,7 +222,7 @@ public class ConnectionTester {
 
         StringBuilder summary = new StringBuilder();
         summary.append("数据库连接测试汇总:\n");
-        summary.append("-".repeat(60)).append("\n");
+        summary.append(org.apache.commons.lang3.StringUtils.repeat("-", 60)).append("\n");
 
         int successCount = 0;
         int failCount = 0;
@@ -249,7 +249,7 @@ public class ConnectionTester {
                 result.getMessage()));
         }
 
-        summary.append("-".repeat(60)).append("\n");
+        summary.append(org.apache.commons.lang3.StringUtils.repeat("-", 60)).append("\n");
         summary.append(String.format("总计: %d个数据库, 成功: %d, 失败: %d\n",
             results.size(), successCount, failCount));
 

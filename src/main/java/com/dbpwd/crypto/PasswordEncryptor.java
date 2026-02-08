@@ -95,7 +95,7 @@ public class PasswordEncryptor {
      */
     public static PasswordStrength validatePassword(String password) {
         if (password == null || password.isEmpty()) {
-            return PasswordStrength.EMPTY;
+            return new PasswordStrength(PasswordStrengthLevel.EMPTY, "密码为空");
         }
 
         int score = 0;

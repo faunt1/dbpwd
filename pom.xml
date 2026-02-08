@@ -22,7 +22,7 @@
         <dbcp2.version>2.11.0</dbcp2.version>
         <c3p0.version>0.9.5.5</c3p0.version>
         <tomcat-jdbc.version>10.1.19</tomcat-jdbc.version>
-        <commons-lang.version>2.6</commons-lang.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
         <slf4j.version>1.7.36</slf4j.version>
         <logback.version>1.2.11</logback.version>
         <junit.version>5.9.3</junit.version>
@@ -86,11 +86,23 @@
             <version>${druid.version}</version>
         </dependency>
 
-        <!-- Apache Commons Lang -->
+        <!-- Apache Commons Lang3 -->
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>${commons-lang.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+        </dependency>
+
+        <!-- Jackson for JSON serialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.15.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.15.2</version>
         </dependency>
 
         <!-- SLF4J API -->

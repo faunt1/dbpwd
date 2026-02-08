@@ -10,11 +10,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -33,7 +32,6 @@ public class PasswordFileManager {
     private final String filePath;
     private PasswordFile passwordFile;
     private final ObjectMapper objectMapper;
-    private volatile long lastLoadedTime = 0;
 
     /**
      * 构造函数
@@ -68,28 +66,37 @@ public class PasswordFileManager {
     public PasswordFileManager load(boolean verifyPermissions) throws IOException {
         File file = new File(filePath);
 
-        // 检查文件是否存在
         if (!file.exists()) {
-            logger.warning("密码文件不存在，将创建新文件: " + filePath);
-            this.passwordFile = new PasswordFile();
-            save();
+            // 文件不存在，创建新的空文件
+            passwordFile = new PasswordFile();
+            logger.info("密码文件不存在，创建新的密码文件: " + filePath);
             return this;
+        }
+
+        if (file.isDirectory()) {
+            throw new IOException("密码路径是目录而非文件: " + filePath);
         }
 
         // 验证文件权限
         if (verifyPermissions) {
-            FilePermissionChecker.verifyPermission600(filePath);
+            checkFilePermissions(file);
         }
 
         // 读取文件内容
-        String content = new String(Files.readAllBytes(file.toPath()));
+        String jsonContent = new String(Files.readAllBytes(file.toPath()), "UTF-8")
+                .trim();
+
+        if (jsonContent.isEmpty()) {
+            passwordFile = new PasswordFile();
+            logger.warning("密码文件为空，初始化为空密码文件");
+            return this;
+        }
 
         // 解析JSON
         try {
-            this.passwordFile = objectMapper.readValue(content, PasswordFile.class);
-            this.lastLoadedTime = file.lastModified();
-            logger.info("密码文件加载成功: " + filePath + ", 包含 " +
-                passwordFile.getDatabases().size() + " 个数据库");
+            passwordFile = objectMapper.readValue(jsonContent, PasswordFile.class);
+            logger.info("密码文件加载成功: " + filePath + "，包含 " +
+                passwordFile.size() + " 个数据库配置");
         } catch (Exception e) {
             throw new IOException("解析密码文件失败: " + e.getMessage(), e);
         }
@@ -98,71 +105,95 @@ public class PasswordFileManager {
     }
 
     /**
-     * 刷新密码文件（如果文件被外部修改）
-     *
-     * @return 是否成功刷新
-     * @throws IOException 刷新失败
-     */
-    public boolean refresh() throws IOException {
-        File file = new File(filePath);
-
-        if (!file.exists()) {
-            logger.warning("密码文件不存在，无法刷新");
-            return false;
-        }
-
-        long currentModified = file.lastModified();
-        if (currentModified > lastLoadedTime) {
-            logger.info("检测到密码文件已修改，重新加载");
-            load(true);
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * 保存密码文件
+     *
+     * 更新lastModified时间戳
      *
      * @throws IOException 保存失败
      */
     public void save() throws IOException {
-        // 确保父目录存在
-        FilePermissionChecker.ensureParentDirectoryExists(filePath);
-
-        // 更新最后修改时间
-        if (passwordFile != null) {
-            passwordFile.touchLastModified();
+        if (passwordFile == null) {
+            passwordFile = new PasswordFile();
         }
 
-        // 先写入临时文件
+        // 更新时间戳
+        passwordFile.touchLastModified();
+
+        // 序列化为JSON
+        String json = objectMapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(passwordFile);
+
+        // 写入临时文件，然后重命名（原子性操作）
         File file = new File(filePath);
         File tempFile = new File(filePath + ".tmp");
 
+        Files.write(tempFile.toPath(), json.getBytes("UTF-8"),
+                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+        // 重命名
+        Files.move(tempFile.toPath(), file.toPath(),
+                StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+
+        // 设置文件权限（Unix-like系统）
         try {
-            // 写入临时文件
-            objectMapper.writeValue(tempFile, passwordFile);
-
-            // 设置临时文件权限
-            FilePermissionChecker.setPermission600(tempFile);
-
-            // 原子性替换
-            Files.move(tempFile.toPath(), file.toPath(),
-                      StandardCopyOption.REPLACE_EXISTING,
-                      StandardCopyOption.ATOMIC_MOVE);
-
-            // 确保目标文件权限正确
-            FilePermissionChecker.setPermission600(filePath);
-
-            this.lastLoadedTime = file.lastModified();
-            logger.info("密码文件已保存: " + filePath);
-        } catch (Exception e) {
-            // 清理临时文件
-            if (tempFile.exists()) {
-                tempFile.delete();
+            if (!isWindows()) {
+                java.util.Set<java.nio.file.attribute.PosixFilePermission> permissions =
+                    java.nio.file.attribute.PosixFilePermissions.fromString("rw-------");
+                Files.setPosixFilePermissions(file.toPath(), permissions);
+                logger.fine("密码文件权限已设置为600");
             }
-            throw new IOException("保存密码文件失败: " + e.getMessage(), e);
+        } catch (UnsupportedOperationException | java.nio.file.FileSystemException e) {
+            logger.warning("无法设置文件权限: " + e.getMessage());
         }
+
+        logger.info("密码文件已保存: " + filePath);
+    }
+
+    /**
+     * 添加数据库条目
+     *
+     * @param entry 数据库条目
+     */
+    public void addDatabase(DatabaseEntry entry) {
+        if (entry == null) {
+            throw new IllegalArgumentException("DatabaseEntry不能为null");
+        }
+
+        if (passwordFile == null) {
+            passwordFile = new PasswordFile();
+        }
+
+        passwordFile.addDatabase(entry);
+    }
+
+    /**
+     * 更新数据库条目
+     *
+     * @param entry 数据库条目
+     */
+    public void updateDatabase(DatabaseEntry entry) {
+        if (entry == null) {
+            throw new IllegalArgumentException("DatabaseEntry不能为null");
+        }
+
+        if (passwordFile == null) {
+            passwordFile = new PasswordFile();
+        }
+
+        passwordFile.updateDatabase(entry);
+    }
+
+    /**
+     * 删除数据库条目
+     *
+     * @param id 数据库ID
+     * @return true=删除成功，false=不存在
+     */
+    public boolean removeDatabase(String id) {
+        if (passwordFile == null) {
+            return false;
+        }
+        return passwordFile.removeDatabase(id);
     }
 
     /**
@@ -192,6 +223,19 @@ public class PasswordFileManager {
     }
 
     /**
+     * 根据用户名获取数据库条目列表
+     *
+     * @param username 用户名
+     * @return 数据库条目列表
+     */
+    public List<DatabaseEntry> getByUsername(String username) {
+        if (passwordFile == null) {
+            return Collections.emptyList();
+        }
+        return passwordFile.getByUsername(username);
+    }
+
+    /**
      * 根据标签获取数据库条目列表
      *
      * @param tag 标签
@@ -199,7 +243,7 @@ public class PasswordFileManager {
      */
     public List<DatabaseEntry> getByTag(String tag) {
         if (passwordFile == null) {
-            return List.of();
+            return Collections.emptyList();
         }
         return passwordFile.getByTag(tag);
     }
@@ -211,182 +255,131 @@ public class PasswordFileManager {
      */
     public List<DatabaseEntry> getAllDatabases() {
         if (passwordFile == null) {
-            return List.of();
+            return Collections.emptyList();
         }
         return passwordFile.getAllDatabases();
     }
 
     /**
-     * 添加数据库条目
+     * 获取数据库条目数量
      *
-     * @param entry 数据库条目
+     * @return 数量
      */
-    public void addDatabase(DatabaseEntry entry) {
+    public int size() {
         if (passwordFile == null) {
-            passwordFile = new PasswordFile();
+            return 0;
         }
-        passwordFile.addDatabase(entry);
+        return passwordFile.size();
     }
 
     /**
-     * 更新数据库条目
+     * 检查是否为空
      *
-     * @param entry 数据库条目
+     * @return true=空，false=非空
      */
-    public void updateDatabase(DatabaseEntry entry) {
+    public boolean isEmpty() {
         if (passwordFile == null) {
-            passwordFile = new PasswordFile();
+            return true;
         }
-        passwordFile.updateDatabase(entry);
+        return passwordFile.isEmpty();
     }
 
     /**
-     * 删除数据库条目
-     *
-     * @param id 数据库ID
-     * @return 是否删除成功
+     * 清空所有数据库条目
      */
-    public boolean removeDatabase(String id) {
-        if (passwordFile == null) {
-            return false;
+    public void clear() {
+        if (passwordFile != null) {
+            passwordFile.clear();
         }
-        return passwordFile.removeDatabase(id);
     }
 
     /**
-     * 解密密码
+     * 解密指定数据库的密码
      *
-     * @param sm4Key SM4密钥
-     * @param password 加密密码
-     * @return 明文密码
+     * @param dbId    数据库ID
+     * @param sm4Key  SM4密钥
+     * @return 解密后的明文密码
      * @throws Exception 解密失败
      */
-    public static String decryptPassword(String sm4Key, String password) throws Exception {
-        // 检查是否为ENC格式
-        if (ENCFormat.isEncrypted(password)) {
-            String algorithm = ENCFormat.extractAlgorithm(password);
-            String cipherText = ENCFormat.extractCipherText(password);
-
-            if ("SM4".equals(algorithm)) {
-                return com.dbpwd.crypto.Sm4Cipher.decrypt(cipherText, sm4Key);
-            } else {
-                throw new IllegalArgumentException("不支持的加密算法: " + algorithm);
-            }
+    public String getDecryptedPassword(String dbId, String sm4Key) throws Exception {
+        DatabaseEntry entry = getById(dbId);
+        if (entry == null) {
+            throw new IllegalArgumentException("未找到数据库配置: " + dbId);
         }
 
-        // 如果不是加密格式，直接返回（明文）
+        String password = entry.getPassword();
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("数据库密码为空: " + dbId);
+        }
+
+        // 如果是加密格式，解密
+        if (ENCFormat.isEncrypted(password)) {
+            String cipherText = ENCFormat.extractCipherText(password);
+            return com.dbpwd.crypto.Sm4Cipher.decrypt(cipherText, sm4Key);
+        }
+
+        // 明文密码直接返回
         return password;
     }
 
     /**
-     * 加密密码
+     * 加密指定数据库的密码
      *
-     * @param sm4Key SM4密钥
-     * @param plainPassword 明文密码
-     * @return ENC格式加密密码
+     * @param dbId    数据库ID
+     * @param sm4Key  SM4密钥
      * @throws Exception 加密失败
      */
-    public static String encryptPassword(String sm4Key, String plainPassword) throws Exception {
-        String cipherText = com.dbpwd.crypto.Sm4Cipher.encrypt(plainPassword, sm4Key);
-        return ENCFormat.formatSM4(cipherText);
-    }
-
-    /**
-     * 获取数据库ID的解密密码
-     *
-     * @param sm4Key SM4密钥
-     * @param dbId 数据库ID
-     * @return 明文密码
-     * @throws Exception 解密失败
-     */
-    public String getDecryptedPassword(String sm4Key, String dbId) throws Exception {
+    public void encryptPassword(String dbId, String sm4Key) throws Exception {
         DatabaseEntry entry = getById(dbId);
         if (entry == null) {
-            throw new IllegalArgumentException("未找到数据库条目: " + dbId);
+            throw new IllegalArgumentException("未找到数据库配置: " + dbId);
         }
-        return decryptPassword(sm4Key, entry.getPassword());
+
+        String plainPassword = entry.getPassword();
+        if (plainPassword == null || plainPassword.isEmpty()) {
+            throw new IllegalArgumentException("数据库密码为空: " + dbId);
+        }
+
+        // 如果已经是加密格式，跳过
+        if (ENCFormat.isEncrypted(plainPassword)) {
+            logger.fine("数据库密码已经是加密格式: " + dbId);
+            return;
+        }
+
+        // 加密
+        String cipherText = com.dbpwd.crypto.Sm4Cipher.encrypt(plainPassword, sm4Key);
+        entry.setPassword(ENCFormat.formatSM4(cipherText));
+        entry.setEncrypted(true);
     }
 
     /**
-     * 对比两个密码文件的更新时间
+     * 获取最后的加载时间
      *
-     * @param other 另一个密码文件管理器
-     * @return 比较结果：<0表示当前文件较新，0表示相同，>0表示另一个文件较新
+     * @return 最后加载时间戳（毫秒）
      */
-    public int compareUpdateTime(PasswordFileManager other) {
-        if (passwordFile == null || other == null || other.passwordFile == null) {
-            return 0;
-        }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
-        Instant thisTime = Instant.from(formatter.parse(passwordFile.getLastModified()));
-        Instant otherTime = Instant.from(formatter.parse(other.passwordFile.getLastModified()));
-
-        return thisTime.compareTo(otherTime) * -1; // 反转，返回正数表示other较新
+    public long getLastLoadedTime() {
+        return lastLoadedTime;
     }
 
     /**
-     * 合并另一个密码文件的内容（保留较新的条目）
+     * 获取文件路径
      *
-     * @param other 另一个密码文件管理器
-     * @return 合并的条目数量
+     * @return 文件路径
      */
-    public int merge(PasswordFileManager other) {
-        if (passwordFile == null || other == null || other.passwordFile == null) {
-            return 0;
-        }
-
-        int mergedCount = 0;
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
-
-        for (DatabaseEntry otherEntry : other.getAllDatabases()) {
-            DatabaseEntry existing = getById(otherEntry.getId());
-
-            if (existing == null) {
-                // 新增
-                addDatabase(otherEntry);
-                mergedCount++;
-            } else {
-                // 比较更新时间
-                Instant existingTime = Instant.from(formatter.parse(existing.getUpdatedAt()));
-                Instant otherTime = Instant.from(formatter.parse(otherEntry.getUpdatedAt()));
-
-                if (otherTime.isAfter(existingTime)) {
-                    // 更新
-                    updateDatabase(otherEntry);
-                    mergedCount++;
-                }
-            }
-        }
-
-        if (mergedCount > 0) {
-            logger.info("合并了 " + mergedCount + " 个数据库条目");
-        }
-
-        return mergedCount;
-    }
-
-    // ==================== Getters ====================
-
     public String getFilePath() {
         return filePath;
     }
 
+    /**
+     * 获取密码文件对象（内部使用）
+     *
+     * @return PasswordFile对象
+     */
     public PasswordFile getPasswordFile() {
         return passwordFile;
     }
 
-    public void setPasswordFile(PasswordFile passwordFile) {
-        this.passwordFile = passwordFile;
-    }
-
-    public boolean isEmpty() {
-        return passwordFile == null || passwordFile.isEmpty();
-    }
-
-    public int size() {
-        return passwordFile == null ? 0 : passwordFile.size();
-    }
+    // ==================== 私有辅助方法 ====================
 
     /**
      * 展开家目录路径 (~)
@@ -399,7 +392,44 @@ public class PasswordFileManager {
     }
 
     /**
-     * 创建ObjectMapper实例
+     * 检查文件权限
+     */
+    private void checkFilePermissions(File file) throws IOException {
+        try {
+            java.nio.file.Path path = file.toPath();
+
+            // 在Unix-like系统上检查Posix权限
+            Set<java.nio.file.attribute.PosixFilePermission> permissions =
+                Files.getPosixFilePermissions(path);
+
+            Set<java.nio.file.attribute.PosixFilePermission> requiredPermissions =
+                new java.util.HashSet<>();
+            requiredPermissions.add(java.nio.file.attribute.PosixFilePermission.OWNER_READ);
+            requiredPermissions.add(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE);
+
+            // 检查是否有其他用户的权限
+            boolean hasOtherPermission = permissions.stream()
+                .filter(p -> !requiredPermissions.contains(p))
+                .count() > 0;
+
+            if (hasOtherPermission) {
+                logger.warning("密码文件权限不安全，建议设置为600。当前权限: " +
+                    java.nio.file.attribute.PosixFilePermissions.toString(permissions));
+            }
+        } catch (UnsupportedOperationException e) {
+            logger.warning("无法检查文件权限: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 检查是否为Windows系统
+     */
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("win");
+    }
+
+    /**
+     * 创建配置好的ObjectMapper
      */
     private ObjectMapper createObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
@@ -408,6 +438,8 @@ public class PasswordFileManager {
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         return mapper;
     }
+
+    // ==================== 静态工厂方法 ====================
 
     /**
      * 工厂方法：从文件路径加载
@@ -420,5 +452,52 @@ public class PasswordFileManager {
         PasswordFileManager manager = new PasswordFileManager(filePath);
         manager.load();
         return manager;
+    }
+
+    /**
+     * 安全加载文件（失败时返回新实例）
+     *
+     * @param filePath 文件路径
+     * @return PasswordFileManager实例
+     */
+    public static PasswordFileManager loadFromFileSafe(String filePath) {
+        try {
+            return loadFromFile(filePath);
+        } catch (IOException e) {
+            Logger.getLogger(PasswordFileManager.class.getName())
+                .warning("加载密码文件失败: " + filePath + " - " + e.getMessage());
+            PasswordFileManager manager = new PasswordFileManager(filePath);
+            manager.passwordFile = new PasswordFile();
+            return manager;
+        }
+    }
+
+    /**
+     * 检查文件是否需要重新加载
+     *
+     * @param filePath 文件路径
+     * @param lastModified 上次修改时间
+     * @return true=需要重新加载，false=不需重新加载
+     */
+    public static boolean needsReload(String filePath, long lastModified) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return false;
+        }
+        return file.lastModified() > lastModified;
+    }
+
+    /**
+     * 获取文件修改时间
+     *
+     * @param filePath 文件路径
+     * @return 文件修改时间（毫秒）
+     */
+    public static long getFileModifiedTime(String filePath) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return 0;
+        }
+        return file.lastModified();
     }
 }

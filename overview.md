@@ -390,7 +390,7 @@ dbpwd-cli test db001
 
 - [配置中心集成](technical/config-center.md) - 配置中心目录结构和同步策略
 - [命令行工具](technical/command-line.md) - CLI命令和参数说明
-- [连接池包装](technical/connection-pool.md) - Druid/HikariCP包装实现
+- [连接池装饰](technical/connection-pool.md) - Druid/HikariCP装饰器实现
 - [框架集成](technical/framework-integration.md) - Spring Boot/MyBatis集成
 
 ### 4.3 安全文档

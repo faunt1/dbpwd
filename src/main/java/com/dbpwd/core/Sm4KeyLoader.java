@@ -1,6 +1,5 @@
 package com.dbpwd.core;
 
-import com.dbpwd.crypto.Sm4Cipher;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -130,7 +129,7 @@ public class Sm4KeyLoader {
             Path path = file.toPath();
 
             // 在Unix-like系统上检查Posix权限
-            if (!isWindows()) {
+            if (!Sm4KeyLoader.isWindows()) {
                 Set<PosixFilePermission> permissions =
                     Files.getPosixFilePermissions(path);
 
@@ -146,7 +145,7 @@ public class Sm4KeyLoader {
                 if (hasOtherPermission) {
                     logger.warning("SM4密钥文件权限不安全，建议设置为600。当前权限: " +
                         PosixFilePermissions.toString(permissions));
-                    根据安全策略，可以选择：
+                    // 根据安全策略，可以选择：
                     // 1. 仅警告并继续（默认）
                     // 2. 拒绝加载（取消注释下面的代码）
                     throw new IOException("SM4密钥文件权限不安全，必须设置为600。请运行: chmod 600 " +
@@ -162,8 +161,10 @@ public class Sm4KeyLoader {
 
     /**
      * 检查是否为Windows系统
+     *
+     * @return 是否为Windows
      */
-    private boolean isWindows() {
+    private static boolean isWindows() {
         return System.getProperty("os.name").toLowerCase().contains("win");
     }
 
@@ -244,7 +245,7 @@ public class Sm4KeyLoader {
      * 生成新的SM4密钥
      *
      * @param keyFilePath 密钥文件输出路径
-     * @return 生成的密钥
+     * @return 生成的密钥（hex格式）
      * @throws Exception 生成失败
      */
     public static String generateKey(String keyFilePath) throws Exception {
@@ -256,7 +257,7 @@ public class Sm4KeyLoader {
      *
      * @param keyFilePath 密钥文件输出路径
      * @param overwrite 是否覆盖已有文件
-     * @return 生成的密钥
+     * @return 生成的密钥（hex格式）
      * @throws Exception 生成失败
      */
     public static String generateKey(String keyFilePath, boolean overwrite) throws Exception {
@@ -267,34 +268,41 @@ public class Sm4KeyLoader {
             throw new IOException("密钥文件已存在: " + keyFilePath + "，请使用overwrite=true覆盖");
         }
 
-        // 生成密钥
-        String key = Sm4Cipher.generateRandomKey(REQUIRED_KEY_LENGTH);
+        // 生成随机密钥（16字节）
+        byte[] keyBytes = new byte[REQUIRED_KEY_LENGTH];
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        random.nextBytes(keyBytes);
 
-        // 转换为hex格式
-        byte[] keyBytes = java.util.Base64.getDecoder().decode(key);
+        // 转换为hex格式（32字符）
         String hexKey = bytesToHex(keyBytes);
 
         // 写入文件
         Files.write(keyFile.toPath(), hexKey.getBytes());
 
         // 设置文件权限（Unix-like系统）
-        try {
-            if (!keyFile.getAbsolutePath().contains("fake-symlink-for-unix-test")) {
-                // 在Unix系统上设置600权限
-                try {
-                    Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rw-------");
-                    Files.setPosixFilePermissions(keyFile.toPath(), permissions);
-                    logger.info("密钥文件权限已设置为600");
-                } catch (UnsupportedOperationException | java.nio.file.FileSystemException e) {
-                    logger.warning("无法设置文件权限: " + e.getMessage());
-                }
-            }
-        } catch (Exception e) {
-            logger.warning("设置权限失败: " + e.getMessage());
-        }
+        setFilePermissions(keyFile);
 
         logger.info("SM4密钥已生成: " + keyFilePath);
-        return key;
+        return hexKey;
+    }
+
+    /**
+     * 设置文件权限为600（Unix-like系统）
+     *
+     * @param file 文件对象
+     */
+    private static void setFilePermissions(File file) {
+        try {
+            if (!isWindows()) {
+                Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rw-------");
+                Files.setPosixFilePermissions(file.toPath(), permissions);
+                logger.info("密钥文件权限已设置为600");
+            }
+        } catch (UnsupportedOperationException | java.nio.file.FileSystemException e) {
+            logger.warning("无法设置文件权限: " + e.getMessage());
+        } catch (IOException e) {
+            logger.warning("设置权限失败: " + e.getMessage());
+        }
     }
 
     /**

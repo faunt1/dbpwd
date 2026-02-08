@@ -9,6 +9,7 @@ import com.dbpwd.crypto.PasswordEncryptor;
 import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.model.DatabaseEntry;
 import com.dbpwd.model.ENCFormat;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -74,9 +75,9 @@ public class DBPasswordCLI {
     }
 
     private void interactiveMode() {
-        System.out.println("=".repeat(60));
+        System.out.println(org.apache.commons.lang3.StringUtils.repeat("=", 60));
         System.out.println("   数据库密码管理命令行工具 v3.0");
-        System.out.println("=".repeat(60));
+        System.out.println(org.apache.commons.lang3.StringUtils.repeat("=", 60));
         System.out.println();
 
         Scanner scanner = new Scanner(System.in);
@@ -196,16 +197,16 @@ public class DBPasswordCLI {
 
             System.out.println();
             System.out.println("数据库列表:");
-            System.out.println("-".repeat(60));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 60));
             System.out.printf("%-15s | %-20s | %-20s | %s%n", "ID", "名称", "类型", "用户名");
-            System.out.println("-".repeat(60));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 60));
 
             for (DatabaseEntry db : databases) {
                 System.out.printf("%-15s | %-20s | %-20s | %s%n",
                     db.getId(), db.getName(), db.getType(), db.getUsername());
             }
 
-            System.out.println("-".repeat(60));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 60));
             System.out.println("总计: " + databases.size() + " 个数据库");
         } catch (Exception e) {
             System.err.println("加载数据库列表失败: " + e.getMessage());
@@ -216,7 +217,7 @@ public class DBPasswordCLI {
         try {
             System.out.println();
             System.out.println("添加新数据库");
-            System.out.println("-".repeat(30));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 30));
 
             System.out.print("数据库ID: ");
             String id = scanner.nextLine().trim();
@@ -270,7 +271,7 @@ public class DBPasswordCLI {
         try {
             System.out.println();
             System.out.println("更新数据库配置");
-            System.out.println("-".repeat(30));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 30));
 
             System.out.print("数据库ID: ");
             String id = scanner.nextLine().trim();
@@ -322,7 +323,7 @@ public class DBPasswordCLI {
         try {
             System.out.println();
             System.out.println("删除数据库配置");
-            System.out.println("-".repeat(30));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 30));
 
             System.out.print("数据库ID: ");
             String id = scanner.nextLine().trim();
@@ -344,7 +345,7 @@ public class DBPasswordCLI {
         try {
             System.out.println();
             System.out.println("测试数据库连接");
-            System.out.println("-".repeat(30));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 30));
 
             System.out.print("数据库ID (或 'all' 测试所有): ");
             String input = scanner.nextLine().trim();
@@ -373,7 +374,7 @@ public class DBPasswordCLI {
         try {
             System.out.println();
             System.out.println("加密密码");
-            System.out.println("-".repeat(30));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 30));
 
             String plainPassword = PasswordEncryptor.readPasswordInteractive("要加密的密码: ");
 
@@ -390,7 +391,7 @@ public class DBPasswordCLI {
         try {
             System.out.println();
             System.out.println("解密密码");
-            System.out.println("-".repeat(30));
+            System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 30));
 
             System.out.print("要解密的密码: ");
             String encryptedPassword = scanner.nextLine().trim();
@@ -407,7 +408,7 @@ public class DBPasswordCLI {
     private void showInfo() {
         System.out.println();
         System.out.println("配置信息");
-        System.out.println("-".repeat(30));
+        System.out.println(org.apache.commons.lang3.StringUtils.repeat("-", 30));
         System.out.println("密码文件: " + passwordFile);
         System.out.println("密钥文件: " + keyFile);
 
