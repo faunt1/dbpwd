@@ -346,11 +346,17 @@ public class ConnectionValidator {
 
         try {
             // 格式：jdbc:mysql://host:port/db
-            int colonPos = url.indexOf(':', 5); // 跳过jdbc:
+            int colonPos = url.indexOf(':'); // 跳过jdbc:
+
+            // 找第一个 : 或 :// 之前的部分
+            int secondColonPos = url.indexOf(':', colonPos + 1);
             int slashPos = url.indexOf("://", colonPos + 1);
 
             if (slashPos > 0) {
                 return url.substring(colonPos + 1, slashPos).toLowerCase();
+            } else if (secondColonPos > 0) {
+                // H2 格式：h2:mem:... 或 h2:file:...
+                return url.substring(colonPos + 1, secondColonPos).toLowerCase();
             }
         } catch (Exception e) {
             logger.log(Level.FINE, "从URL提取数据库类型失败", e);
