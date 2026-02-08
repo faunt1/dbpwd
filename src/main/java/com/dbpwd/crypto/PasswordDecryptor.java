@@ -43,6 +43,8 @@ public class PasswordDecryptor {
         // 根据算法解密
         if ("SM4".equalsIgnoreCase(algorithm)) {
             return Sm4Cipher.decrypt(cipherText, sm4Key);
+        } else if ("SM4-GCM".equalsIgnoreCase(algorithm)) {
+            return Sm4GCMCipher.decrypt(cipherText, sm4Key);
         } else {
             throw new UnsupportedOperationException("不支持的加密算法: " + algorithm);
         }

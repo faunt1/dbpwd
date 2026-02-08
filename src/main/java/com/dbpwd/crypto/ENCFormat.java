@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  */
 public class ENCFormat {
 
-    private static final Pattern ENC_PREFIX_PATTERN = Pattern.compile("^ENC\\(([A-Z0-9]+):(.*)\\)$", Pattern.DOTALL);
+    private static final Pattern ENC_PREFIX_PATTERN = Pattern.compile("^ENC\\(([A-Za-z0-9-]+):(.*)\\)$", Pattern.DOTALL);
 
     /**
      * 检查密码是否为加密格式
@@ -90,6 +90,16 @@ public class ENCFormat {
     }
 
     /**
+     * 格式化为SM4-GCM加密格式
+     *
+     * @param cipherText 密文（包含IV的格式）
+     * @return 格式化后的加密密码
+     */
+    public static String formatSM4GCM(String cipherText) {
+        return formatEncrypted("SM4-GCM", cipherText);
+    }
+
+    /**
      * 检查是否为SM4加密格式
      *
      * @param password 密码字符串
@@ -97,6 +107,16 @@ public class ENCFormat {
      */
     public static boolean isSM4Encrypted(String password) {
         return "SM4".equals(extractAlgorithm(password));
+    }
+
+    /**
+     * 检查是否为SM4-GCM加密格式
+     *
+     * @param password 密码字符串
+     * @return 是否为SM4-GCM加密格式
+     */
+    public static boolean isSM4GCMEncrypted(String password) {
+        return "SM4-GCM".equals(extractAlgorithm(password));
     }
 
     /**
