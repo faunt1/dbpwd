@@ -5,81 +5,30 @@
 
 ## 目录
 
-1. [业务需求](#业务需求)
-2. [技术需求](#技术需求)
-3. [整体方案](#整体方案)
-4. [项目目标](#项目目标)
+1. [概述](#概述)
+2. [业务需求](#业务需求)
+3. [技术需求](#技术需求)
+4. [整体方案](#整体方案)
 5. [核心设计决策](#核心设计决策)
-6. [整体架构](overview.md)
-7. [密码文件格式规范](technical/password-format.md)
-8. [SM4密钥管理](technical/key-management.md)
-9. [密钥管理概述](overview.md#4-sm4密钥管理)
-10. [密码更新流程](technical/password-update-flow.md)
-11. [密码更新概述](overview.md#5-密码更新流程)
-12. [项目代码结构](technical/code-structure.md)
-13. [配置中心集成](technical/config-center.md)
-14. [命令行工具](technical/command-line.md)
-15. [配置属性说明](technical/properties.md)
-16. [安全机制设计](technical/security.md)
-17. [技术栈](#技术栈)
-18. [SM4加密详解](technical/sm4-encryption.md)
-19. [连接池包装类](technical/connection-pool.md)
-20. [框架集成](technical/framework-integration.md)
-21. [安全检查清单](technical/security.md#安全检查清单)
-22. [设计决策总结](overview.md#设计决策总结)
-23. [JDK版本兼容](technical/jdk-compatibility.md)
-24. [开发计划](technical/development-plan.md)
+6. [相关文档](#相关文档)
 
 ---
 
-## 项目目标
+## 概述
+
+### 项目简介
 
 实现一个基于 SM4 加密的数据库密码管理系统，采用JSON格式存储密码文件，支持本地安全管理和数据库连接测试。
 
-## 快速开始
+### 技术栈
 
-### 1. 安装与配置
-
-```bash
-# 编译项目
-mvn clean package
-
-# 创建配置目录
-mkdir -p ~/.dbpwd && chmod 700 ~/.dbpwd
-
-# 密钥文件（16字节hex编码）
-echo "AABBCCDD1234567890ABCDEF12345678" > ~/.dbpwd/sm4.key
-chmod 600 ~/.dbpwd/sm4.key
-```
-
-### 2. 密码文件示例
-
-```json
-{
-  "version": "1.0",
-  "lastModified": "2026-02-08T10:30:45Z",
-  "databases": [
-    {
-      "id": "db001",
-      "name": "主数据库",
-      "type": "mysql",
-      "host": "192.168.1.100",
-      "port": 3306,
-      "database": "mydb",
-      "url": "jdbc:mysql://192.168.1.100:3306/mydb",
-      "username": "admin",
-      "password": "ENC(SM4:r7X9k3mP8nQ2vL5wY1zA4cD6eF8gH0iJ=)",
-      "encrypted": true
-    }
-  ]
-}
-```
-
-### 3. 运行工具
-
-```bash
-java -jar dbpwd-cli.jar
-```
+| 组件 | 技术选择 |
+|------|---------|
+| **JDK版本** | JDK 8+ |
+| **加密库** | Bouncy Castle (1.69+) SM4实现 |
+| **JSON库** | Jackson (2.12+) |
+| **日志框架** | JDK Logging / SLF4J |
+| **构建工具** | Maven 3.6+ |
 
 ---
 
@@ -257,7 +206,10 @@ java -jar dbpwd-cli.jar
 | 决策点 | 选项 | 理由 |
 |-------|------|------|
 | 密码文件格式 | JSON格式 | 可读性强，易扩展，工具友好 |
-| 密码字段格式 | Druid ENC格式 | 兼容性强，可扩展其他算法 |
+| 密码字段格式 | ENC标准格式 | 兼容性强，可扩展其他算法 |
+| 加密算法 | SM4国密算法 | 符合国家密码标准，128位安全强度 |
+| 加密模式 | GCM（推荐）/ ECB（兼容） | GCM提供认证加密防篡改，ECB保持兼容性 |
+| 密钥长度 | 128位（16字节） | SM4标准密钥长度 |
 | 配置中心使用 | 存储实际文件+多环境管理 | 支持多环境分层 |
 | 应用与配置中心 | 完全解耦 | 应用只读本地文件，提高稳定性 |
 | 同步机制 | 独立同步工具 | 不影响应用运行，可控的文件更新 |
@@ -265,61 +217,28 @@ java -jar dbpwd-cli.jar
 | 密钥保护 | 600权限，可选密码短语 | 参照SSH机制，增强安全 |
 | 容器部署 | 外挂文件600权限 | 灵活部署，安全可控 |
 | JDK版本 | JDK 8+ | 兼容现有系统 |
+| 应用侧集成 | 装饰器模式 | 统一接口，易于扩展 |
 
 ---
 
-## 技术栈
+## 相关文档
 
-| 组件 | 技术选择 |
-|------|---------|
-| **JDK版本** | JDK 8+ |
-| **加密库** | Bouncy Castle (1.69+) SM4实现 |
-| **JSON库** | Jackson (2.12+) |
-| **日志框架** | JDK Logging / SLF4J |
-| **构建工具** | Maven 3.6+ |
+### 技术设计
+- [整体架构](overview.md) - 完整技术设计文档
+- [密码文件格式](technical/password-format.md) - JSON格式和字段定义
+- [SM4加密详解](technical/sm4-encryption.md) - 加密流程和实现
+- [密钥管理](technical/key-management.md) - 密钥生命周期管理
+- [JDK版本兼容](technical/jdk-compatibility.md) - JDK 8/11/17+支持对比
 
----
+### 集成实现
+- [配置中心集成](technical/config-center.md) - 配置中心目录结构和同步策略
+- [命令行工具](technical/command-line.md) - CLI命令和参数说明
+- [连接池装饰器](technical/connection-pool.md) - 连接池装饰器实现
+- [框架集成](technical/framework-integration.md) - Spring/MyBatis集成
+- [配置属性说明](technical/properties.md) - 应用配置参数
 
-## 快速参考
-
-### 常用命令
-
-```bash
-# 查看帮助
-dbpwd-cli --help
-
-# 交互式模式
-java -cp . com.dbpwd.cli.DBPasswordCLI
-
-# 测试数据库连接
-dbpwd-cli test db001
-
-# 加密密码
-dbpwd-cli encrypt "mypassword"
-
-# 解密密码
-dbpwd-cli decrypt ENC(SM4:r7X9k3mP8nQ2vL5w)
-```
-
-### 应用配置
-
-```yaml
-dbpwd:
-  enabled: true
-  password-file: ~/.dbpwd/db.pwd
-  key-file: ~/.dbpwd/sm4.key
-  connection:
-    timeout: 5000
-```
-
----
-
-## 许可证
-
-> 文档版本: v3.0
-> 最后更新: 2026-02-08
-> 系统要求: JDK 8+
-
-## 相关链接
-
-项目主页: [https://github.com/your-org/dbpwd](https://github.com/your-org/dbpwd)
+### 安全与开发
+- [安全机制设计](technical/security.md) - 安全机制和检查清单
+- [密码更新流程](technical/password-update-flow.md) - 密码更新详细流程
+- [代码结构](technical/code-structure.md) - 项目目录结构说明
+- [开发计划](technical/development-plan.md) - Sprint划分、里程碑、测试要求
