@@ -7,17 +7,14 @@ import com.dbpwd.framework.DataSourceDecoratorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 
 /**
  * Database Password Manager Spring Boot 自动配置类
@@ -103,8 +100,8 @@ public class DbPwdAutoConfiguration {
 
         if (properties.isValidateKeyOnStartup()) {
             try {
-                String key = keyLoader.loadKey();
-                logger.info("SM4 key loaded and validated successfully");
+                keyLoader.loadKey();
+                logger.info("SM4 key loaded and validated successfully: " );
             } catch (Exception e) {
                 logger.error("Failed to load SM4 key: {}", e.getMessage());
                 throw new IllegalStateException("Failed to load SM4 key: " + e.getMessage(), e);

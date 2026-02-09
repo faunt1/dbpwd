@@ -6,7 +6,6 @@ import com.dbpwd.crypto.ENCFormat;
 import com.dbpwd.crypto.PasswordDecryptor;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -109,6 +108,7 @@ public class DataSourceDecorator implements DataSource {
         return delegate.getParentLogger();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
         if (iface.equals(DataSource.class)) {
@@ -220,10 +220,9 @@ public class DataSourceDecorator implements DataSource {
     private String getPasswordFromDataSource() {
         if (delegate instanceof DruidDataSource) {
             return ((DruidDataSource) delegate).getPassword();
-        } else if (delegate instanceof org.apache.commons.dbcp2.BasicDataSource) {
-            return ((org.apache.commons.dbcp2.BasicDataSource) delegate).getPassword();
         }
-        // 其他类型通过反射获取
+        // DBCP2使用反射获取密码（getPassword已弃用）
+        // 其他类型也通过反射获取
         return getPasswordThroughReflection(delegate);
     }
 

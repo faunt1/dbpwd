@@ -1,17 +1,12 @@
 package com.dbpwd.framework;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.core.PasswordFileManager;
 import com.dbpwd.crypto.ENCFormat;
 import com.dbpwd.crypto.Sm4Cipher;
 
-import javax.sql.DataSource;
 import java.io.File;
-import java.io.IOException;
-import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * DataSourceDecorator单元测试
@@ -227,8 +222,9 @@ public class DataSourceDecoratorTest {
 
     /**
      * 创建测试密码文件
+     * @throws Exception
      */
-    private void createTestPasswordFile() throws IOException {
+    private void createTestPasswordFile() throws Exception {
         File testDir = new File(TEST_DIR);
         if (!testDir.exists()) {
             testDir.mkdirs();
