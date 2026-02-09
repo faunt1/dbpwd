@@ -8,6 +8,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.sql.DataSource;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -93,12 +94,12 @@ public class SpringBootDemo {
 
         @GetMapping("/")
         public Map<String, Object> index() {
-            return Map.of(
-                "application", "Database Password Manager - Spring Boot Demo",
-                "status", "running",
-                "database", "SQLite",
-                "description", "Demo application with encrypted database password"
-            );
+            Map<String, Object> result = new HashMap<>();
+            result.put("application", "Database Password Manager - Spring Boot Demo");
+            result.put("status", "running");
+            result.put("database", "SQLite");
+            result.put("description", "Demo application with encrypted database password");
+            return result;
         }
 
         @GetMapping("/health")
@@ -107,16 +108,16 @@ public class SpringBootDemo {
                 Integer count = jdbcTemplate.queryForObject(
                     "SELECT COUNT(*) as count FROM users", Integer.class
                 );
-                return Map.of(
-                    "status", "healthy",
-                    "user_count", count,
-                    "database", "connected"
-                );
+                Map<String, Object> result = new HashMap<>();
+                result.put("status", "healthy");
+                result.put("user_count", count);
+                result.put("database", "connected");
+                return result;
             } catch (Exception e) {
-                return Map.of(
-                    "status", "unhealthy",
-                    "error", e.getMessage()
-                );
+                Map<String, Object> result = new HashMap<>();
+                result.put("status", "unhealthy");
+                result.put("error", e.getMessage());
+                return result;
             }
         }
 

@@ -198,23 +198,25 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.6.0</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.dbpwd.cli.DBPasswordCLI</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
                 <executions>
+                    <!-- Jar with dependencies - main execution -->
                     <execution>
                         <id>make-assembly</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <configuration>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.dbpwd.cli.DBPasswordCLI</mainClass>
+                                </manifest>
+                            </archive>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
                     </execution>
                     <!-- Documentation package -->
                     <execution>
