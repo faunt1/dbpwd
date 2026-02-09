@@ -6,12 +6,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.dbpwd</groupId>
-    <artifactId>druid-db-pwd</artifactId>
+    <artifactId>db-pwd</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>Druid Database Password Manager</name>
-    <description>Druid JDBC连接池密码加密存储工具，支持国密算法和配置中心集成</description>
+    <name>Database Password Manager</name>
+    <description>数据库密码加密存储工具，支持国密算法和配置中心集成</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
