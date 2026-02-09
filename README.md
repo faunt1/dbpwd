@@ -157,6 +157,13 @@ src/main/java/com/dbpwd/
 
 ## 文档索引
 
+### 用户文档
+- [用户使用手册](docs/user-guide.md) - 完整的用户操作指南
+- [系统部署文档](docs/deployment-guide.md) - 部署和运维指南
+- [常见问题FAQ](docs/FAQ.md) - 常见问题解答
+- [API参考文档](docs/api-reference.md) - API函数和类参考
+- [Demo使用说明](demo-README.md) - 示例应用使用说明
+
 ### 技术设计
 - [技术设计详情](overview.md) - 技术设计文档
 - [密码文件格式](technical/password-format.md) - 密码文件规范
@@ -169,13 +176,17 @@ src/main/java/com/dbpwd/
 - [命令行工具](technical/command-line.md) - CLI命令和参数说明
 - [连接池包装](technical/connection-pool.md) - Druid/HikariCP包装实现
 - [框架集成](technical/framework-integration.md) - Spring/MyBatis集成
+- [Spring Boot集成](technical/spring-boot-integration.md) - Spring Boot集成详情
+- [MyBatis集成](technical/mybatis-integration.md) - MyBatis集成详情
 
 ### 安全机制
 - [安全机制设计](technical/security.md) - SSH对比、安全增强建议
+- [密钥管理](technical/key-management.md) - 密钥生命周期管理
 
 ### 开发相关
 - [代码结构](technical/code-structure.md) - 项目目录结构说明
 - [开发计划](technical/development-plan.md) - Sprint划分、里程碑、测试要求
+- [密码更新流程](technical/password-update-flow.md) - 密码更新详细流程
 
 ## 技术要求
 
