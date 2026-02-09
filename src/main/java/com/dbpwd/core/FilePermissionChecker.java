@@ -30,6 +30,8 @@ public class FilePermissionChecker {
      */
     public static boolean isPermission600(String filePath) {
         try {
+            if (filePath == null | filePath.isEmpty())
+                return false;
             return isPermission600(new File(filePath));
         } catch (Exception e) {
             logger.warning("检查文件权限失败: " + e.getMessage());
