@@ -153,36 +153,47 @@
 
 ---
 
-### Sprint 4.5: 测试应用开发（0.5周）🔄 进行中 (2026-02-09)
+### Sprint 4.5: 多模块架构和测试应用开发（0.5周）🔄 进行中 (2026-02-09)
 
-**目标**: 基于已实现的功能，开发三个测试应用验证功能流程
+**目标**: 重构为多模块体系结构，开发三个测试应用验证功能流程
+
+**架构变更**:
+- 从单模块改为多模块Maven项目
+- 核心模块：db-pwd-core（包含所有核心功能）
+- 测试模块：db-pwd-simple-jdbc-test、db-pwd-spring-boot-test、db-pwd-struts-test
 
 **测试要求**:
-- 使用SQLite数据库（简化测试环境）
+- 使用SQLCipher数据库（加密SQLite，支持密码）
 - 验证密码解密和数据库连接流程
 - 三个测试应用：Spring Web应用、简单JDBC应用、Struts应用
 
 #### 任务清单
-- [ ] 创建测试应用基础目录结构
-- [ ] 创建SQLite测试数据库和测试数据
+- [x] 创建多模块Maven架构（父子POM结构）
+- [x] 创建db-pwd-core核心模块
+- [x] 创建db-pwd-simple-jdbc-test模块
+- [x] 创建db-pwd-spring-boot-test模块
+- [x] 创建db-pwd-struts-test模块
+- [ ] 迁移现有代码到核心模块
 - [ ] 实现简单JDBC测试应用
 - [ ] 实现Spring Boot Web测试应用
 - [ ] 实现Struts 1.x测试应用
+- [ ] 创建SQLCipher测试数据库和测试数据
 - [ ] 验证三个测试应用都能成功连接数据库
 - [ ] 编写测试使用文档
 
 #### 测试技术栈
-- **数据库**: SQLite（无需安装，文件型数据库）
+- **数据库**: SQLCipher（加密SQLite，支持密码访问）
 - **JDBC**: JDBC 4.x
 - **Spring Boot**: 2.7.x（Web应用）
 - **Struts**: 1.3.x（可选集成）
 - **构建工具**: Maven
 
 #### 验收标准
-- [ ] 简单JDBC应用能成功连接SQLite数据库
-- [ ] Spring Boot Web应用能成功连接SQLite数据库
-- [ ] Struts应用能成功连接SQLite数据库
+- [ ] 简单JDBC应用能成功连接SQLCipher数据库
+- [ ] Spring Boot Web应用能成功连接SQLCipher数据库
+- [ ] Struts应用能成功连接SQLCipher数据库
 - [ ] 三个测试应用的密码解密流程正常
+- [ ] 多模块架构可以独立构建和测试
 
 ---
 
@@ -371,8 +382,8 @@
 | Sprint 2 | 第3-4周 | 密码文件管理和连接测试 | 连接测试通过 | ✅ 完成 |
 | Sprint 3 | 第5-6周 | 命令行工具 | CLI功能测试通过 | ✅ 完成 (2026-02-09) |
 | Sprint 4 | 第7-9周 | 框架集成（装饰器模式） | 框架集成测试通过 | ✅ 完成 (2026-02-09) |
-| Sprint 4.5 | 第9.5周 | 测试应用开发 | 三个测试应用跑通 | 🔄 进行中 (2026-02-09) |
-| Sprint 5 | 第10-11周 | 安全增强和文档 | 全部检查完成 | ⚪ 待开始 |
+| Sprint 4.5 | 第9.5周 | 多模块架构和测试应用 | 三个测试应用跑通 | 🔄 进行中 (2026-02-09) |
+| Sprint 5 | 第10-11周 | 文档完善 | 全部检查完成 | ⚪ 待开始 |
 
 ---
 
@@ -450,6 +461,59 @@
 **影响范围**:
 - DataSourceDecorator修改密码获取逻辑
 - 移除对DBCP2.getPassword()的直接调用
+
+---
+
+### D4: 采用多模块Maven架构
+
+**决策时间**: 2026-02-09
+**决策内容**: 将单模块项目重构为多模块Maven架构
+**决策理由**:
+1. **依赖隔离**: 每个测试应用可以独立管理自己的依赖
+2. **独立运行**: 每个模块都可以单独被打包和运行
+3. **版本控制**: 不同测试应用可以使用不同版本的依赖
+4. **清晰结构**: 更符合Maven多模块项目的最佳实践
+5. **用户反馈**: "针对测试应用创建多POM文件的架构是不是会更好一点？"
+
+**项目结构**:
+```
+db-pwd/
+├── pom.xml (parent POM, packaging=pom)
+├── db-pwd-core/ (核心模块)
+│   ├── pom.xml
+│   └── src/
+│       ├── main/java/com/dbpwd/
+│       └── test/
+├── db-pwd-simple-jdbc-test/ (简单JDBC测试)
+│   ├── pom.xml
+│   └── src/main/java/com/dbpwd/test/
+├── db-pwd-spring-boot-test/ (Spring Boot测试)
+│   ├── pom.xml
+│   └── src/main/java/com/dbpwd/test/
+└── db-pwd-struts-test/ (Struts测试)
+    ├── pom.xml
+    └── src/main/java/com/dbpwd/test/
+```
+
+**模块说明**:
+
+| 模块 | 类型 | 主要功能 | 打包方式 |
+|------|------|---------|----------|
+| db-pwd-core | 核心模块 | 所有核心功能（加密、解密、文件管理、CLI、装饰器） | jar |
+| db-pwd-simple-jdbc-test | 测试模块 | 简单JDBC测试应用 | jar (可执行) |
+| db-pwd-spring-boot-test | 测试模块 | Spring Boot Web测试应用 | jar (spring-boot) |
+| db-pwd-struts-test | 测试模块 | Struts 1.x测试应用 | war |
+
+**技术要点**:
+- 父POM使用packaging=pom，包含子模块配置
+- 核心模块依赖通过引用父POM版本管理
+- 测试模块独立依赖SQLCipher JDBC驱动
+- 父POM中统一管理版本号和仓库配置
+
+**影响范围**:
+- 所有现有源代码移动到db-pwd-core模块
+- 创建4个新的pom.xml文件（父POM + 3个子模块）
+- 更新开发计划和文档说明
 
 ---
 
