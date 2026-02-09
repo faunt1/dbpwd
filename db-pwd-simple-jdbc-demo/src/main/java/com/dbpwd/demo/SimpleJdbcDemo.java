@@ -1,4 +1,4 @@
-import com.dbpwd.crypto.SM4Cipher;
+import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.crypto.ENCFormat;
 
 import java.sql.*;
@@ -62,7 +62,7 @@ public class SimpleJdbcDemo {
      */
     private static String encryptDatabasePassword(String plainPassword, String sm4Key) {
         try {
-            String cipherText = SM4Cipher.encrypt(plainPassword, sm4Key);
+            String cipherText = Sm4Cipher.encrypt(plainPassword, sm4Key);
             return ENCFormat.formatSM4(cipherText);
         } catch (Exception e) {
             throw new RuntimeException("Encrypt database password failed: " + e.getMessage(), e);

@@ -1,9 +1,10 @@
-import com.dbpwd.crypto.SM4Cipher;
+import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.crypto.ENCFormat;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import javax.sql.DataSource;
@@ -14,13 +15,13 @@ import java.util.Map;
  * Spring Boot demo application
  *
  * Demo Database Password Manager in Spring Boot web application
- * Using SQLCipher as demo database
+ * Using SQLite as demo database
  *
  * Features:
  * 1. Spring Boot web application with REST API
  * 2. JdbcTemplate for database access
  * 3. SM4 encryption for database password
- * 4. SQLCipher database connection
+ * 4. SQLite database connection
  *
  * @author Database Password Manager
  * @version 4.3
@@ -29,13 +30,13 @@ import java.util.Map;
 public class SpringBootDemo {
 
     private static final String DB_PATH = "target/dbpwd-demo.db";
-    private static final String DB_PASSWORD = "test123"; // SQLCipher database password
-    private static final String DB_URL = "jdbc:sqlite:" + DB_PATH + "?cipher=sqlcipher&key=" + DB_PASSWORD;
+    private static final String DB_PASSWORD = "test123"; // SQLite database password
+    private static final String DB_URL = "jdbc:sqlite:" + DB_PATH;
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
 
     public static void main(String[] args) {
         System.out.println("=== Spring Boot Demo Application ===");
-        System.out.println("Database: SQLCipher (encrypted SQLite)");
+        System.out.println("Database: SQLite");
         System.out.println("Database path: " + DB_PATH);
         System.out.println("Database password: " + DB_PASSWORD);
         System.out.println("SM4 key: " + TEST_SM4_KEY);
@@ -43,7 +44,7 @@ public class SpringBootDemo {
 
         try {
             // Test SM4 encryption
-            String encryptedDbPassword = SM4Cipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
+            String encryptedDbPassword = Sm4Cipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
             String formattedEncrypted = ENCFormat.formatSM4(encryptedDbPassword);
             System.out.println("SM4 Encryption Test:");
             System.out.println("  Original password: " + DB_PASSWORD);
@@ -67,7 +68,8 @@ public class SpringBootDemo {
     public DataSource dataSource() {
         try {
             Class.forName("org.sqlite.JDBC");
-            org.xerial.SQLiteDataSource dataSource = new org.xerial.SQLiteDataSource();
+            DriverManagerDataSource dataSource = new DriverManagerDataSource();
+            dataSource.setDriverClassName("org.sqlite.JDBC");
             dataSource.setUrl(DB_URL);
             return dataSource;
         } catch (ClassNotFoundException e) {
@@ -94,7 +96,7 @@ public class SpringBootDemo {
             return Map.of(
                 "application", "Database Password Manager - Spring Boot Demo",
                 "status", "running",
-                "database", "SQLCipher",
+                "database", "SQLite",
                 "description", "Demo application with encrypted database password"
             );
         }

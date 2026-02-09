@@ -1,4 +1,4 @@
-import com.dbpwd.crypto.SM4Cipher;
+import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.crypto.ENCFormat;
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
@@ -53,7 +53,7 @@ public class StrutsDemo {
          */
         public static String getEncryptedPassword() {
             try {
-                String cipherText = SM4Cipher.encrypt(DB_PASSWORD, SM4_KEY);
+                String cipherText = Sm4Cipher.encrypt(DB_PASSWORD, SM4_KEY);
                 return ENCFormat.formatSM4(cipherText);
             } catch (Exception e) {
                 throw new RuntimeException("Encrypt database password failed: " + e.getMessage(), e);
@@ -253,7 +253,7 @@ public class StrutsDemo {
 
         try {
             // Test SM4 encryption
-            String encryptedDbPassword = SM4Cipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
+            String encryptedDbPassword = Sm4Cipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
             String formattedEncrypted = ENCFormat.formatSM4(encryptedDbPassword);
             System.out.println("SM4 Encryption Test:");
             System.out.println("  Original password: " + DB_PASSWORD);

@@ -18,15 +18,41 @@
         <!-- Source code -->
         <fileSet>
             <directory>${project.basedir}/src</directory>
-            <outputDirectory>src</outputDirectory>
+            <outputDirectory>db-pwd-core/src</outputDirectory>
             <includes>
                 <include>**/*</include>
             </includes>
         </fileSet>
 
+        <!-- Demo modules source code -->
+        <fileSet>
+            <directory>${project.basedir}/../db-pwd-simple-jdbc-demo/src</directory>
+            <outputDirectory>db-pwd-simple-jdbc-demo/src</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+            <useDefaultExcludes>false</useDefaultExcludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../db-pwd-spring-boot-demo/src</directory>
+            <outputDirectory>db-pwd-spring-boot-demo/src</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+            <useDefaultExcludes>false</useDefaultExcludes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../db-pwd-struts-demo/src</directory>
+            <outputDirectory>db-pwd-struts-demo/src</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+            <useDefaultExcludes>false</useDefaultExcludes>
+        </fileSet>
+
         <!-- Project configuration files -->
         <fileSet>
-            <directory>${project.basedir}</directory>
+            <directory>${project.basedir}/../</directory>
             <outputDirectory>.</outputDirectory>
             <includes>
                 <include>pom.xml</include>
@@ -36,9 +62,40 @@
             </includes>
         </fileSet>
 
+        <!-- Module POM files -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>db-pwd-core</outputDirectory>
+            <includes>
+                <include>pom.xml</include>
+                <include>src/main/assembly/**/*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../db-pwd-simple-jdbc-demo</directory>
+            <outputDirectory>db-pwd-simple-jdbc-demo</outputDirectory>
+            <includes>
+                <include>pom.xml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../db-pwd-spring-boot-demo</directory>
+            <outputDirectory>db-pwd-spring-boot-demo</outputDirectory>
+            <includes>
+                <include>pom.xml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../db-pwd-struts-demo</directory>
+            <outputDirectory>db-pwd-struts-demo</outputDirectory>
+            <includes>
+                <include>pom.xml</include>
+            </includes>
+        </fileSet>
+
         <!-- Configuration directory -->
         <fileSet>
-            <directory>${project.basedir}/config</directory>
+            <directory>${project.basedir}/../config</directory>
             <outputDirectory>config</outputDirectory>
             <includes>
                 <include>**/*</include>
@@ -47,7 +104,7 @@
 
         <!-- Scripts directory -->
         <fileSet>
-            <directory>${project.basedir}/scripts</directory>
+            <directory>${project.basedir}/../scripts</directory>
             <outputDirectory>scripts</outputDirectory>
             <includes>
                 <include>**/*</include>
@@ -56,30 +113,21 @@
 
         <!-- Documentation -->
         <fileSet>
-            <directory>${project.basedir}</directory>
+            <directory>${project.basedir}/../</directory>
             <outputDirectory>.</outputDirectory>
             <includes>
                 <include>README.md</include>
-                <include>claude.md</include>
+                <include>CLAUDE.md</include>
                 <include>LICENSE</include>
-                <include>CHANGELOG.md</include>
                 <include>overview.md</include>
             </includes>
         </fileSet>
 
         <fileSet>
-            <directory>${project.basedir}/technical</directory>
+            <directory>${project.basedir}/../technical</directory>
             <outputDirectory>technical</outputDirectory>
             <includes>
                 <include>**/*.md</include>
-            </includes>
-        </fileSet>
-
-        <fileSet>
-            <directory>${project.basedir}/docs</directory>
-            <outputDirectory>docs</outputDirectory>
-            <includes>
-                <include>**/*</include>
             </includes>
         </fileSet>
     </fileSets>

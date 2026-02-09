@@ -31,7 +31,7 @@
 
         <!-- Configuration directory -->
         <fileSet>
-            <directory>${project.basedir}/config</directory>
+            <directory>${project.basedir}/../config</directory>
             <outputDirectory>config</outputDirectory>
             <includes>
                 <include>**/*</include>
@@ -40,7 +40,7 @@
 
         <!-- Scripts directory -->
         <fileSet>
-            <directory>${project.basedir}/scripts</directory>
+            <directory>${project.basedir}/../scripts</directory>
             <outputDirectory>bin</outputDirectory>
             <includes>
                 <include>**/*</include>
@@ -50,30 +50,21 @@
 
         <!-- Documentation -->
         <fileSet>
-            <directory>${project.basedir}</directory>
+            <directory>${project.basedir}/../</directory>
             <outputDirectory>.</outputDirectory>
             <includes>
                 <include>README.md</include>
-                <include>claude.md</include>
+                <include>CLAUDE.md</include>
                 <include>LICENSE</include>
-                <include>CHANGELOG.md</include>
                 <include>overview.md</include>
             </includes>
         </fileSet>
 
         <fileSet>
-            <directory>${project.basedir}/technical</directory>
+            <directory>${project.basedir}/../technical</directory>
             <outputDirectory>docs/technical</outputDirectory>
             <includes>
                 <include>**/*.md</include>
-            </includes>
-        </fileSet>
-
-        <fileSet>
-            <directory>${project.basedir}/docs</directory>
-            <outputDirectory>docs</outputDirectory>
-            <includes>
-                <include>**/*</include>
             </includes>
         </fileSet>
     </fileSets>

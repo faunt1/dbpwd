@@ -13,55 +13,33 @@
     <includeBaseDirectory>false</includeBaseDirectory>
 
     <fileSets>
-        <!-- Root markdown files -->
+        <!-- Overview documentation -->
         <fileSet>
-            <directory>${project.basedir}</directory>
+            <directory>${project.basedir}/../</directory>
             <outputDirectory>.</outputDirectory>
             <includes>
                 <include>README.md</include>
-                <include>claude.md</include>
+                <include>CLAUDE.md</include>
                 <include>LICENSE</include>
-                <include>CHANGELOG.md</include>
+                <include>overview.md</include>
             </includes>
-            <excludes>
-                <exclude>**/.git/**</exclude>
-                <exclude>**/target/**</exclude>
-            </excludes>
         </fileSet>
 
         <!-- Technical documentation -->
         <fileSet>
-            <directory>${project.basedir}/technical</directory>
+            <directory>${project.basedir}/../technical</directory>
             <outputDirectory>technical</outputDirectory>
             <includes>
                 <include>**/*.md</include>
             </includes>
         </fileSet>
 
-        <!-- Additional documentation -->
-        <fileSet>
-            <directory>${project.basedir}/docs</directory>
-            <outputDirectory>docs</outputDirectory>
-            <includes>
-                <include>**/*</include>
-            </includes>
-        </fileSet>
-
         <!-- Config directory if exists -->
         <fileSet>
-            <directory>${project.basedir}/config</directory>
+            <directory>${project.basedir}/../config</directory>
             <outputDirectory>config</outputDirectory>
             <includes>
                 <include>**/*</include>
-            </includes>
-        </fileSet>
-
-        <!-- Overview if not included in root -->
-        <fileSet>
-            <directory>${project.basedir}</directory>
-            <outputDirectory>.</outputDirectory>
-            <includes>
-                <include>overview.md</include>
             </includes>
         </fileSet>
     </fileSets>
