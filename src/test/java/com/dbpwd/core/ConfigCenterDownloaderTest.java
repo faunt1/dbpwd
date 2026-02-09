@@ -11,9 +11,6 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.Properties;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * ConfigCenterDownloader测试类
@@ -143,7 +140,6 @@ class ConfigCenterDownloaderTest {
 
     @Test
     void testFilePathExpansion() {
-        String homeDir = System.getProperty("user.home");
         ConfigCenterDownloader.Builder builder = new ConfigCenterDownloader.Builder()
                 .physicalGroup("测试")
                 .application("测试")
