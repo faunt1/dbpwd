@@ -15,11 +15,11 @@
     <packaging>jar</packaging>
 
     <name>Database Password Manager - Spring Boot Demo</name>
-    <description>Spring Boot web demo application using SQLCipher database</description>
+    <description>Spring Boot web demo application demonstrating SM4 encryption</description>
 
     <properties>
         <spring-boot.version>2.7.18</spring-boot.version>
-        <sqlcipher.version>3.42.0.0</sqlcipher.version>
+        <h2.version>2.2.224</h2.version>
     </properties>
 
     <dependencyManagement>
@@ -54,11 +54,11 @@
             <artifactId>spring-jdbc</artifactId>
         </dependency>
 
-        <!-- SQLite JDBC Driver -->
+        <!-- H2 Database (in-memory for demo) -->
         <dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
-            <version>3.42.0.0</version>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
         </dependency>
     </dependencies>
 

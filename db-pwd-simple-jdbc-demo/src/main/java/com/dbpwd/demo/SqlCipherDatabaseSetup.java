@@ -1,57 +1,43 @@
+package com.dbpwd.demo;
+
 import java.io.File;
 import java.sql.*;
 
 /**
- * SQLCipher demo database setup utility
+ * Demo database connection example
  *
- * Responsible for creating and initializing SQLCipher demo database (encrypted SQLite)
- *
- * SQLCipher provides SQLite encryption:
- * - Database file encryption
- * - JDBC connection with password support
- * - Transparent encryption, SQL queries remain unchanged
+ * Demonstrate database connection with SM4-encrypted password
+ * Using H2 in-memory database for demo purposes
  *
  * @author Database Password Manager
- * @version 4.3
+ * @version 4.4
  */
 public class SqlCipherDatabaseSetup {
 
-    private static final String DB_PATH = "target/dbpwd-demo.db";
-    private static final String DB_PASSWORD = "test123"; // SQLCipher database password
+    private static final String DB_URL = "jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1";
+    private static final String DB_USERNAME = "sa";
+    private static final String DB_PASSWORD = ""; // H2 default: empty password
 
     /**
-     * Initialize SQLCipher demo database
+     * Initialize demo database
      */
     public static void setupDemoDatabase() {
         try {
-            // Ensure directory exists
-            File dbFile = new File(DB_PATH);
-            dbFile.getParentFile().mkdirs();
+            // Connect to H2 in-memory database
+            Class.forName("org.h2.Driver");
+            Connection conn = DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
 
-            // Delete old database file (if exists)
-            if (dbFile.exists()) {
-                if (!dbFile.delete()) {
-                    System.err.println("Cannot delete old database file: " + DB_PATH);
-                }
-            }
-
-            // Connect to SQLCipher database
-            // Note: SQLCipher requires specifying password in URL: jdbc:sqlite:path?cipher=sqlcipher&key=password
-            String url = "jdbc:sqlite:" + DB_PATH + "?cipher=sqlcipher&key=" + DB_PASSWORD;
-            Class.forName("org.sqlite.JDBC");
-            Connection conn = DriverManager.getConnection(url);
-
-            System.out.println("SQLCipher demo database connected successfully: " + DB_PATH);
+            System.out.println("Demo database connected successfully: " + DB_URL);
 
             // Execute initialization script
             initDatabase(conn);
 
             conn.close();
 
-            System.out.println("SQLCipher demo database initialized successfully");
+            System.out.println("Demo database initialized successfully");
 
         } catch (Exception e) {
-            System.err.println("Failed to initialize SQLCipher demo database: " + e.getMessage());
+            System.err.println("Failed to initialize demo database: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -64,28 +50,28 @@ public class SqlCipherDatabaseSetup {
 
         // Create users table
         stmt.execute("CREATE TABLE IF NOT EXISTS users (" +
-                      "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                      "name TEXT NOT NULL, " +
-                      "email TEXT NOT NULL UNIQUE, " +
-                      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
-                      "updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+                      "id IDENTITY PRIMARY KEY, " +
+                      "name VARCHAR(100) NOT NULL, " +
+                      "email VARCHAR(255) NOT NULL UNIQUE, " +
+                      "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
+                      "updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
 
         // Create orders table
         stmt.execute("CREATE TABLE IF NOT EXISTS orders (" +
-                      "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                      "user_id INTEGER NOT NULL, " +
-                      "product_name TEXT NOT NULL, " +
-                      "amount REAL NOT NULL, " +
-                      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
+                      "id IDENTITY PRIMARY KEY, " +
+                      "user_id BIGINT NOT NULL, " +
+                      "product_name VARCHAR(200) NOT NULL, " +
+                      "amount DECIMAL(10,2) NOT NULL, " +
+                      "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
                       "FOREIGN KEY (user_id) REFERENCES users(id))");
 
         // Insert demo data
-        stmt.execute("INSERT OR IGNORE INTO users (name, email) VALUES " +
+        stmt.execute("INSERT INTO users (name, email) VALUES " +
                       "('Alice', 'alice@example.com'), " +
                       "('Bob', 'bob@example.com'), " +
                       "('Charlie', 'charlie@example.com')");
 
-        stmt.execute("INSERT OR IGNORE INTO orders (user_id, product_name, amount) VALUES " +
+        stmt.execute("INSERT INTO orders (user_id, product_name, amount) VALUES " +
                       "(1, 'Product A', 100.00), " +
                       "(2, 'Product B', 200.00), " +
                       "(1, 'Product C', 150.00)");
@@ -94,61 +80,36 @@ public class SqlCipherDatabaseSetup {
     }
 
     /**
-     * Get SQLCipher demo database connection
+     * Get demo database connection
      *
      * @return Database connection
      */
     public static Connection getDemoConnection() throws SQLException {
         try {
-            Class.forName("org.sqlite.JDBC");
-            String url = "jdbc:sqlite:" + DB_PATH + "?cipher=sqlcipher&key=" + DB_PASSWORD;
-            return DriverManager.getConnection(url);
+            Class.forName("org.h2.Driver");
+            return DriverManager.getConnection(DB_URL, DB_USERNAME, DB_PASSWORD);
         } catch (ClassNotFoundException e) {
-            throw new SQLException("SQLCipher JDBC driver not found", e);
+            throw new SQLException("H2 JDBC driver not found", e);
         }
     }
 
     /**
-     * Get demo database path
+     * Get demo database URL
      *
-     * @return Database file path
+     * @return Database URL
      */
-    public static String getDatabasePath() {
-        return DB_PATH;
+    public static String getDatabaseUrl() {
+        return DB_URL;
     }
 
     /**
-     * Get database password
-     *
-     * @return Database password
-     */
-    public static String getDatabasePassword() {
-        return DB_PASSWORD;
-    }
-
-    /**
-     * Cleanup demo database
-     */
-    public static void cleanupDatabase() {
-        File dbFile = new File(DB_PATH);
-        if (dbFile.exists()) {
-            if (dbFile.delete()) {
-                System.out.println("Demo database deleted: " + DB_PATH);
-            } else {
-                System.err.println("Failed to delete demo database: " + DB_PATH);
-            }
-        }
-    }
-
-    /**
-     * Main method for manual database initialization
+     * Main method for manual database initialization and testing
      */
     public static void main(String[] args) {
-        System.out.println("=== SQLCipher Demo Database Initialization ===");
+        System.out.println("=== Demo Database Initialization (H2 In-Memory) ===");
         setupDemoDatabase();
-        System.out.println("\nDemo database path: " + DB_PATH);
-        System.out.println("Database password: " + DB_PASSWORD);
-        System.out.println("JDBC URL: jdbc:sqlite:" + DB_PATH + "?cipher=sqlcipher&key=" + DB_PASSWORD);
+        System.out.println("\nDemo database URL: " + DB_URL);
+        System.out.println("Username: " + DB_USERNAME);
 
         // Test connection and query data
         try {
