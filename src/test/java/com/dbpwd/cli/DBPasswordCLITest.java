@@ -231,7 +231,7 @@ public class DBPasswordCLITest {
 
         assertNotNull(encrypted);
         assertNotEquals(plainPassword, encrypted);
-        assertTrue(encrypted.startsWith("ENC(SM4:"));
+        assertTrue(encrypted.startsWith("ENC(SM4-GCM:"));
         assertTrue(encrypted.endsWith(")"));
     }
 
@@ -251,7 +251,7 @@ public class DBPasswordCLITest {
         String encrypted = PasswordEncryptor.encrypt(plainPassword, TEST_KEY);
 
         assertNotNull(encrypted);
-        assertTrue(encrypted.startsWith("ENC(SM4:"));
+        assertTrue(encrypted.startsWith("ENC(SM4-GCM:"));
 
         // 验证可以解密回原文
         String decrypted = PasswordDecryptor.decrypt(encrypted, TEST_KEY);
@@ -276,8 +276,14 @@ public class DBPasswordCLITest {
         String encrypted1 = PasswordEncryptor.encrypt(plainPassword, TEST_KEY);
         String encrypted2 = PasswordEncryptor.encrypt(plainPassword, TEST_KEY);
 
-        // SM4 ECB模式下，相同明文应产生相同密文
-        assertEquals(encrypted1, encrypted2);
+        // SM4 GCM模式下，相同明文会产生不同密文（随机IV）
+        assertNotEquals(encrypted1, encrypted2);
+
+        // 但解密结果应该相同
+        String decrypted1 = PasswordDecryptor.decrypt(encrypted1, TEST_KEY);
+        String decrypted2 = PasswordDecryptor.decrypt(encrypted2, TEST_KEY);
+        assertEquals(plainPassword, decrypted1);
+        assertEquals(plainPassword, decrypted2);
     }
 
     // ==================== decryptPassword() 测试 ====================

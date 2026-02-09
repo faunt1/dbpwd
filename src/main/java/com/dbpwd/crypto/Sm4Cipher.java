@@ -9,7 +9,11 @@ import java.security.Security;
 import java.util.Base64;
 
 /**
- * SM4国密算法加密解密工具
+ * SM4国密算法加密解密工具（ECB模式）
+ *
+ * 【注意】ECB模式是传统的SM4加密方式，保持向后兼容性。
+ * 对于新应用，推荐使用Sm4GCMCipher（GCM认证加密），
+ * 它提供认证加密和防篡改功能。
  *
  * 算法参数：
  * - 算法名称：SM4
@@ -18,8 +22,14 @@ import java.util.Base64;
  * - 加密模式：ECB（电子密码本模式）
  * - 填充方式：PKCS7Padding
  *
+ * 安全性说明：
+ * ECB模式不使用IV（初始化向量），相同明文+密钥总是产生相同密文。
+ * 这使得ECB模式易受模式分析和侧信道攻击。
+ * 推荐场景：向后兼容已有加密数据。
+ *
+ * @see Sm4GCMCipher 推荐的GCM认证加密实现
  * @author Druid DB Password Manager
- * @version 3.0
+ * @version 4.0
  */
 public class Sm4Cipher {
 
