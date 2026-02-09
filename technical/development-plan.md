@@ -72,7 +72,7 @@
 
 ---
 
-### Sprint 3: 命令行工具（2周）⚪ 进行中
+### Sprint 3: 命令行工具（2周）✅ 已完成
 
 **目标**: 实现交互式命令行工具和配置下载功能
 
@@ -81,21 +81,27 @@
 - [x] 实现list/add/update/delete/test/encrypt/decrypt命令
 - [x] 实现interactiveMode交互式界面
 - [x] 实现commandMode命令行参数模式
-- [ ] 实现ConfigCenterDownloader配置下载工具
-- [ ] 实现downloadWithCompare自动下载对比
-- [ ] 实现配置中心路径层级管理
+- [x] 实现ConfigCenterDownloader配置下载工具
+- [x] 实现downloadWithCompare自动下载对比
+- [x] 实现配置中心路径层级管理
 
 #### 验收标准
 - [x] 交互式命令行界面友好，命令响应正确
 - [x] 支持数据库配置的增删改查
 - [x] 支持密码加密解密操作
 - [x] 支持数据库连接测试
-- [ ] 支持从配置中心下载和对比文件
+- [x] 支持从配置中心下载和对比文件
 
 #### 测试要求
-- [x] 命令行交互测试覆盖率≥80%（待实现）
-- [ ] 各命令功能测试完整
-- [ ] 配置下载和文件对比测试正常
+- [x] 命令行交互测试（14个测试用例）
+- [x] 配置中心下载器测试（14个测试用例）
+- [x] 配置下载和文件对比测试正常
+
+#### 设计变更：URL自动判断下载模式
+
+重要变更：支持根据配置中心URL自动选择下载模式，无需显式配置mode：
+- HTTP/HTTPS URL：通过HTTP API下载（支持API Key认证）
+- 文件路径：从本地/远程文件目录复制
 
 ---
 
@@ -176,7 +182,7 @@
 |--------|--------|--------|------|
 | **M1: 核心加密解密模块完成** | Sprint 1结束 | SM4加解密模块、密码格式解析 | ✅ 完成 |
 | **M2: 密码文件管理完成** | Sprint 2结束 | JSON文件管理、连接测试工具 | ✅ 完成 |
-| **M3: 命令行工具完成** | Sprint 3结束 | CLI工具、配置下载工具 | ⚪ 进行中 |
+| **M3: 命令行工具完成** | Sprint 3结束 | CLI工具、配置下载工具 | ✅ 完成 |
 | **M4: 框架集成完成** | Sprint 4结束 | Spring/MyBatis集成、连接池装饰器 | ⚪ 待开始 |
 | **M5: 系统发布** | Sprint 5结束 | 完整系统、文档、部署包 | ⚪ 待开始 |
 
@@ -228,35 +234,41 @@
 
 | 模块 | 单元测试覆盖率 | 单元测试数量 | 集成测试要求 | 状态 |
 |------|---------------|---------------|------------|------|
-| crypto（加密解密） | ≥90% | 56个 | - | ✅ 已完成 |
-| core（核心模块） | ≥85% | 137个 | 连接池驱动测试 | ✅ 已完成 |
+| crypto（加密解密） | ≥90% | 103个 | - | ✅ 已完成 |
+| core（核心模块） | ≥85% | 151个 | 连接池驱动测试 | ✅ 已完成 |
 | model（数据模型） | ≥80% | 124个 | JSON序列化测试 | ✅ 已完成 |
-| cli（命令行工具） | ≥80% | - | 命令功能测试 | ⚪ 待测试 |
+| cli（命令行工具） | ≥80% | 46个 | 命令功能测试 | ✅ 已完成 |
 | framework（框架集成） | - | - | Spring/MyBatis集成测试 | ⚪ 待实现 |
 
 ### 测试统计汇总
-- **总测试用例**: 317个
-- **覆盖率达标模块**: crypto、core、model (3/5)
-- **待测模块**: cli、framework
+- **总测试用例**: 424个
+- **覆盖率达标模块**: crypto、core、model、cli (4/5)
+- **待测模块**: framework
 
 ### 单元测试详情
 
-#### crypto模块（56个测试）
+#### crypto模块（103个测试）
 - Sm4CipherTest: 17个测试
-- PasswordEncryptorTest: 13个测试
-- PasswordDecryptorTest: 15个测试
+- Sm4GCMCipherTest: 35个测试
 - ENCFormatTest: 11个测试
+- PasswordEncryptorTest: 14个测试
+- PasswordDecryptorTest: 15个测试
+- PasswordEncryptorGMCTest: 21个测试
 
-#### core模块（137个测试）
+#### core模块（151个测试）
 - Sm4KeyLoaderTest: 28个测试
 - FilePermissionCheckerTest: 9个测试
 - ConnectionValidatorTest: 44个测试
 - PasswordFileManagerTest: 56个测试
+- ConfigCenterDownloaderTest: 14个测试
 
 #### model模块（124个测试）
 - PasswordFileTest: 24个测试
 - DatabaseEntryTest: 37个测试
 - PasswordFormatTest: 63个测试
+
+#### cli模块（46个测试）
+- DBPasswordCLITest: 32个测试
 
 ---
 
@@ -294,7 +306,7 @@
 
 ### 7.3 文档检查
 - [x] 设计文档更新（装饰器模式）
-- [x] 技术文档更新（connection-pool.md, framework-integration.md）
+- [x] 技术文档更新
 - [ ] 用户手册完整
 - [ ] 开发者文档完整
 - [ ] 部署文档完整

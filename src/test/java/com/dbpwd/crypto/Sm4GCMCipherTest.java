@@ -132,7 +132,7 @@ public class Sm4GCMCipherTest {
 
     @Test
     public void testDecryptWithEmptyCipherText() {
-        Exception e = assertThrows(Exception.class, () -> {
+        assertThrows(Exception.class, () -> {
             Sm4GCMCipher.decrypt("", TEST_KEY);
         });
     }
@@ -271,14 +271,14 @@ public class Sm4GCMCipherTest {
 
     @Test
     public void testDecryptInvalidFormat() {
-        Exception e = assertThrows(Exception.class, () -> {
+        assertThrows(Exception.class, () -> {
             Sm4GCMCipher.decrypt("invalidformat", TEST_KEY);
         });
     }
 
     @Test
     public void testDecryptInvalidBase64() {
-        Exception e = assertThrows(Exception.class, () -> {
+        assertThrows(Exception.class, () -> {
             Sm4GCMCipher.decrypt("notbase64:notbase64", TEST_KEY);
         });
     }
