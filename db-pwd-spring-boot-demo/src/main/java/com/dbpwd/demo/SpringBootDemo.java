@@ -1,6 +1,6 @@
 package com.dbpwd.demo;
 
-import com.dbpwd.crypto.Sm4Cipher;
+import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.crypto.ENCFormat;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -39,16 +39,16 @@ public class SpringBootDemo {
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
 
     static {
-        // Test SM4 encryption at class load time
+        // Test SM4-GCM encryption at class load time
         try {
-            String encryptedDbPassword = Sm4Cipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
-            String formattedEncrypted = ENCFormat.formatSM4(encryptedDbPassword);
+            String encryptedDbPassword = Sm4GCMCipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
+            String formattedEncrypted = ENCFormat.formatSM4GCM(encryptedDbPassword);
             System.out.println("=== Spring Boot Demo Application ===");
             System.out.println("Database: H2 In-Memory");
             System.out.println("Database URL: " + DB_URL);
             System.out.println("Database password: " + DB_PASSWORD);
             System.out.println("SM4 key: " + TEST_SM4_KEY);
-            System.out.println("SM4 Encryption Test:");
+            System.out.println("SM4-GCM Encryption Test:");
             System.out.println("  Original password: " + DB_PASSWORD);
             System.out.println("  Encrypted password: " + formattedEncrypted);
             System.out.println();
@@ -65,18 +65,27 @@ public class SpringBootDemo {
         System.out.println();
 
         try {
-            // Test SM4 decryption after application started
-            String decryptedPassword = Sm4Cipher.decrypt(
-                ENCFormat.extractCipherText(ENCFormat.formatSM4(Sm4Cipher.encrypt(DB_PASSWORD, TEST_SM4_KEY))),
-                TEST_SM4_KEY
-            );
-            System.out.println("SM4 Decryption Test:");
+            // Test SM4-GCM decryption after application started
+            String formattedEncrypted = ENCFormat.formatSM4GCM(Sm4GCMCipher.encrypt(DB_PASSWORD, TEST_SM4_KEY));
+            String algorithm = ENCFormat.extractAlgorithm(formattedEncrypted);
+            String cipherText = ENCFormat.extractCipherText(formattedEncrypted);
+
+            // 仅支持SM4-GCM格式，ECB格式抛出异常
+            if (!"SM4-GCM".equalsIgnoreCase(algorithm)) {
+                throw new IllegalArgumentException(
+                    "Unsupported encryption algorithm: " + algorithm + ". Only SM4-GCM is supported for new applications");
+            }
+
+            String decryptedPassword = Sm4GCMCipher.decrypt(cipherText, TEST_SM4_KEY);
+
+            System.out.println("SM4-GCM Decryption Test:");
+            System.out.println("  Algorithm: " + algorithm);
             System.out.println("  Decrypted password: " + decryptedPassword);
             System.out.println("  Verification: " + (DB_PASSWORD.equals(decryptedPassword) ? "SUCCESS" : "FAILED"));
             System.out.println();
             System.out.println("=== Demo Completed Successfully ===");
         } catch (Exception e) {
-            System.err.println("SM4 decryption test failed: " + e.getMessage());
+            System.err.println("SM4-GCM decryption test failed: " + e.getMessage());
         }
     }
 

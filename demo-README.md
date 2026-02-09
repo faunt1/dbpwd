@@ -1,14 +1,26 @@
 # Database Password Manager - Demo Applications
 
-这是一个数据库密码管理系统的演示应用集合，展示了SM4国密加解密功能。
+这是一个数据库密码管理系统的演示应用集合，展示了SM4-GCM国密认证加解密功能。
 
 ## 概述
 
 本项目包含三个演示应用，展示了在不同场景下使用Database Password Manager进行密码加密和管理的方式：
 
-1. **Simple JDBC Demo** - 基础JDBC应用，演示核心SM4加解密功能
+1. **Simple JDBC Demo** - 基础JDBC应用，演示核心SM4-GCM加解密功能
 2. **Spring Boot Demo** - Spring Boot Web应用，演示与Spring框架集成
 3. **Struts Demo** - 独立应用，演示密码加密解密验证
+
+## 为什么使用SM4-GCM？
+
+**SM4-GCM（Galois/Counter Mode）** 是SM4算法的认证加密模式，相比ECB模式有以下优势：
+
+| 特性 | ECB模式 | GCM模式 |
+|-----|--------|---------|
+| **认证加密** | ❌ 仅提供机密性 | ✅ 同时提供机密性和完整性保护 |
+| **防篡改** | ❌ 无法检测密文篡改 | ✅ 任何篡改都会导致解密失败 |
+| **随机IV** | ❌ 相同明文产生相同密文 | ✅ 每次加密结果不同 |
+| **抗侧信道** | ❌ 易受模式分析攻击 | ✅ 抗侧信道攻击能力更强 |
+| **标准符合** | 基础加密模式 | ✅ 符合NIST SP 800-38D标准 |
 
 ## 快速开始
 
@@ -30,9 +42,10 @@ mvn clean install -DskipTests
 **位置**: `db-pwd-simple-jdbc-demo/`
 
 **功能**:
-- SM4加密功能演示
+- SM4-GCM加密功能演示
 - 密码格式化（ENC格式）
 - 加密解密验证
+- 随机IV验证
 
 **运行方式**:
 
@@ -50,7 +63,8 @@ SM4 key: 0123456789abcdef0123456789abcdef
 
 Step 1: Test SM4 Encryption
   Original password: myDatabasePassword123
-  Encrypted password: ENC(SM4:wTfeDzh58xG9hPbocCV5F/njQAD4DJMDHzCYplxHzDo=)
+  Encrypted password: ENC(SM4-GCM:xxx)
+  Note: 每次加密结果不同（随机IV）
 
 Step 2: Test SM4 Decryption
   Decrypted password: myDatabasePassword123
@@ -58,7 +72,7 @@ Step 2: Test SM4 Decryption
 
 Step 3: Test ENC Format
   Database password: postgres_password
-  Formatted encrypted: ENC(SM4:zGpkBpGOcH4K2I93lphxbDM0aczSrY6EMOoXPnIYuSI=)
+  Formatted encrypted: ENC(SM4-GCM:xxx)
   Decrypted: postgres_password
   Verification: SUCCESS
 
@@ -74,7 +88,8 @@ All SM4 encryption and decryption tests passed!
 - Spring Boot Web应用
 - REST API接口
 - H2内存数据库
-- SM4加密功能演示
+- SM4-GCM加密功能演示
+- 数据库初始化
 
 **运行方式**:
 
@@ -115,8 +130,8 @@ curl http://localhost:8080/orders
 {
   "application": "Database Password Manager - Spring Boot Demo",
   "status": "running",
-  "database": "SQLite",
-  "description": "Demo application with encrypted database password"
+  "database": "H2",
+  "description": "Demo application with SM4-GCM encrypted password"
 }
 ```
 
@@ -125,9 +140,11 @@ curl http://localhost:8080/orders
 **位置**: `db-pwd-struts-demo/`
 
 **功能**:
-- SM4加密解密验证
+- SM4-GCM加密解密验证
 - 多密码加密测试
-- 不同密钥加密测试
+- 随机IV验证
+- ECB模式向后兼容
+- 认证标签验证
 
 **运行方式**:
 
@@ -140,12 +157,12 @@ mvn exec:java -Dexec.mainClass="com.dbpwd.demo.StrutsDemo"
 **预期输出**:
 ```
 === Struts Demo Application (Standalone) ===
-Demo: Database Password Manager - SM4 Encryption
+Demo: Database Password Manager - SM4-GCM Encryption
 SM4 key: 0123456789abcdef0123456789abcdef
 
-Test 1: Basic SM4 Encryption/Decryption
+Test 1: Basic SM4-GCM Encryption/Decryption
   Password: struts_password_123
-  Encrypted: ENC(SM4:rLDUuaoU0Inbi+dFJkqZgPcYgyz7NGG5Rxeir1Dn5GE=)
+  Encrypted: ENC(SM4-GCM:xxx)
   Decrypted: struts_password_123
   Result: SUCCESS
 
@@ -155,17 +172,60 @@ Test 2: Multiple Password Encoding
   migration_key => OK
   production_db => OK
 
-Test 3: Different SM4 Keys
+Test 3: Different SM4-GCM Keys
   Test password: test_db_password
-  Encrypted with key1: ENC(SM4:+wss0V+L9M6Qo6Wtm09Il0F+ZGzthM9TtQywULsvSGI=)
+  Encrypted with key1: ENC(SM4-GCM:xxx)
   Decrypted with key1: test_db_password => OK
-  Encrypted with key2: ENC(SM4:OCQ3/L/eOYNbCotPG72IsJ52L2Q3fX3e2GYNViahQbQ=)
+  Encrypted with key2: ENC(SM4-GCM:yyy)
   Decrypted with key2: test_db_password => OK
   Keys produce different ciphers: YES
 
+Test 4: GCM Random IV Property
+  Password: test_password_123
+  Encryption A: ENC(SM4-GCM:aaa)
+  Encryption B: ENC(SM4-GCM:bbb)
+  Different ciphertexts: YES (GCM property)
+  Both decrypt correctly: YES
+
+Test 5: Backward Compatibility with ECB Format
+  ECB Password: test_ecb_compat
+  ECB Encrypted: ENC(SM4:zzz)
+  ECB Decrypted: test_ecb_compat
+  ECB decryption: OK
+
 === Demo Completed Successfully ===
-All SM4 encryption and decryption tests passed!
+All SM4-GCM encryption and decryption tests passed!
+GCM mode provides authenticated encryption and tamper protection.
 ```
+
+## GCM模式详解
+
+### 加密流程
+
+1. **生成随机IV**（12字节）：每次加密使用不同的初始化向量
+2. **SM4加密**：使用GCM模式加密明文
+3. **生成认证标签**（16字节）：对密文完整性进行认证
+4. **Base64编码**：将`IV:密文`格式化为Base64编码
+
+### 密文格式
+
+```
+ENC(SM4-GCM:Base64(IV):Base64(密文+认证标签))
+```
+
+### 解密流程
+
+1. **解析ENC格式**：提取算法标识和密文数据
+2. **Base64解码**：分别解码IV和密文
+3. **GCM解密**：使用IV和GCM模式解密密文
+4. **完整性验证**：验证认证标签，确保密文未篡改
+
+### 安全特性
+
+1. **完整性保护**：任何密文篡改都会导致解密失败
+2. **抗重放攻击**：IV重放攻击被GCM认证标签阻止
+3. **抗模式分析**：随机IV使相同明文产生不同密文
+4. **选择明文攻击保护**：认证标签保护选择明文攻击
 
 ## 架构说明
 
@@ -176,7 +236,7 @@ db-pwd/
 ├── pom.xml                 # 父POM
 ├── db-pwd-core/           # 核心模块
 │   ├── src/main/java/com/dbpwd/
-│   │   ├── crypto/       # SM4加密解密
+│   │   ├── crypto/       # SM4加密解密（支持ECB和GCM）
 │   │   ├── core/         # 核心功能
 │   │   ├── model/        # 数据模型
 │   │   ├── cli/          # 命令行工具
@@ -196,24 +256,15 @@ db-pwd/
     └── target/
 ```
 
-### 核心功能
+### 核心类
 
-#### SM4加密
-
-- 算法：SM4国密标准（GM/T 0002-2012）
-- 密钥长度：128位（16字节）
-- 模式：ECB/PKCS7Padding
-- 格式：`ENC(SM4:密文)`
-
-#### 核心类
-
-| 类名 | 功能 |
-|-----|------|
-| `Sm4Cipher` | SM4加解密核心 |
-| `ENCFormat` | 密码格式化工具 |
-| `PasswordEncryptor` | 密码加密器 |
-| `PasswordDecryptor` | 密码解密器 |
-| `Sm4KeyLoader` | 密钥加载器 |
+| 类名 | 功能 | 推荐模式 |
+|-----|------|---------|
+| `Sm4GCMCipher` | SM4-GCM加解密 | ✅ 推荐使用 |
+| `Sm4Cipher` | SM4-ECB加解密 | ⚠️ 仅用于向后兼容 |
+| `ENCFormat` | 密码格式化工具 | - |
+| `PasswordEncryptor` | 统一加密接口（推荐GCM） | ✅ 推荐使用 |
+| `PasswordDecryptor` | 统一解密接口（支持向后兼容） | ✅ 推荐使用 |
 
 ## 集成到您的项目
 
@@ -227,60 +278,126 @@ db-pwd/
 </dependency>
 ```
 
-### 使用示例
-
-#### 加密密码
+### 使用SM4-GCM加密密码
 
 ```java
-import com.dbpwd.crypto.Sm4Cipher;
+import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.crypto.ENCFormat;
 
 String plainPassword = "myDatabasePassword";
 String sm4Key = "0123456789abcdef0123456789abcdef";
 
-// 加密
-String cipherText = Sm4Cipher.encrypt(plainPassword, sm4Key);
-String formattedEncrypted = ENCFormat.formatSM4(cipherText);
+// 使用SM4-GCM加密
+String cipherText = Sm4GCMCipher.encrypt(plainPassword, sm4Key);
+String formattedEncrypted = ENCFormat.formatSM4GCM(cipherText);
 System.out.println("Encrypted: " + formattedEncrypted);
-// 输出: Encrypted: ENC(SM4:xxx)
+// 输出: Encrypted: ENC(SM4-GCM:xxx)
 ```
 
-#### 解密密码
+### 解密密码（支持向后兼容）
 
 ```java
+import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.crypto.ENCFormat;
 
-String encryptedPassword = "ENC(SM4:xxx)";
+String encryptedPassword = "ENC(SM4-GCM:xxx)";
 String sm4Key = "0123456789abcdef0123456789abcdef";
 
-// 解密
+// 解密（自动识别算法）
 String algorithm = ENCFormat.extractAlgorithm(encryptedPassword);
 String cipherText = ENCFormat.extractCipherText(encryptedPassword);
-String plainPassword = Sm4Cipher.decrypt(cipherText, sm4Key);
-System.out.println("Decrypted: " + plainPassword);
+
+if ("SM4".equalsIgnoreCase(algorithm)) {
+    // 向后兼容ECB格式
+    String plainPassword = Sm4Cipher.decrypt(cipherText, sm4Key);
+} else if ("SM4-GCM".equalsIgnoreCase(algorithm)) {
+    // GCM认证加密
+    String plainPassword = Sm4GCMCipher.decrypt(cipherText, sm4Key);
+} else {
+    throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
+}
+```
+
+### 使用推荐的高级接口
+
+```java
+import com.dbpwd.crypto.PasswordEncryptor;
+import com.dbpwd.crypto.PasswordDecryptor;
+
+String plainPassword = "myDbPassword";
+String sm4Key = "0123456789abcdef0123456789abcdef";
+
+// 推荐：使用统一的加密接口（默认使用GCM）
+String encrypted = PasswordEncryptor.encrypt(plainPassword, sm4Key);
+// 得到: ENC(SM4-GCM:xxx)
+
+// 推荐：使用统一的解密接口（支持GCM和ECB）
+String decrypted = PasswordDecryptor.decrypt(encrypted, sm4Key);
+// 自动识别算法并正确解密
 ```
 
 ## 常见问题
 
-### Q1: 编译出现Java版本兼容错误？
+### Q1: 为什么推荐使用SM4-GCM而不是ECB？
 
-**A**: 确保使用JDK 8+. 如果使用更高版本JDK，需要调整pom.xml中的javaee-api依赖。
+**A**:
+- **安全性**：GCM提供认证加密，能检测密文篡改
+- **标准符合**：符合NIST SP 800-38D等国际标准
+- **随机IV**：每次加密结果不同，提高抗侧信道能力
+- **完整性验证**：防止重放攻击和选择明文攻击
 
-### Q2: 如何更换SM4密钥？
+### Q2: 如何更换SM4-GCM密钥？
 
-**A**: 修改代码中的`SM4_KEY`常量，密钥必须是16字节（32个十六进制字符）的十六进制字符串。
+**A**: 修改代码中的`SM4_KEY`常量，密钥必须是16字节（32个十六进制字符）的十六进制字符串。建议使用`Sm4GCMCipher.generateRandomHexKey()`生成随机安全密钥：
 
-### Q3: 密码格式ENC(SM4:xxx)是什么？
+```java
+String sm4Key = Sm4GCMCipher.generateRandomHexKey(); // 生成安全的随机密钥
+```
 
-**A**: 这是标准加密密码格式，格式为`ENC(算法:密文)`。支持自动检测SM4、Druid、明文等多种格式。
+### Q3: 密码格式ENC(SM4-GCM:xxx)是什么？
+
+**A**:
+- **ENC**：加密格式标识符
+- **SM4-GCM**：算法标识（SM4国密 + GCM认证模式）
+- **Base64(IV)**：12字节初始化向量的Base64编码
+- **:**：分隔符
+- **Base64(密文+认证标签)**：密文和16字节认证标签的Base64编码
 
 ### Q4: 示例中使用的数据库是什么？
 
 **A**:
-- Simple JDBC Demo: 仅演示加密功能，不涉及数据库连接
-- Spring Boot Demo: 使用H2内存数据库
-- Struts Demo: 仅演示加密功能，不涉及数据库连接
+- **Simple JDBC Demo**: 仅演示加密功能，不涉及数据库连接
+- **Spring Boot Demo**: 使用H2内存数据库
+- **Struts Demo**: 仅演示加密功能，不涉及数据库连接
+
+### Q5: 旧系统使用ECB格式怎么办？
+
+**A**:
+系统支持向后兼容：
+- `PasswordDecryptor.decrypt()` 能自动识别ECB和GCM格式
+- 可以使用`PasswordEncryptor.migrateECBToGCM()`将旧密码迁移到GCM
+- 新密码建议全部使用SM4-GCM
+
+```java
+// 将ECB格式迁移到GCM
+String oldPassword = "ENC(SM4:old_ecb_cipher)";
+String newPassword = PasswordEncryptor.migrateECBToGCM(oldPassword, sm4Key);
+```
+
+## SM4-GCM vs ECB对比
+
+| 特性 | ECB模式 | GCM模式 | 说明 |
+|-----|--------|---------|------|
+| **加密算法** | SM4 | SM4 | 使用相同的SM4分组密码 |
+| **工作模式** | ECB | GCM | 分组加密/计数器模式 |
+| **完整性验证** | ❌ 无 | ✅ 16字节认证标签 | GCM提供完整性验证 |
+| **初始化向量** | ❌ 不使用 | ✅ 12字节随机IV | 每次加密IV不同 |
+| **相同明文** | ✅ 相同密文 | ❌ 不同密文 | GCM防模式分析 |
+| **侧信道攻击** | ❌ 易受 | ✅ 抗攻击 | GCM更安全 |
+| **并行处理** | ❌ 不支持 | ✅ 支持 | GCM性能更优 |
+| **符合标准** | 基础加密 | NIST SP 800-38D | GCM符合国际标准 |
+| **推荐度** | ⚠️ 约向后兼容 | ✅ 强烈推荐 | GCM更安全 |
 
 ## 技术支持
 
@@ -295,3 +412,14 @@ System.out.println("Decrypted: " + plainPassword);
 - 最后更新: 2026-02-09
 - Java版本: JDK 8+
 - 构建工具: Maven 3.6+
+- 加密算法: SM4-GCM（认证加密）
+
+## 迁移建议
+
+如果您正在使用ECB模式，建议按以下步骤迁移：
+
+1. **保留Sm4Cipher类**：以便支持向后兼容
+2. **新代码使用GCM**：所有新加密使用`Sm4GCMCipher`
+3. **使用高级接口**：使用`PasswordEncryptor`和`PasswordDecryptor`
+4. **文档更新**：更新文档说明使用GCM模式
+5. **密码迁移**：使用`migrateECBToGCM()`迁移旧密码
