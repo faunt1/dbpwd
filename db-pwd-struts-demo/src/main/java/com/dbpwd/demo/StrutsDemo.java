@@ -43,10 +43,10 @@ public class StrutsDemo {
      * Database configuration utility
      */
     public static class DbConfig {
-        public static final String DB_PATH = DB_PATH;
-        public static final String DB_PASSWORD = DB_PASSWORD;
-        public static final String DB_URL = DB_URL;
-        public static final String SM4_KEY = TEST_SM4_KEY;
+        public static final String DB_PATH = "target/dbpwd-demo.db";
+        public static final String DB_PASSWORD = "test123";
+        public static final String DB_URL = "jdbc:sqlite:" + DB_PATH;
+        public static final String SM4_KEY = "0123456789abcdef0123456789abcdef";
 
         /**
          * Get encrypted database password
