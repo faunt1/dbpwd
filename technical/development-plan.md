@@ -105,40 +105,44 @@
 
 ---
 
-### Sprint 4: 框架集成（3周）⚪ 待开始
+### Sprint 4: 框架集成（3周）🔄 进行中
 
 **目标**: 实现Spring Boot和MyBatis集成，连接池装饰器
 
-#### 设计变更：装饰器模式
+#### 设计变更：装饰器模式（简化版）
 
-**重要变更**: 从包装类方案改为装饰器模式，提供更统一的接口和更好的扩展性。
+**重要变更**:
+1. 从包装类方案改为装饰器模式
+2. 进一步简化为单一装饰器设计，无需多个Initializer
+3. 在getConnection()时自动解密密码并调用实际数据源
 
-| 对比维度 | 包装类方案（已废弃） | 装饰器方案（当前） |
-|---------|---------------------|-------------------|
-| **接口统一** | 每个连接池类型一个包装类 | 单一 DataSource 装饰器 |
-| **扩展性** | 新连接池需新增包装类 | 新连接池只需新增初始化器 |
-| **用户使用** | 需根据类型选择包装类 | 透明装饰，无需关心类型 |
-| **代码维护** | 重复代码多 | 代码集中在装饰器中 |
-| **符合原则** | 无 | 开闭原则、单一职责原则 |
+| 对比维度 | 包装类方案（已废弃） | 初始装饰器方案 | 当前简化方案 |
+|---------|---------------------|--------------|-------------|
+| **接口统一** | 每个连接池类型一个包装类 | 单一 DataSource 装饰器 | 单一 DataSource 装饰器 |
+| **初始化方式** | 无 | 多个Initializer注册表 | 无需Initializer |
+| **解密时机** | N/A | 初始化时或回调 | getConnection()时 |
+| **扩展性** | 新连接池需新增包装类 | 新连接池需新增Initializer | 新连接池自动兼容 |
+| **用户使用** | 需根据类型选择包装类 | 透明装饰 | 透明装饰 |
+| **代码维护** | 重复代码多 | 装饰器+初始化器 | 仅装饰器 |
 
 #### 任务清单
-- [ ] 实现ConnectionPoolDecorator装饰器（实现DataSource接口）
-- [ ] 实现ConnectionPoolInitializer接口（处理不同连接池的特殊需求）
-- [ ] 实现DruidInitializer初始化器
-- [ ] 实现HikariInitializer初始化器
-- [ ] 实现DBCP2Initializer初始化器
-- [ ] 实现ConnectionPoolInitializerRegistry注册表
-- [ ] 实现ConnectionPoolDecoratorFactory工厂类
+- [x] 实现DataSourceDecorator装饰器（实现DataSource接口）
+- [x] 实现DataSourceDecoratorFactory工厂类
+- [x] 支持Druid连接池装饰
+- [x] 支持HikariCP连接池装饰
+- [x] 支持DBCP2连接池装饰
 - [ ] 实现DbPwdAutoConfiguration自动配置类
 - [ ] 实现Spring Boot集成配置
 - [ ] 实现MyBatis数据源配置
+- [ ] 编写装饰器单元测试
+- [ ] 编写Spring Boot集成测试
 
 #### 验收标准
-- [ ] Druid和HikariCP连接池装饰正常
+- [x] Druid和HikariCP连接池装饰正常
 - [ ] Spring Boot自动配置正常
 - [ ] MyBatis集成正常
 - [ ] 支持多数据源配置
-- [ ] 密码自动解密和应用
+- [x] 密码自动解密和应用
 
 #### 测试要求
 - [ ] 连接池装饰器测试覆盖率≥85%
@@ -334,8 +338,8 @@
 |-------|------|----------|----------|------|
 | Sprint 1 | 第1-2周 | SM4加密解密模块 | 加解密测试通过 | ✅ 完成 |
 | Sprint 2 | 第3-4周 | 密码文件管理和连接测试 | 连接测试通过 | ✅ 完成 |
-| Sprint 3 | 第5-6周 | 命令行工具 | CLI功能测试通过 | ⚪ 进行中 |
-| Sprint 4 | 第7-9周 | 框架集成（装饰器模式） | 框架集成测试通过 | ⚪ 待开始 |
+| Sprint 3 | 第5-6周 | 命令行工具 | CLI功能测试通过 | ✅ 完成 (2026-02-09) |
+| Sprint 4 | 第7-9周 | 框架集成（装饰器模式） | 框架集成测试通过 | 🔄 进行中 (2026-02-09) |
 | Sprint 5 | 第10-11周 | 安全增强和文档 | 全部检查完成 | ⚪ 待开始 |
 
 ---
@@ -369,6 +373,30 @@
 - 框架集成文档更新
 - Sprint 4任务调整
 - 相关设计文档同步更新
+
+---
+
+### D2: 简化装饰器设计（移除Initializer）
+
+**决策时间**: 2026-02-09
+**决策内容**: 从装饰器+Initializer模式简化为单一装饰器设计，在getConnection()时自动解密密码
+**决策理由**:
+1. 代码更简洁：无需维护多个Initializer类和注册表
+2. 扩展性更好：新连接池类型自动兼容，无需新增Initializer
+3. 调用更直观：getConnection()时解密，逻辑清晰
+4. 用户反馈：架构过于复杂，建议简化为单一装饰器
+
+**技术要点**:
+- 通过instanceof判断连接池类型
+- 支持Druid、HikariCP、DBCP2直接反射设置密码
+- 使用passwordDecrypted标志避免重复解密
+- 实现完整的javax.sql.DataSource接口
+
+**影响范围**:
+- 删除DataSourceInitializer接口
+- 删除DruidInitializer、HikariInitializer、DBCP2Initializer类
+- 删除DataSourceInitializerRegistry注册表类
+- DataSourceDecoratorFactory简化相关方法
 
 ---
 
