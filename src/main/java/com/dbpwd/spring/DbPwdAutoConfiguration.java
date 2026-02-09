@@ -78,14 +78,9 @@ public class DbPwdAutoConfiguration {
         String passwordFilePath = expandPath(properties.getPasswordFile());
         logger.info("Loading password file from: {}", passwordFilePath);
 
-        try {
-            PasswordFileManager fileManager = PasswordFileManager.loadFromFileSafe(passwordFilePath);
-            logger.info("Password file loaded successfully, {} entries", fileManager.getAll().size());
-            return fileManager;
-        } catch (IOException e) {
-            logger.error("Failed to load password file: {}", e.getMessage());
-            throw new IllegalStateException("Failed to load password file: " + e.getMessage(), e);
-        }
+        PasswordFileManager fileManager = PasswordFileManager.loadFromFileSafe(passwordFilePath);
+        logger.info("Password file loaded successfully, {} entries", fileManager.getAllDatabases().size());
+        return fileManager;
     }
 
     /**
