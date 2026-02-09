@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0
+          https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+
+    <id>source</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>${project.artifactId}-${project.version}-source</baseDirectory>
+
+    <fileSets>
+        <!-- Source code -->
+        <fileSet>
+            <directory>${project.basedir}/src</directory>
+            <outputDirectory>src</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+
+        <!-- Project configuration files -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>.</outputDirectory>
+            <includes>
+                <include>pom.xml</include>
+                <include>.mvn/**/*</include>
+                <include>mvnw</include>
+                <include>mvnw.cmd</include>
+            </includes>
+        </fileSet>
+
+        <!-- Configuration directory -->
+        <fileSet>
+            <directory>${project.basedir}/config</directory>
+            <outputDirectory>config</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+
+        <!-- Scripts directory -->
+        <fileSet>
+            <directory>${project.basedir}/scripts</directory>
+            <outputDirectory>scripts</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+
+        <!-- Documentation -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>.</outputDirectory>
+            <includes>
+                <include>README.md</include>
+                <include>CLAUDE.md</include>
+                <include>LICENSE</include>
+                <include>CHANGELOG.md</include>
+                <include>overview.md</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${project.basedir}/technical</directory>
+            <outputDirectory>technical</outputDirectory>
+            <includes>
+                <include>**/*.md</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${project.basedir}/docs</directory>
+            <outputDirectory>docs</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+
+</assembly>

@@ -59,6 +59,83 @@ chmod 600 ~/.dbpwd/sm4.key
 java -jar dbpwd-cli.jar
 ```
 
+## 打包和发布
+
+### Maven 打包命令
+
+项目提供了三种打包模式，可通过 Maven Profile 轻松切换：
+
+| 命令 | 说明 | 输出文件 |
+|-----|------|---------|
+| `mvn clean package` | 打包所有（默认） | 所有 JAR 和 ZIP 包 |
+| `mvn clean package -Pdocs` | 仅打包文档 | `druid-db-pwd-1.0.0-docs.zip` |
+| `mvn clean package -Psource` | 仅打包源码 | `druid-db-pwd-1.0.0-source.{zip,tar.gz}` |
+| `mvn clean package -Pdist` | 仅打包发布包 | `druid-db-pwd-1.0.0-dist.{zip,tar.gz}` |
+
+### 包类型说明
+
+#### 1. 文档包 (docs)
+仅包含项目文档，不包含源码和编译文件：
+- README.md、CLAUDE.md、overview.md 等根目录文档
+- `technical/` 目录下的所有技术文档
+- `docs/` 目录下的额外文档
+- `config/` 目录配置文件
+
+**文件名格式**：`druid-db-pwd-{version}-docs.zip`
+
+#### 2. 源码包 (source)
+包含完整源代码，不含 target 目录：
+- `src/` 源代码目录
+- `pom.xml` 构建配置
+- 所有文档文件
+- config 和 scripts 目录
+
+**文件名格式**：`druid-db-pwd-{version}-source.{zip|tar.gz}`
+
+#### 3. 发布包 (dist)
+包含可执行文件和所有依赖：
+- JAR 文件（含依赖）
+- lib/ 目录（所有依赖 JAR）
+- bin/ 目录（启动脚本）
+- 完整文档
+- config/ 目录配置文件
+
+**文件名格式**：`druid-db-pwd-{version}-dist.{zip|tar.gz}`
+
+### 快速打包示例
+
+```bash
+# 完整打包（所有包）
+mvn clean package
+
+# 仅打包文档
+mvn clean package -Pdocs
+
+# 仅打包源码用于归档
+mvn clean package -Psource
+
+# 仅打包用于发布的版本
+mvn clean package -Pdist
+
+# 同时生成文档和源码包
+mvn clean package -Pdocs,source
+```
+
+### 输出目录
+
+所有生成的包位于 `target/` 目录下：
+
+```
+target/
+├── druid-db-pwd-1.0.0.jar                    # 普通 JAR
+├── druid-db-pwd-1.0.0-jar-with-dependencies.jar  # 可执行 JAR
+├── druid-db-pwd-1.0.0-docs.zip               # 文档包
+├── druid-db-pwd-1.0.0-source.zip             # 源码包
+├── druid-db-pwd-1.0.0-source.tar.gz          # 源码包 (tar.gz)
+├── druid-db-pwd-1.0.0-dist.zip               # 发布包
+└── druid-db-pwd-1.0.0-dist.tar.gz            # 发布包 (tar.gz)
+```
+
 ## 核心特性
 
 - **SM4国密加密**: 默认使用SM4国密算法进行密码加密
