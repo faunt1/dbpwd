@@ -57,7 +57,7 @@
  * 负责装饰任意DataSource，在getConnection()方法调用前自动解密密码
  * 支持Druid、HikariCP、DBCP2等所有实现DataSource的数据源
  *
- * @author Druid DB Password Manager
+ * @author Database Password Manager
  * @version 3.0
  */
 public class ConnectionPoolDecorator implements DataSource {
@@ -166,7 +166,7 @@ public void close() throws SQLException {
  *
  * 用于处理不同连接池类型在密码设置上的特殊需求
  *
- * @author Druid DB Password Manager
+ * @author Database Password Manager
  * @version 3.0
  */
 public interface ConnectionPoolInitializer {
@@ -284,7 +284,7 @@ public class DBCP2Initializer implements ConnectionPoolInitializer {
  *
  * 根据DataSource类型自动选择合适的初始化器
  *
- * @author Druid DB Password Manager
+ * @author Database Password Manager
  * @version 3.0
  */
 public class ConnectionPoolInitializerRegistry {
@@ -376,7 +376,7 @@ public class ConnectionPoolInitializerRegistry {
  *
  * 提供便捷的装饰器创建方法
  *
- * @author Druid DB Password Manager
+ * @author Database Password Manager
  * @version 3.0
  */
 public class ConnectionPoolDecoratorFactory {

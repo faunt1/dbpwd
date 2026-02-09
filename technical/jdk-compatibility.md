@@ -96,7 +96,7 @@ JDK 17提供：
 | **文件权限** | Unix系统600权限 | Unix系统600权限 | Unix系统600权限 |
 | **编码兼容** | UTF-8编码 | UTF-8编码 | UTF-8编码 |
 | **JSON解析** | Jackson 2.12+ | Jackson 2.12+ | Jackson 2.12+ |
-| **连接池** | Druid/HikariCP | Druid/HikariCP | Druid/HikariCP |
+| **连接池** | Druid/HikariCP/DBCP2 | Druid/HikariCP/DBCP2 | Druid/HikariCP/DBCP2 |
 
 ## 推荐版本
 
@@ -126,7 +126,7 @@ JDK 17提供：
 | 密钥派生 | ✅ | ✅ | ✅ |
 | JSON读写 | ✅ | ✅ | ✅ |
 | 文件权限 | ✅ | ✅ | ✅ |
-| Druid包装 | ✅ | ✅ | ✅ |
+| 连接池装饰 | ✅ | ✅ | ✅ |
 
 ### 编译目标
 

@@ -1,4 +1,4 @@
-# Druid Database Password Manager - 技术设计文档
+# Database Password Manager - 技术设计文档
 
 > 文档版本: v3.0
 > 最后更新: 2026-02-08

@@ -1,4 +1,4 @@
-# Druid Database Password Manager
+# Database Password Manager
 
 一个基于 SM4 加密的数据库密码管理系统，提供本地安全管理和数据库连接测试。
 
@@ -68,9 +68,9 @@ java -jar dbpwd-cli.jar
 | 命令 | 说明 | 输出文件 |
 |-----|------|---------|
 | `mvn clean package` | 打包所有（默认） | 所有 JAR 和 ZIP 包 |
-| `mvn clean package -Pdocs` | 仅打包文档 | `druid-db-pwd-1.0.0-docs.zip` |
-| `mvn clean package -Psource` | 仅打包源码 | `druid-db-pwd-1.0.0-source.{zip,tar.gz}` |
-| `mvn clean package -Pdist` | 仅打包发布包 | `druid-db-pwd-1.0.0-dist.{zip,tar.gz}` |
+| `mvn clean package -Pdocs` | 仅打包文档 | `db-pwd-1.0.0-docs.zip` |
+| `mvn clean package -Psource` | 仅打包源码 | `db-pwd-1.0.0-source.{zip,tar.gz}` |
+| `mvn clean package -Pdist` | 仅打包发布包 | `db-pwd-1.0.0-dist.{zip,tar.gz}` |
 
 ### 包类型说明
 
@@ -81,7 +81,7 @@ java -jar dbpwd-cli.jar
 - `docs/` 目录下的额外文档
 - `config/` 目录配置文件
 
-**文件名格式**：`druid-db-pwd-{version}-docs.zip`
+**文件名格式**：`db-pwd-{version}-docs.zip`
 
 #### 2. 源码包 (source)
 包含完整源代码，不含 target 目录：
@@ -90,7 +90,7 @@ java -jar dbpwd-cli.jar
 - 所有文档文件
 - config 和 scripts 目录
 
-**文件名格式**：`druid-db-pwd-{version}-source.{zip|tar.gz}`
+**文件名格式**：`db-pwd-{version}-source.{zip|tar.gz}`
 
 #### 3. 发布包 (dist)
 包含可执行文件和所有依赖：
@@ -100,7 +100,7 @@ java -jar dbpwd-cli.jar
 - 完整文档
 - config/ 目录配置文件
 
-**文件名格式**：`druid-db-pwd-{version}-dist.{zip|tar.gz}`
+**文件名格式**：`db-pwd-{version}-dist.{zip|tar.gz}`
 
 ### 快速打包示例
 
@@ -127,13 +127,13 @@ mvn clean package -Pdocs,source
 
 ```
 target/
-├── druid-db-pwd-1.0.0.jar                    # 普通 JAR
-├── druid-db-pwd-1.0.0-jar-with-dependencies.jar  # 可执行 JAR
-├── druid-db-pwd-1.0.0-docs.zip               # 文档包
-├── druid-db-pwd-1.0.0-source.zip             # 源码包
-├── druid-db-pwd-1.0.0-source.tar.gz          # 源码包 (tar.gz)
-├── druid-db-pwd-1.0.0-dist.zip               # 发布包
-└── druid-db-pwd-1.0.0-dist.tar.gz            # 发布包 (tar.gz)
+├── db-pwd-1.0.0.jar                    # 普通 JAR
+├── db-pwd-1.0.0-jar-with-dependencies.jar  # 可执行 JAR
+├── db-pwd-1.0.0-docs.zip               # 文档包
+├── db-pwd-1.0.0-source.zip             # 源码包
+├── db-pwd-1.0.0-source.tar.gz          # 源码包 (tar.gz)
+├── db-pwd-1.0.0-dist.zip               # 发布包
+└── db-pwd-1.0.0-dist.tar.gz            # 发布包 (tar.gz)
 ```
 
 ## 核心特性
