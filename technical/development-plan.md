@@ -485,13 +485,13 @@ db-pwd/
 │   └── src/
 │       ├── main/java/com/dbpwd/
 │       └── test/
-├── db-pwd-simple-jdbc-test/ (简单JDBC测试)
+├── db-pwd-simple-jdbc-demo/ (简单JDBC测试)
 │   ├── pom.xml
 │   └── src/main/java/com/dbpwd/test/
-├── db-pwd-spring-boot-test/ (Spring Boot测试)
+├── db-pwd-spring-boot-demo/ (Spring Boot测试)
 │   ├── pom.xml
 │   └── src/main/java/com/dbpwd/test/
-└── db-pwd-struts-test/ (Struts测试)
+└── db-pwd-struts-demo/ (Struts测试)
     ├── pom.xml
     └── src/main/java/com/dbpwd/test/
 ```
@@ -501,9 +501,9 @@ db-pwd/
 | 模块 | 类型 | 主要功能 | 打包方式 |
 |------|------|---------|----------|
 | db-pwd-core | 核心模块 | 所有核心功能（加密、解密、文件管理、CLI、装饰器） | jar |
-| db-pwd-simple-jdbc-test | 测试模块 | 简单JDBC测试应用 | jar (可执行) |
-| db-pwd-spring-boot-test | 测试模块 | Spring Boot Web测试应用 | jar (spring-boot) |
-| db-pwd-struts-test | 测试模块 | Struts 1.x测试应用 | war |
+| db-pwd-simple-jdbc-demo | 测试模块 | 简单JDBC测试应用 | jar (可执行) |
+| db-pwd-spring-boot-demo | 测试模块 | Spring Boot Web测试应用 | jar (spring-boot) |
+| db-pwd-struts-demo | 测试模块 | Struts 1.x测试应用 | war |
 
 **技术要点**:
 - 父POM使用packaging=pom，包含子模块配置
