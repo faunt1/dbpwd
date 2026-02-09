@@ -36,7 +36,6 @@ public class StrutsDemo {
 
     private static final String DB_PATH = "target/dbpwd-demo.db";
     private static final String DB_PASSWORD = "test123"; // SQLCipher database password
-    private static final String DB_URL = "jdbc:sqlite:" + DB_PATH + "?cipher=sqlcipher&key=" + DB_PASSWORD;
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
 
     /**
