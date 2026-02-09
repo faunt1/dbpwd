@@ -11,11 +11,11 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>db-pwd-spring-boot-test</artifactId>
+    <artifactId>db-pwd-spring-boot-demo</artifactId>
     <packaging>jar</packaging>
 
-    <name>Database Password Manager - Spring Boot Test</name>
-    <description>Spring Boot web test application using SQLCipher database</description>
+    <name>Database Password Manager - Spring Boot Demo</name>
+    <description>Spring Boot web demo application using SQLCipher database</description>
 
     <properties>
         <spring-boot.version>2.7.18</spring-boot.version>
@@ -82,7 +82,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.dbpwd.test.SpringBootTestTestApp</mainClass>
+                    <mainClass>com.dbpwd.demo.SpringBootDemo</mainClass>
                 </configuration>
                 <executions>
                     <execution>

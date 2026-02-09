@@ -18,10 +18,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Struts 1.x test application
+ * Struts 1.x demo application
  *
- * Test Database Password Manager in Struts 1.x web application
- * Using SQLCipher as test database
+ * Demo Database Password Manager in Struts 1.x web application
+ * Using SQLCipher as demo database
  *
  * Features:
  * 1. Struts 1.x action pattern for database access
@@ -32,9 +32,9 @@ import java.util.Map;
  * @author Database Password Manager
  * @version 4.3
  */
-public class StrutsTestApp {
+public class StrutsDemo {
 
-    private static final String DB_PATH = "target/dbpwd-test.db";
+    private static final String DB_PATH = "target/dbpwd-demo.db";
     private static final String DB_PASSWORD = "test123"; // SQLCipher database password
     private static final String DB_URL = "jdbc:sqlite:" + DB_PATH + "?cipher=sqlcipher&key=" + DB_PASSWORD;
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
@@ -173,10 +173,10 @@ public class StrutsTestApp {
                 throws Exception {
 
             Map<String, Object> result = new HashMap<>();
-            result.put("application", "Database Password Manager - Struts Test");
+            result.put("application", "Database Password Manager - Struts Demo");
             result.put("status", "running");
             result.put("database", "SQLCipher");
-            result.put("description", "Test application with encrypted database password");
+            result.put("description", "Demo application with encrypted database password");
 
             request.setAttribute("result", result);
             return mapping.findForward("success");
@@ -244,7 +244,7 @@ public class StrutsTestApp {
      * Main method for standalone testing (without servlet container)
      */
     public static void main(String[] args) {
-        System.out.println("=== Struts Test Application (Standalone) ===");
+        System.out.println("=== Struts Demo Application (Standalone) ===");
         System.out.println("Database: SQLCipher (encrypted SQLite)");
         System.out.println("Database path: " + DB_PATH);
         System.out.println("Database password: " + DB_PASSWORD);
@@ -279,10 +279,10 @@ public class StrutsTestApp {
             }
 
             System.out.println();
-            System.out.println("=== All Tests Passed ===");
+            System.out.println("=== Demo Completed Successfully ===");
 
         } catch (Exception e) {
-            System.err.println("Test failed: " + e.getMessage());
+            System.err.println("Demo failed: " + e.getMessage());
             e.printStackTrace();
         }
     }

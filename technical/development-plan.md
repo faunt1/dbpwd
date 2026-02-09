@@ -153,35 +153,36 @@
 
 ---
 
-### Sprint 4.5: 多模块架构和测试应用开发（0.5周）🔄 进行中 (2026-02-09)
+### Sprint 4.5: 多模块架构和Demo应用开发（0.5周）🔄 进行中 (2026-02-09)
 
-**目标**: 重构为多模块体系结构，开发三个测试应用验证功能流程
+**目标**: 重构为多模块体系结构，开发三个Demo应用验证功能流程
 
 **架构变更**:
 - 从单模块改为多模块Maven项目
 - 核心模块：db-pwd-core（包含所有核心功能）
-- 测试模块：db-pwd-simple-jdbc-test、db-pwd-spring-boot-test、db-pwd-struts-test
+- Demo模块：db-pwd-simple-jdbc-demo、db-pwd-spring-boot-demo、db-pwd-struts-demo
 
-**测试要求**:
+**Demo要求**:
 - 使用SQLCipher数据库（加密SQLite，支持密码）
 - 验证密码解密和数据库连接流程
-- 三个测试应用：Spring Web应用、简单JDBC应用、Struts应用
+- 三个Demo应用：Spring Web应用、简单JDBC应用、Struts应用
+- 所有Demo应用代码位于com.dbpwd.demo包下
 
 #### 任务清单
 - [x] 创建多模块Maven架构（父子POM结构）
 - [x] 创建db-pwd-core核心模块
-- [x] 创建db-pwd-simple-jdbc-test模块
-- [x] 创建db-pwd-spring-boot-test模块
-- [x] 创建db-pwd-struts-test模块
-- [ ] 迁移现有代码到核心模块
-- [ ] 实现简单JDBC测试应用
-- [ ] 实现Spring Boot Web测试应用
-- [ ] 实现Struts 1.x测试应用
-- [ ] 创建SQLCipher测试数据库和测试数据
-- [ ] 验证三个测试应用都能成功连接数据库
-- [ ] 编写测试使用文档
+- [x] 创建db-pwd-simple-jdbc-demo模块
+- [x] 创建db-pwd-spring-boot-demo模块
+- [x] 创建db-pwd-struts-demo模块
+- [x] 迁移现有代码到核心模块
+- [x] 实现简单JDBC demo应用
+- [x] 实现Spring Boot Web demo应用
+- [x] 实现Struts 1.x demo应用
+- [x] 创建SQLCipher demo数据库和demo数据
+- [ ] 验证三个demo应用都能成功连接数据库
+- [ ] 编写demo使用文档
 
-#### 测试技术栈
+#### Demo技术栈
 - **数据库**: SQLCipher（加密SQLite，支持密码访问）
 - **JDBC**: JDBC 4.x
 - **Spring Boot**: 2.7.x（Web应用）
@@ -189,10 +190,10 @@
 - **构建工具**: Maven
 
 #### 验收标准
-- [ ] 简单JDBC应用能成功连接SQLCipher数据库
-- [ ] Spring Boot Web应用能成功连接SQLCipher数据库
-- [ ] Struts应用能成功连接SQLCipher数据库
-- [ ] 三个测试应用的密码解密流程正常
+- [ ] 简单JDBC demo能成功连接SQLCipher数据库
+- [ ] Spring Boot Web demo能成功连接SQLCipher数据库
+- [ ] Struts demo能成功连接SQLCipher数据库
+- [ ] 三个demo应用的密码解密流程正常
 - [ ] 多模块架构可以独立构建和测试
 
 ---

@@ -11,11 +11,11 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>db-pwd-simple-jdbc-test</artifactId>
+    <artifactId>db-pwd-simple-jdbc-demo</artifactId>
     <packaging>jar</packaging>
 
-    <name>Database Password Manager - Simple JDBC Test</name>
-    <description>Simple JDBC test application using SQLCipher database</description>
+    <name>Database Password Manager - Simple JDBC Demo</name>
+    <description>Simple JDBC demo application using SQLCipher database</description>
 
     <properties>
         <sqlcipher.version>3.42.0.0</sqlcipher.version>
@@ -67,7 +67,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.dbpwd.test.SimpleJdbcTestApp</mainClass>
+                            <mainClass>com.dbpwd.demo.SimpleJdbcDemo</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>dependency/</classpathPrefix>
                         </manifest>
@@ -105,7 +105,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.dbpwd.test.SimpleJdbcTestApp</mainClass>
+                            <mainClass>com.dbpwd.demo.SimpleJdbcDemo</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

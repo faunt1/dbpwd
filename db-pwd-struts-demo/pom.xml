@@ -11,11 +11,11 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>db-pwd-struts-test</artifactId>
+    <artifactId>db-pwd-struts-demo</artifactId>
     <packaging>war</packaging>
 
-    <name>Database Password Manager - Struts Test</name>
-    <description>Struts 1.x test application using SQLCipher database</description>
+    <name>Database Password Manager - Struts Demo</name>
+    <description>Struts 1.x demo application using SQLCipher database</description>
 
     <properties>
         <struts.version>1.3.10</struts.version>

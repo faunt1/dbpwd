@@ -15,9 +15,9 @@
 
     <modules>
         <module>db-pwd-core</module>
-        <module>db-pwd-simple-jdbc-test</module>
-        <module>db-pwd-spring-boot-test</module>
-        <module>db-pwd-struts-test</module>
+        <module>db-pwd-simple-jdbc-demo</module>
+        <module>db-pwd-spring-boot-demo</module>
+        <module>db-pwd-struts-demo</module>
     </modules>
 
     <properties>

@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Spring Boot test application
+ * Spring Boot demo application
  *
- * Test Database Password Manager in Spring Boot web application
- * Using SQLCipher as test database
+ * Demo Database Password Manager in Spring Boot web application
+ * Using SQLCipher as demo database
  *
  * Features:
  * 1. Spring Boot web application with REST API
@@ -26,15 +26,15 @@ import java.util.Map;
  * @version 4.3
  */
 @SpringBootApplication
-public class SpringBootTestTestApp {
+public class SpringBootDemo {
 
-    private static final String DB_PATH = "target/dbpwd-test.db";
+    private static final String DB_PATH = "target/dbpwd-demo.db";
     private static final String DB_PASSWORD = "test123"; // SQLCipher database password
     private static final String DB_URL = "jdbc:sqlite:" + DB_PATH + "?cipher=sqlcipher&key=" + DB_PASSWORD;
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
 
     public static void main(String[] args) {
-        System.out.println("=== Spring Boot Test Application ===");
+        System.out.println("=== Spring Boot Demo Application ===");
         System.out.println("Database: SQLCipher (encrypted SQLite)");
         System.out.println("Database path: " + DB_PATH);
         System.out.println("Database password: " + DB_PASSWORD);
@@ -51,9 +51,9 @@ public class SpringBootTestTestApp {
             System.out.println();
 
             // Start Spring Boot application
-            SpringApplication.run(SpringBootTestTestApp.class, args);
+            SpringApplication.run(SpringBootDemo.class, args);
             System.out.println("Spring Boot application started successfully!");
-            System.out.println("Access http://localhost:8080 for testing");
+            System.out.println("Access http://localhost:8080 for demo");
             System.out.println();
 
         } catch (Exception e) {
@@ -81,21 +81,21 @@ public class SpringBootTestTestApp {
     }
 
     @org.springframework.web.bind.annotation.RestController
-    public static class TestController {
+    public static class DemoController {
 
         private final JdbcTemplate jdbcTemplate;
 
-        public TestController(JdbcTemplate jdbcTemplate) {
+        public DemoController(JdbcTemplate jdbcTemplate) {
             this.jdbcTemplate = jdbcTemplate;
         }
 
         @GetMapping("/")
         public Map<String, Object> index() {
             return Map.of(
-                "application", "Database Password Manager - Spring Boot Test",
+                "application", "Database Password Manager - Spring Boot Demo",
                 "status", "running",
                 "database", "SQLCipher",
-                "description", "Test application with encrypted database password"
+                "description", "Demo application with encrypted database password"
             );
         }
 
