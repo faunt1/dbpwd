@@ -242,3 +242,20 @@
 - [密码更新流程](technical/password-update-flow.md) - 密码更新详细流程
 - [代码结构](technical/code-structure.md) - 项目目录结构说明
 - [开发计划](technical/development-plan.md) - Sprint划分、里程碑、测试要求
+
+---
+
+## 开发指令模式
+
+当收到"请继续开发"或类似任务时，按以下模式操作：
+
+1. **读取开发计划**：查看 `technical/development-plan.md` 获取最新开发进度
+2. **检查当前进度**：对照Sprint任务清单，确认已完成的任务
+3. **确定下一步任务**：从当前Sprint的待完成任务中选择优先级最高的
+4. **执行开发任务**：
+   - 理解任务需求和相关设计文档
+   - 查看相关代码实现和测试
+   - 编写/修改代码
+   - 编写/更新单元测试
+5. **更新开发计划**：完成任务后更新 `technical/development-plan.md` 中的任务状态
+6. **汇报进度**：向用户汇报完成的任务和下一步计划
