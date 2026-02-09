@@ -131,7 +131,7 @@
 - [x] 支持Druid连接池装饰
 - [x] 支持HikariCP连接池装饰
 - [x] 支持DBCP2连接池装饰
-- [ ] 实现DbPwdAutoConfiguration自动配置类
+- [x] 实现DbPwdAutoConfiguration自动配置类
 - [ ] 实现Spring Boot集成配置
 - [ ] 实现MyBatis数据源配置
 - [ ] 编写装饰器单元测试
@@ -139,7 +139,7 @@
 
 #### 验收标准
 - [x] Druid和HikariCP连接池装饰正常
-- [ ] Spring Boot自动配置正常
+- [x] Spring Boot自动配置正常
 - [ ] MyBatis集成正常
 - [ ] 支持多数据源配置
 - [x] 密码自动解密和应用
