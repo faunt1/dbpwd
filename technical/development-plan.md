@@ -1,7 +1,7 @@
 # 开发计划
 
-> 文档版本: v5.0
-> 最后更新: 2026-02-10
+> 文档版本: v6.0
+> 最后更新: 2026-02-11
 
 ## 目录
 
@@ -223,6 +223,125 @@
 
 ---
 
+### Sprint 6: 集成模块开发（2周）⚪ 待开始
+
+**目标**: 实现6种集成场景的独立模块，支持Druid、Spring Boot、传统Spring、MyBatis、纯JDBC、Struts/Servlet等多种技术栈的集成
+
+#### 集成模块架构设计
+
+**重要设计变更**:
+1. 每个集成场景使用独立的Maven子模块
+2. 基础功能在db-pwd-core中实现（StandalonePasswordDecryptor）
+3. 额外依赖的框架集成创建独立子模块
+4. 保持模块间低耦合，按需引入依赖
+
+**模块依赖关系**:
+```
+db-pwd/
+├── db-pwd-core              # 核心模块（已有）
+│   └── StandalonePasswordDecryptor  # 纯JDBC集成API
+├── db-pwd-druid             # 方案1: Druid PasswordCallback集成
+├── db-pwd-spring-boot-starter  # 方案2: Spring Boot Starter集成
+├── db-pwd-spring            # 方案3: 传统Spring BeanPostProcessor集成
+├── db-pwd-mybatis           # 方案4: MyBatis DataSourceFactory集成
+└── db-pwd-web               # 方案6: Struts/Servlet InitListener集成
+```
+
+#### 任务清单
+
+**6.1 方案5: 纯JDBC StandalonePasswordDecryptor集成**（在db-pwd-core中实现）
+- [ ] 实现StandalonePasswordDecryptor工具类
+- [ ] 实现decrypt()静态方法（获取解密密码）
+- [ ] 实现getConnection()静态方法（获取数据库连接）
+- [ ] 实现DbUtil简化工具类（query/update方法）
+- [ ] 编写StandalonePasswordDecryptor单元测试
+- [ ] 提供使用示例和文档
+
+**6.2 方案1: Druid DruidPasswordCallback集成**（db-pwd-druid模块）
+- [ ] 创建db-pwd-druid子模块和pom.xml
+- [ ] 实现DruidPasswordCallback类（继承DruidDataSource.PasswordCallback）
+- [ ] 实现createDataSource()工厂方法
+- [ ] 支持密码占位符自动解密
+- [ ] 编写Druid集成单元测试
+- [ ] 提供Spring Boot配置示例
+- [ ] 提供纯Java使用示例
+
+**6.3 方案3: Spring BeanPostProcessor集成**（db-pwd-spring模块）
+- [ ] 创建db-pwd-spring子模块和pom.xml
+- [ ] 实现DataSourcePasswordProcessor类（BeanPostProcessor）
+- [ ] 实现DbPwdSpringConfiguration配置类
+- [ ] 支持拦截所有DataSource Bean
+- [ ] 支持排除特定DataSource Bean
+- [ ] 编写Spring集成单元测试
+- [ ] 提供XML配置示例
+- [ ] 提供Java配置示例
+- [ ] 提供属性文件配置示例
+
+**6.4 方案2: Spring Boot Starter集成**（db-pwd-spring-boot-starter模块）
+- [ ] 创建db-pwd-spring-boot-starter子模块和pom.xml
+- [ ] 实现DbPwdProperties配置属性类
+- [ ] 实现DbPwdAutoConfiguration自动配置类
+- [ ] 实现DataSourceDecorator装饰器类
+- [ ] 配置spring.factories文件
+- [ ] 支持application.yml配置
+- [ ] 支持多数据源装饰
+- [ ] 编写Spring Boot集成测试
+- [ ] 提供最小化配置示例
+- [ ] 提供完整配置示例
+- [ ] 提供多数据源配置示例
+
+**6.5 方案4: MyBatis DataSourceFactory集成**（db-pwd-mybatis模块）
+- [ ] 创建db-pwd-mybatis子模块和pom.xml
+- [ ] 实现DbPwdDataSourceFactory类（继承UnpooledDataSourceFactory）
+- [ ] 实现DbPwdDruidDataSourceFactory类（支持Druid连接池）
+- [ ] 支持MyBatis XML配置
+- [ ] 支持密码占位符自动解密
+- [ ] 支持连接池参数配置
+- [ ] 编写MyBatis集成单元测试
+- [ ] 提供mybatis-config.xml配置示例
+- [ ] 提供纯Java使用示例
+
+**6.6 方案6: Struts/Servlet InitListener集成**（db-pwd-web模块）
+- [ ] 创建db-pwd-web子模块和pom.xml
+- [ ] 实现DatabasePasswordInitListener类（ServletContextListener）
+- [ ] 实现WebPasswordUtil工具类
+- [ ] 支持ServletContext密码服务初始化
+- [ ] 支持密码预加载到内存
+- [ ] 编写Web集成单元测试
+- [ ] 提供web.xml配置示例
+- [ ] 提供Servlet使用示例
+- [ ] 提供Struts Action使用示例
+- [ ] 提供Struts XML配置示例
+
+#### 验收标准
+- [ ] 所有6个集成子模块创建成功，编译通过
+- [ ] StandalonePasswordDecryptor API功能完整，单元测试通过
+- [ ] Druid PasswordCallback集成正常，密码自动解密
+- [ ] Spring BeanPostProcessor正常拦截DataSource
+- [ ] Spring Boot Starter自动配置正常
+- [ ] MyBatis DataSourceFactory集成正常
+- [ ] Struts/Servlet InitListener初始化正常
+- [ ] 所有集成模块都有完整的使用示例和文档
+- [ ] 依赖关系正确，模块间通过db-pwd-core通信
+
+#### 测试要求
+- [ ] StandalonePasswordDecryptor单元测试覆盖率≥80%
+- [ ] Druid集成模块单元测试覆盖率≥80%
+- [ ] Spring集成模块单元测试覆盖率≥80%
+- [ ] Spring Boot Starter集成测试完整
+- [ ] MyBatis集成测试完整
+- [ ] Web集成测试完整
+
+#### 集成场景文档
+
+已完成的集成场景和方案文档：`technical/integration-scenarios.md`
+- 6种集成场景的详细设计
+- 每种方案的架构设计、实现设计、使用方式
+- 集成方案选择指南
+- 依赖需求对比表
+
+---
+
 ## 2. 里程碑计划
 
 | 里程碑 | 时间点 | 交付物 | 状态 |
@@ -231,7 +350,8 @@
 | **M2: 密码文件管理完成** | Sprint 2结束 | JSON文件管理、连接测试工具 | ✅ 完成 |
 | **M3: 命令行工具完成** | Sprint 3结束 | CLI工具、配置下载工具 | ✅ 完成 |
 | **M4: 框架集成完成** | Sprint 4结束 | Spring/MyBatis集成、连接池装饰器 | ✅ 完成 (2026-02-09) |
-| **M5: 系统发布** | Sprint 5结束 | 完整系统、文档、部署包 | ✅ 完成 (2026-02-10) |
+| **M5: 系统文档完成** | Sprint 5结束 | 系统文档、集成场景文档 | ✅ 完成 (2026-02-11) |
+| **M6: 集成模块开发完成** | Sprint 6结束 | 6个集成模块、完整集成方案 | ⚪ 待开始 |
 
 ---
 
@@ -384,7 +504,8 @@
 | Sprint 3 | 第5-6周 | 命令行工具 | CLI功能测试通过 | ✅ 完成 (2026-02-09) |
 | Sprint 4 | 第7-9周 | 框架集成（装饰器模式） | 框架集成测试通过 | ✅ 完成 (2026-02-09) |
 | Sprint 4.5 | 第9.5周 | 多模块架构和测试应用 | 三个测试应用跑通 | ✅ 完成 (2026-02-09) |
-| Sprint 5 | 第10-11周 | 文档完善 | 全部检查完成 | ✅ 完成 (2026-02-10) |
+| Sprint 5 | 第10-11周 | 文档完善 | 全部检查完成 | ✅ 完成 (2026-02-11) |
+| Sprint 6 | 第12-13周 | 集成模块开发 | 6个集成模块完成 | ⚪ 待开始 |
 
 ---
 
@@ -396,6 +517,7 @@
 | 发布前 | 集成测试完成 | 所有场景测试通过 | ✅ 完成 |
 | 发布前 | 安全扫描完成 | 无严重安全漏洞 | ✅ 完成 |
 | 发布前 | 文档更新完成 | 文档齐全 | ✅ 完成 (2026-02-10) |
+| 发布前 | 集成模块完成 | 6个集成模块开发完成 | ⚪ 待开始 |
 | 发布 | 版本打标签 | Git tag创建 | ⚪ 待开始 |
 | 发布 | 生产部署 | 生产环境部署成功 | ⚪ 待开始 |
 
@@ -546,9 +668,49 @@ db-pwd/
 
 ---
 
+### D5: 集成场景和方案设计
+
+**决策时间**: 2026-02-11
+**决策内容**: 设计6种集成场景的独立模块架构，覆盖Druid、Spring Boot、传统Spring、MyBatis、纯JDBC、Struts/Servlet等多种技术栈
+**决策理由**:
+1. **场景覆盖**: 6种集成方案覆盖主流Java应用技术栈
+2. **按需引入**: 独立子模块避免不必要的依赖引入
+3. **统一设计**: 基础功能在db-pwd-core中实现，额外依赖使用独立模块
+4. **低耦合**: 模块间通过db-pwd-core通信，降低耦合度
+5. **易于维护**: 每个集成模块职责单一，易于理解和维护
+
+**模块说明**:
+
+| 模块 | 集成方案 | 适用场景 | 额外依赖 |
+|------|---------|---------|---------|
+| db-pwd-core | StandalonePasswordDecryptor | 纯JDBC应用/工具类 | 无 |
+| db-pwd-druid | Druid PasswordCallback | Druid连接池应用 | Druid |
+| db-pwd-spring-boot-starter | Spring Boot Starter | Spring Boot应用 | Spring Boot |
+| db-pwd-spring | BeanPostProcessor | 传统Spring应用（XML/Java配置） | Spring Framework |
+| db-pwd-mybatis | MyBatis DataSourceFactory | 纯MyBatis应用（无Spring） | MyBatis |
+| db-pwd-web | Servlet InitListener | Struts或纯Servlet应用 | Servlet API |
+
+**技术要点**:
+- 基础API：`StandalonePasswordDecryptor`在db-pwd-core中提供
+- Druid集成：利用Druid原生PasswordCallback机制
+- Spring Boot：通过spring.factories实现自动配置
+- 传统Spring：通过BeanPostProcessor拦截DataSource Bean
+- MyBatis：继承UnpooledDataSourceFactory实现密码解密
+- Web集成：通过ServletContextListener初始化密码服务
+
+**影响范围**:
+- 新增5个集成子模块（db-pwd-druid、db-pwd-spring、db-pwd-spring-boot-starter、db-pwd-mybatis、db-pwd-web）
+- 在db-pwd-core中新增StandalonePasswordDecryptor工具类
+- 创建集成场景和方案文档（technical/integration-scenarios.md）
+- 更新开发计划和里程碑计划
+- 更新根pom.xml添加新子模块声明
+
+---
+
 ## 相关文档
 
 - [技术栈](../overview.md#技术栈) - 技术栈版本要求
+- [集成场景和方案](integration-scenarios.md) - 6种集成场景详解和方案选择
 - [连接池装饰器](connection-pool.md) - 装饰器架构和实现
 - [框架集成](framework-integration.md) - 框架集成详细代码（装饰器版本）
 - [安全设计](security.md) - 审计日志和安全强化
