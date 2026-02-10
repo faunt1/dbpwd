@@ -243,6 +243,9 @@
 - [代码结构](technical/code-structure.md) - 项目目录结构说明
 - [开发计划](technical/development-plan.md) - Sprint划分、里程碑、测试要求
 
+### Demo应用
+- [Demo应用验证](demo-README.md) - Demo应用验证步骤和MySQL数据库配置详细说明
+
 ---
 
 ## 开发指令模式
@@ -275,59 +278,79 @@
 
 ---
 
-## Demo应用数据库配置
+## Demo应用密码管理集成模式
 
-### MySQL数据库配置
+### 集成模式定义
 
-三个Demo应用（Simple JDBC Demo、Spring Boot Demo、Struts Demo）使用MySQL数据库进行演示。
+Demo程序集成密码管理支持两种模式：
 
-#### 启动MySQL Docker容器
+#### 模式1: 程序直接操作模式
 
-使用以下命令启动MySQL容器（需要Docker Desktop已启动）：
+程序中直接到 `db.pwd` 中获取对应数据库的密文密码，并调用解密程序生成密码密文，再生成数据库JDBC连接串，进行数据库连接和数据库操作。
 
-```bash
-docker run -d \
-  --name dbpwd-mysql \
-  --restart always \
-  -e MYSQL_ROOT_PASSWORD=rootpass123 \
-  -e MYSQL_DATABASE=dbpwd_demo \
-  -e MYSQL_USER=dbpwd \
-  -e MYSQL_PASSWORD=dbpwd123 \
-  -p 3306:3306 \
-  mysql:8.0
+**特点**:
+- 解密和替换工作由**程序自己实现**
+- 代码直接调用密码管理API
+- 适合简单场景或不想引入框架依赖的应用
+
+**核心流程**:
+```
+1. 程序启动 -> 读取db.pwd和sm4.key
+2. 根据数据库ID查找密文密码
+3. 调用解密API(Sm4GCMCipher.decrypt)解密密码
+4. 构建JDBC连接串(使用明文密码)
+5. 建立数据库连接
+6. 执行数据库操作
 ```
 
-#### 验证MySQL连接
+#### 模式2: 配置文件装饰器模式
 
-```bash
-# 等待MySQL启动（约30秒）
-docker logs -f dbpwd-mysql
+程序在配置文件中指定了数据库连接信息，包括数据库密码，这时候这个密码的值应该是个"占位符"(如数据库名或ID)，框架或程序读取配置文件并根据"占位符"在 `db.pwd` 中查找到对应行数据并获取密文密码后再解密获取明文，再根据框架或连接池DataSource机制用明文密码建立连接。
 
-# 连接测试
-docker exec -it dbpwd-mysql mysql -u dbpwd -p dbpwd_demo
-# 密码: dbpwd123
+**特点**:
+- 解密和替换工作由**框架(DataSource装饰器)**实现
+- 配置文件使用占位符而非真实密码
+- 适合需要最小化应用代码改动的场景
+
+**核心流程**:
+```
+1. 程序启动 -> Spring加载配置文件
+2. DataSourceDecorator拦截DataSource初始化
+3. 根据占位符(数据库名)查找db.pwd中的密文密码
+4. 使用sm4.key解密密码
+5. 将明文密码注入到DataSource配置中
+6. 建立连接池和数据库连接
+7. 应用正常使用数据库连接
 ```
 
-#### 数据库连接信息
+### 占位符设计原则
 
-| 参数 | 值 |
-|------|-----|
-| 主机 | localhost |
-| 端口 | 3306 |
-| 数据库 | dbpwd_demo |
-| 用户名 | dbpwd |
-| 密码 | dbpwd123 |
-| JDBC URL | jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC |
+**基本原则**:
+- **占位符唯一性**: 每个Demo使用唯一的占位符标识（如数据库名或ID）
+- **实际数据库可共享**: 不同占位符可以指向同一个物理数据库
+- **配置一致性**: 生成 `db.pwd` 时使用的占位符与Demo程序运行时使用的占位符必须一致
 
-#### 停止和清理MySQL容器
+**设计目的**: 演示如何通过不同的占位符管理多个应用共享同一数据库的不同配置方式。
+
+### Demo演示流程
+
+Demo应用的完整演示流程如下：
+
+**步骤1: 通过命令行工具生成db.pwd和sm4.key两个文件，显示对应数据库id和对应的密文密码**
 
 ```bash
-# 停止容器
-docker stop dbpwd-mysql
-
-# 删除容器
-docker rm dbpwd-mysql
-
-# 删除数据卷（可选，会清空数据库数据）
-docker volume rm dbpwd-mysql-data
+java -jar db-pwd-cli.jar encrypt --id <database_id> --password <plain_password>
 ```
+
+该命令会生成两个文件：
+- `~/.dbpwd/db.pwd` - 密文密码文件，包含数据库连接信息和加密后的密码
+- `~/.dbpwd/sm4.key` - SM4密钥文件
+
+输出内容显示：数据库ID、加密后的密文密码、文件生成位置。
+
+**步骤2: demo程序根据集成模式，将密码占位符替换为密码密文并解密后进行数据库操作**
+
+- **模式1（程序直接操作模式）**: 程序直接调用 Sm4GCMCipher API，从 db.pwd 中根据占位符查找密文密码，使用 sm4.key 解密，构建 JDBC 连接串
+- **模式2（配置文件装饰器模式）**: DataSourceDecorator 拦截 DataSource 初始化，根据占位符从 db.pwd 中查找密文密码，使用 sm4.key 解密，将明文密码注入到 DataSource 配置中
+
+> 详细的Demo应用验证步骤、MySQL数据库配置、占位符映射表和db.pwd文件结构示例请参考 [Demo应用验证文档](./demo-README.md)。

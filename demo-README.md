@@ -1,4 +1,4 @@
-# Database Password Manager - Demo Applications
+# Database Password Manager - Demo应用集成指南
 
 这是一个数据库密码管理系统的演示应用集合，展示了SM4-GCM国密认证加解密功能。
 
@@ -10,7 +10,11 @@
 2. **Spring Boot Demo** - Spring Boot Web应用，演示与Spring框架集成
 3. **Struts Demo** - 独立应用，演示密码加密解密验证
 
-## 为什么使用SM4-GCM？
+## 相关文档
+
+- [Demo应用设计文档](./demo-design.md) - 三个Demo的详细设计架构、工作机制和适用场景
+- [Demo应用演示步骤](./demo-run-step.md) - Demo应用的完整演示执行步骤
+- [demo-run-result.md](./demo-run-result.md) - 所有Demo的详细执行输出
 
 ## 快速开始
 
@@ -37,7 +41,7 @@ docker run -d \
   mysql:8.0
 
 # 验证MySQL启动状态
-docker logs -f dbpwd-mysql
+docker logs dbpwd-mysql
 ```
 
 数据库连接信息：
@@ -50,358 +54,53 @@ docker logs -f dbpwd-mysql
 | 用户名 | dbpwd |
 | 密码 | dbpwd123 |
 
+**Demo占位符映射**:
+
+| Demo应用 | 占位符(在db.pwd中) | 实际数据库 | 说明 |
+|---------|------------------|-----------|------|
+| Simple JDBC Demo | `simple_jdbc_db` | `dbpwd_demo` | 模式1示例 |
+| Spring Boot Demo | `spring_boot_db` | `dbpwd_demo` | 模式2示例 |
+| Struts Demo | `struts_db` | `dbpwd_demo` | 模式1示例 |
+
+**说明**: 三个Demo使用不同的占位符，但实际都指向同一个MySQL数据库 `dbpwd_demo`。这种设计展示了多应用共享同一数据库的不同配置方式。
+
 ### 停止MySQL数据库
 
 ```bash
 docker stop dbpwd-mysql
 ```
 
-### 完整Demo演示流程
+---
 
-本Demo演示完整的Database Password Manager使用流程，从命令行工具生成配置文件开始。
+## 集成模式概述
 
-#### 步骤1: 构建项目
+Database Password Manager 支持两种集成模式：
 
-```bash
-mvn clean install -DskipTests
-```
+### 模式1: 程序直接操作模式
 
-#### 步骤2: 使用命令行工具生成配置文件
+**核心特点**:
+- 解密和替换工作由**程序自己实现**
+- 代码直接调用 `Sm4GCMCipher` API
+- 适合简单场景或不想引入框架依赖的应用
 
-```bash
-# 进入命令行工具目录
-cd db-pwd-core/target
+**适用Demo**: Simple JDBC Demo, Struts Demo
 
-# 运行命令行工具
-java -jar db-pwd-core-1.0.0.jar --interactive
+### 模式2: 配置文件装饰器模式
 
-# 进入交互模式后，执行以下命令：
+**核心特点**:
+- 解密和替换工作由**框架(DataSourceDecorator)**实现
+- 配置文件使用占位符而非真实密码
+- 适合需要最小化应用代码改动的场景
 
-# 1. 列出当前数据库
-list
+**适用Demo**: Spring Boot Demo
 
-# 2. 添加MySQL数据库配置
-add
-# 按提示输入：
-# - ID: demo-mysql
-# - 名称: MySQL Demo Database
-# - 类型: MySQL
-# - 主机: localhost
-# - 端口: 3306
-# - 数据库: dbpwd_demo
-# - 用户名: dbpwd
-# - 密码: dbpwd123
-
-# 3. 测试数据库连接
-test demo-mysql
-
-# 4. 列出配置确认
-list
-
-# 5. 退出
-exit
-```
-
-生成的配置文件位置：
-- 密钥文件: `~/.dbpwd/sm4.key`
-- 密码文件: `~/.dbpwd/db.pwd`
-
-#### 步骤3: 验证配置文件
-
-```bash
-# 查看生成的配置文件内容（可选）
-cat ~/.dbpwd/db.pwd
-cat ~/.dbpwd/sm4.key
-```
-
-#### 步骤4: 运行Demo应用
-
-配置文件生成后，可以运行各个Demo应用验证功能：
-
-```bash
-# 运行Simple JDBC Demo
-cd db-pwd-simple-jdbc-demo
-mvn clean package java -jar target/db-pwd-simple-jdbc-demo-1.0.0-jar-with-dependencies.jar
-
-# 运行Spring Boot Demo
-cd db-pwd-spring-boot-demo
-mvn clean package
-java -jar target/db-pwd-spring-boot-demo-1.0.0.jar
-
-# 运行Struts Demo
-cd db-pwd-struts-demo
-mvn clean package
-mvn exec:java -Dexec.mainClass="com.dbpwd.demo.StrutsDemo"
-```
-
-### 构建所有模块
-
-```bash
-mvn clean install -DskipTests
-```
-
-## Demo应用详情
-
-### 1. Simple JDBC Demo
-
-**位置**: `db-pwd-simple-jdbc-demo/`
-
-**功能**:
-- SM4-GCM加密功能演示
-- MySQL数据库连接测试
-- 密码格式化（ENC格式）
-- 加密解密验证
-- 随机IV验证
-- 完整的数据库CRUD操作演示
-
-**数据库**: MySQL 8.0
-
-**运行方式**:
-
-```bash
-# 确保MySQL容器正在运行
-docker ps | grep dbpwd-mysql
-
-cd db-pwd-simple-jdbc-demo
-mvn clean package -DskipTests
-java -jar target/db-pwd-simple-jdbc-demo-1.0.0-jar-with-dependencies.jar
-```
-
-**预期输出**:
-```
-=== Simple JDBC Demo Application ===
-Demo: Database Password Manager - SM4 Encryption
-Database: MySQL (jdbc:mysql://localhost:3306/dbpwd_demo)
-SM4 key: 0123456789abcdef0123456789abcdef
-
-Step 1: Test SM4 Encryption
-  Original password: myDatabasePassword123
-  Encrypted password: ENC(SM4-GCM:xxx)
-  Note: 每次加密结果不同（随机IV）
-
-Step 2: Test SM4 Decryption
-  Decrypted password: myDatabasePassword123
-  Verification: SUCCESS
-
-Step 3: Test ENC Format
-  Database password: mysql_password
-  Formatted encrypted: ENC(SM4-GCM:xxx)
-  Decrypted: mysql_password
-  Verification: SUCCESS
-
-Step 4: Database Connection Test
-  Connecting to MySQL database...
-  Created demo tables
-  Inserted test data
-  Query results: [data from MySQL]
-
-=== Demo Completed Successfully ===
-All SM4 encryption and decryption tests passed!
-MySQL database connection successful!
-```
-
-### 2. Spring Boot Demo
-
-**位置**: `db-pwd-spring-boot-demo/`
-
-**功能**:
-- Spring Boot Web应用
-- REST API接口
-- MySQL数据库连接
-- SM4-GCM加密功能演示
-- 数据库初始化和CRUD操作
-
-**数据库**: MySQL 8.0
-
-**运行方式**:
-
-```bash
-# 确保MySQL容器正在运行
-docker ps | grep dbpwd-mysql
-
-cd db-pwd-spring-boot-demo
-mvn clean package -DskipTests
-java -jar target/db-pwd-spring-boot-demo-1.0.0.jar
-```
-
-**API接口**:
-
-| 接口 | 方法 | 描述 |
-|-----|------|------|
-| `/` | GET | 应用信息 |
-| `/health` | GET | 健康检查和用户数量 |
-| `/users` | GET | 用户列表 |
-| `/orders` | GET | 订单列表 |
-
-**测试示例**:
-
-```bash
-# 应用状态
-curl http://localhost:8080/
-
-# 健康检查
-curl http://localhost:8080/health
-
-# 获取用户列表
-curl http://localhost:8080/users
-
-# 获取订单列表
-curl http://localhost:8080/orders
-```
-
-**预期输出**:
-
-```json
-{
-  "application": "Database Password Manager - Spring Boot Demo",
-  "status": "running",
-  "database": "MySQL",
-  "description": "Demo application with SM4-GCM encrypted password"
-}
-```
-
-### 3. Struts Demo
-
-**位置**: `db-pwd-struts-demo/`
-
-**功能**:
-- SM4-GCM加密解密验证
-- MySQL数据库连接测试
-- 多密码加密测试
-- 随机IV验证
-- 认证标签验证
-- 数据库CRUD操作演示
-
-**数据库**: MySQL 8.0
-
-**运行方式**:
-
-```bash
-# 确保MySQL容器正在运行
-docker ps | grep dbpwd-mysql
-
-cd db-pwd-struts-demo
-mvn clean package -DskipTests
-mvn exec:java -Dexec.mainClass="com.dbpwd.demo.StrutsDemo"
-```
-
-**预期输出**:
-```
-=== Struts Demo Application (Standalone) ===
-Demo: Database Password Manager - SM4-GCM Encryption
-Database: MySQL (jdbc:mysql://localhost:3306/dbpwd_demo)
-SM4 key: 0123456789abcdef0123456789abcdef
-
-Test 1: Basic SM4-GCM Encryption/Decryption
-  Password: struts_password_123
-  Encrypted: ENC(SM4-GCM:xxx)
-  Decrypted: struts_password_123
-  Result: SUCCESS
-
-Test 2: Multiple Password Encoding
-  admin_pass => OK
-  user_db_connection => OK
-  migration_key => OK
-  production_db => OK
-
-Test 3: Different SM4-GCM Keys
-  Test password: test_db_password
-  Encrypted with key1: ENC(SM4-GCM:xxx)
-  Decrypted with key1: test_db_password => OK
-  Encrypted with key2: ENC(SM4-GCM:yyy)
-  Decrypted with key2: test_db_password => OK
-  Keys produce different ciphers: YES
-
-Test 4: GCM Random IV Property
-  Password: test_password_123
-  Encryption A: ENC(SM4-GCM:aaa)
-  Encryption B: ENC(SM4-GCM:bbb)
-  Different ciphertexts: YES (GCM property)
-  Both decrypt correctly: YES
-
-Test 5: MySQL Database Connection
-  Connected successfully to MySQL
-  Created demo tables
-  Inserted test data
-  Query results: [data from MySQL]
-
-=== Demo Completed Successfully ===
-All SM4-GCM encryption and decryption tests passed!
-GCM mode provides authenticated encryption and tamper protection.
-MySQL database connection successful!
-```
-
-## GCM模式详解
-
-### 加密流程
-
-1. **生成随机IV**（12字节）：每次加密使用不同的初始化向量
-2. **SM4加密**：使用GCM模式加密明文
-3. **生成认证标签**（16字节）：对密文完整性进行认证
-4. **Base64编码**：将`IV:密文`格式化为Base64编码
-
-### 密文格式
-
-```
-ENC(SM4-GCM:Base64(IV):Base64(密文+认证标签))
-```
-
-### 解密流程
-
-1. **解析ENC格式**：提取算法标识和密文数据
-2. **Base64解码**：分别解码IV和密文
-3. **GCM解密**：使用IV和GCM模式解密密文
-4. **完整性验证**：验证认证标签，确保密文未篡改
-
-### 安全特性
-
-1. **完整性保护**：任何密文篡改都会导致解密失败
-2. **抗重放攻击**：IV重放攻击被GCM认证标签阻止
-3. **抗模式分析**：随机IV使相同明文产生不同密文
-4. **选择明文攻击保护**：认证标签保护选择明文攻击
-
-## 架构说明
-
-### 多模块Maven项目结构
-
-```
-db-pwd/
-├── pom.xml                 # 父POM
-├── db-pwd-core/           # 核心模块
-│   ├── src/main/java/com/dbpwd/
-│   │   ├── crypto/       # SM4加密解密（支持ECB和GCM）
-│   │   ├── core/         # 核心功能
-│   │   ├── model/        # 数据模型
-│   │   ├── cli/          # 命令行工具
-│   │   └── framework/    # 框架集成
-│   └── pom.xml
-├── db-pwd-simple-jdbc-demo/    # JDBC演示
-│   ├── src/main/java/com/dbpwd/demo/
-│   ├── pom.xml
-│   └── target/
-├── db-pwd-spring-boot-demo/    # Spring Boot演示
-│   ├── src/main/java/com/dbpwd/demo/
-│   ├── pom.xml
-│   └── target/
-└── db-pwd-struts-demo/         # Struts演示
-    ├── src/main/java/com/dbpwd/demo/
-    ├── pom.xml
-    └── target/
-```
-
-### 核心类
-
-| 类名 | 功能 |
-|-----|------|
-| `Sm4GCMCipher` | SM4-GCM加解密 |
-| `Sm4Cipher` | SM4-ECB加解密 |
-| `ENCFormat` | 密码格式化工具 |
-| `PasswordEncryptor` | 统一加密接口 |
-| `PasswordDecryptor` | 统一解密接口 |
+---
 
 ## 集成到您的项目
 
-### Maven依赖
+### 模式1集成（程序直接操作）
+
+#### Maven依赖
 
 ```xml
 <dependency>
@@ -411,107 +110,331 @@ db-pwd/
 </dependency>
 ```
 
-### 使用SM4-GCM加密密码
+#### 基本用法
 
 ```java
 import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.crypto.ENCFormat;
 
+// 加密密码
 String plainPassword = "myDatabasePassword";
 String sm4Key = "0123456789abcdef0123456789abcdef";
-
-// 使用SM4-GCM加密
 String cipherText = Sm4GCMCipher.encrypt(plainPassword, sm4Key);
 String formattedEncrypted = ENCFormat.formatSM4GCM(cipherText);
 System.out.println("Encrypted: " + formattedEncrypted);
-// 输出: Encrypted: ENC(SM4-GCM:xxx)
+
+// 解密密码
+String decrypted = Sm4GCMCipher.decrypt(cipherText, sm4Key);
+
+// 使用解密后的密码建立数据库连接
+String jdbcUrl = "jdbc:mysql://localhost:3306/mydb";
+Connection conn = DriverManager.getConnection(jdbcUrl, username, decrypted);
 ```
 
-### 使用推荐的高级接口
+#### 完整示例
 
 ```java
-import com.dbpwd.crypto.PasswordEncryptor;
-import com.dbpwd.crypto.PasswordDecryptor;
+import com.dbpwd.crypto.Sm4GCMCipher;
+import com.dbpwd.crypto.ENCFormat;
 
-String plainPassword = "myDbPassword";
-String sm4Key = "0123456789abcdef0123456789abcdef";
+import java.sql.Connection;
+import java.sql.DriverManager;
 
-// 推荐：使用统一的加密接口（默认使用GCM）
-String encrypted = PasswordEncryptor.encrypt(plainPassword, sm4Key);
-// 得到: ENC(SM4-GCM:xxx)
+public class DatabaseManager {
+    private static final String SM4_KEY = "0123456789abcdef0123456789abcdef";
+    private static final String ENCRYPTED_PASSWORD = "ENC(SM4-GCM:您的密文)";
 
-// 推荐：使用统一的解密接口
-String decrypted = PasswordDecryptor.decrypt(encrypted, sm4Key);
-// 自动识别算法并正确解密
+    public Connection getConnection() throws Exception {
+        // 解密密码
+        String cipherText = ENCFormat.extractCipherText(ENCRYPTED_PASSWORD);
+        String decryptedPassword = Sm4GCMCipher.decrypt(cipherText, SM4_KEY);
+
+        // 建立连接
+        String url = "jdbc:mysql://localhost:3306/mydb?useSSL=false";
+        return DriverManager.getConnection(url, "username", decryptedPassword);
+    }
+}
 ```
 
-## 常见问题
+### 模式2集成（配置文件装饰器）
 
-### Q1: 如何更换SM4-GCM密钥？
+#### Maven依赖
 
-**A**: 修改代码中的`SM4_KEY`常量，密钥必须是16字节（32个十六进制字符）的十六进制字符串。建议使用`Sm4GCMCipher.generateRandomHexKey()`生成随机安全密钥：
+```xml
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-spring-boot-starter</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+#### 配置文件设置
+
+**application.properties**:
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/mydb?useSSL=false
+spring.datasource.username=dbuser
+spring.datasource.password=@my_database@  # 使用占位符
+```
+
+**application.yml**:
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/mydb?useSSL=false
+    username: dbuser
+    password: "@my_database@"  # 使用占位符
+```
+
+#### 应用代码
 
 ```java
-String sm4Key = Sm4GCMCipher.generateRandomHexKey(); // 生成安全的随机密钥
+@RestController
+public class MyController {
+    @Autowired
+    private DataSource dataSource;
+
+    @GetMapping("/data")
+    public List<Data> getData() {
+        // 直接使用DataSource，密码已自动解密
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+        return jdbcTemplate.query("SELECT * FROM data", rowMapper);
+    }
+}
 ```
 
-### Q3: 密码格式ENC(SM4-GCM:xxx)是什么？
+#### 占位符配置
 
-**A**:
-- **ENC**：加密格式标识符
-- **SM4-GCM**：算法标识（SM4国密 + GCM认证模式）
-- **Base64(IV)**：12字节初始化向量的Base64编码
-- **:**：分隔符
-- **Base64(密文+认证标签)**：密文和16字节认证标签的Base64编码
+在 `~/.dbpwd/db.pwd` 文件中配置对应的数据库：
 
-### Q4: 示例中使用的数据库是什么？
+```json
+{
+  "version": "1.0",
+  "databases": [
+    {
+      "id": "my_database",
+      "name": "My Application Database",
+      "type": "mysql",
+      "host": "localhost",
+      "port": 3306,
+      "database": "mydb",
+      "url": "jdbc:mysql://localhost:3306/mydb",
+      "username": "dbuser",
+      "password": "ENC(SM4-GCM:您的密文)"
+    }
+  ]
+}
+```
 
-**A**:
-所有Demo应用都使用MySQL 8.0数据库：
+---
 
-- **Simple JDBC Demo**: MySQL数据库，演示加密和数据库连接
-- **Spring Boot Demo**: MySQL数据库，Spring Boot + JdbcTemplate集成
-- **Struts Demo**: MySQL数据库，演示加密和数据库连接
+## 加密数据库密码
 
-### Q5: 如何设置MySQL数据库？
-
-**A**:
-使用Docker运行MySQL容器（需要Docker Desktop已启动）：
+### 使用命令行工具生成密文
 
 ```bash
-# 启动MySQL容器
-docker run -d \
-  --name dbpwd-mysql \
-  --restart always \
-  -e MYSQL_ROOT_PASSWORD=rootpass123 \
-  -e MYSQL_DATABASE=dbpwd_demo \
-  -e MYSQL_USER=dbpwd \
-  -e MYSQL_PASSWORD=dbpwd123 \
-  -p 3306:3306 \
-  mysql:8.0
+# 加密密码
+java -jar db-pwd-cli.jar encrypt --id my_database --password myPassword123
 
-# 验证MySQL启动状态
-docker logs -f dbpwd-mysql
+# 输出
+# Database ID: my_database
+# Encrypted Password: ENC(SM4-GCM:xxx:yyyy)
+# Files generated: ~/.dbpwd/db.pwd, ~/.dbpwd/sm4.key
 ```
 
-### Q6: MySQL连接失败怎么办？
+### 查看生成的配置文件
 
-**A**:
-1. 检查MySQL容器是否运行：`docker ps | grep dbpwd-mysql`
-2. 等待MySQL启动完成（约30秒）：`docker logs dbpwd-mysql`
-3. 检查端口3306是否被占用：`netstat -ano | findstr :3306` (Windows) 或 `lsof -i :3306` (Linux/Mac)
-4. 手动测试连接：
-   ```bash
-   docker exec -it dbpwd-mysql mysql -u dbpwd -p dbpwd_demo
-   # 输入密码: dbpwd123
-   ```
+**~/.dbpwd/sm4.key**:
+```
+0123456789abcdef0123456789abcdef
+```
+
+**~/.dbpwd/db.pwd**:
+```json
+{
+  "version": "1.0",
+  "databases": [
+    {
+      "id": "my_database",
+      "name": "My Database",
+      "type": "mysql",
+      "host": "localhost",
+      "port": 3306,
+      "database": "mydb",
+      "url": "jdbc:mysql://localhost:3306/mydb",
+      "username": "dbuser",
+      "password": "ENC(SM4-GCM:您的密文)"
+    }
+  ],
+  "updatedAt": "2026-02-10T00:00:00Z"
+}
+```
+
+---
+
+## 多环境配置
+
+### 开发环境
+
+```bash
+# 生成开发环境配置
+java -jar db-pwd-cli.jar encrypt --id my_app_dev --password dev_password_123
+```
+
+### 测试环境
+
+```bash
+# 生成测试环境配置
+java -jar db-pwd-cli.jar encrypt --id my_app_test --password test_password_456
+```
+
+### 生产环境
+
+```bash
+# 生成生产环境配置
+java -jar db-pwd-cli.jar encrypt --id my_app_prod --password prod_secure_pass
+```
+
+### 配置文件示例
+
+```json
+{
+  "version": "1.0",
+  "databases": [
+    {
+      "id": "my_app_dev",
+      "name": "Dev Database",
+      "type": "mysql",
+      "host": "localhost",
+      "port": 3306,
+      "database": "myapp_dev",
+      "url": "jdbc:mysql://localhost:3306/myapp_dev",
+      "username": "dev_user",
+      "password": "ENC(SM4-GCM:dev密文)"
+    },
+    {
+      "id": "my_app_test",
+      "name": "Test Database",
+      "type": "mysql",
+      "host": "test.db.example.com",
+      "port": 3306,
+      "database": "myapp_test",
+      "url": "jdbc:mysql://test.db.example.com:3306/myapp_test",
+      "username": "test_user",
+      "password": "ENC(SM4-GCM:test密文)"
+    },
+    {
+      "id": "my_app_prod",
+      "name": "Production Database",
+      "type": "mysql",
+      "host": "prod.db.example.com",
+      "port": 3306,
+      "database": "myapp_prod",
+      "url": "jdbc:mysql://prod.db.example.com:3306/myapp_prod",
+      "username": "prod_user",
+      "password": "ENC(SM4-GCM:prod密文)"
+    }
+  ],
+  "updatedAt": "2026-02-10T00:00:00Z"
+}
+```
+
+**应用配置文件**:
+```properties
+# 开发环境
+spring.datasource.password=@my_app_dev@
+
+# 测试环境
+# spring.datasource.password=@my_app_test@
+
+# 生产环境
+# spring.datasource.password=@my_app_prod@
+```
+
+---
+
+## 安全最佳实践
+
+### 1. 密钥文件保护
+
+确保密钥文件具有正确的权限：
+```bash
+chmod 600 ~/.dbpwd/sm4.key
+chmod 600 ~/.dbpwd/db.pwd
+chmod 700 ~/.dbpwd/
+```
+
+### 2. 密钥轮换
+
+定期更换SM4密钥：
+```bash
+# 生成新密钥
+java -jar db-pwd-cli.jar keygen
+
+# 使用新密钥重新加密所有密码
+java -jar db-pwd-cli.jar encrypt --id <database_id> --password <new_password>
+```
+
+### 3. 密码复杂度
+
+使用强密码：
+- 最少12个字符
+- 包含大小写字母
+- 包含数字和特殊字符
+- 避免使用字典词汇
+
+### 4. 生产环境部署
+
+生产环境部署建议：
+- 使用配置中心管理 `db.pwd` 和 `sm4.key`
+- 定期审计文件访问日志
+- 使用硬件安全模块(HSM)保护密钥
+- 实施密钥备份和恢复策略
+
+---
+
+## 故障排查
+
+### 常见问题
+
+**问题1**: 解密失败，报错 `AEADBadTagException`
+
+**原因**: 密文被篡改或使用了错误的密钥
+
+**解决方案**:
+- 检查 `sm4.key` 文件内容是否正确
+- 确认 `db.pwd` 文件未被修改
+- 重新生成密文和密钥
+
+**问题2**: 连接MySQL 8.0+失败
+
+**原因**: MySQL 8.0+默认使用`caching_sha2_password`认证方式
+
+**解决方案**: 在JDBC URL中添加`allowPublicKeyRetrieval=true`参数
+```
+jdbc:mysql://localhost:3306/mydb?useSSL=false&allowPublicKeyRetrieval=true
+```
+
+**问题3**: 占位符未被识别
+
+**原因**: 占位符格式不正确或DataSourceDecorator未正确配置
+
+**解决方案**:
+- 确认占位符格式为 `@database_id@`
+- 检查 `db.pwd` 中是否存在对应的数据库配置
+- 查看启动日志确认DataSourceDecorator是否已加载
+
+---
 
 ## 技术支持
 
 如有问题，请参考主项目文档：
-- [设计文档](./CLAUDE.md)
-- [技术文档](./technical/)
-- [项目README](./README.md)
+- [设计文档](./claude.md) - 包含Demo应用密码管理集成模式和占位符设计原则
+- [Demo应用设计](./demo-design.md) - 三个Demo的详细设计架构和机制说明
+- [Demo演示步骤](./demo-run-step.md) - Demo应用的完整演示执行步骤
+- [技术文档](./technical/) - 技术文档目录结构
+- [项目README](./README.md) - 项目主README
+- [demo-run-result.md](./demo-run-result.md) - 所有Demo的详细执行输出
 
 ## 版本信息
 

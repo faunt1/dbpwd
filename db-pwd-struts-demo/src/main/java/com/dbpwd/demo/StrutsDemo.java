@@ -36,7 +36,7 @@ public class StrutsDemo {
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
 
     // MySQL database configuration
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     private static final String DB_USERNAME = "dbpwd";
     private static final String DB_PASSWORD = "dbpwd123";
 
