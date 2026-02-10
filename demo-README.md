@@ -28,6 +28,121 @@
 
 - JDK 8+
 - Maven 3.6+
+- Docker Desktop（用于运行MySQL数据库）
+
+### MySQL数据库设置
+
+在运行Demo应用之前，需要先启动MySQL容器：
+
+```bash
+# 启动MySQL容器
+docker run -d \
+  --name dbpwd-mysql \
+  --restart always \
+  -e MYSQL_ROOT_PASSWORD=rootpass123 \
+  -e MYSQL_DATABASE=dbpwd_demo \
+  -e MYSQL_USER=dbpwd \
+  -e MYSQL_PASSWORD=dbpwd123 \
+  -p 3306:3306 \
+  mysql:8.0
+
+# 验证MySQL启动状态
+docker logs -f dbpwd-mysql
+```
+
+数据库连接信息：
+
+| 参数 | 值 |
+|------|-----|
+| 主机 | localhost |
+| 端口 | 3306 |
+| 数据库 | dbpwd_demo |
+| 用户名 | dbpwd |
+| 密码 | dbpwd123 |
+
+### 停止MySQL数据库
+
+```bash
+docker stop dbpwd-mysql
+```
+
+### 完整Demo演示流程
+
+本Demo演示完整的Database Password Manager使用流程，从命令行工具生成配置文件开始。
+
+#### 步骤1: 构建项目
+
+```bash
+mvn clean install -DskipTests
+```
+
+#### 步骤2: 使用命令行工具生成配置文件
+
+```bash
+# 进入命令行工具目录
+cd db-pwd-core/target
+
+# 运行命令行工具
+java -jar db-pwd-core-1.0.0.jar --interactive
+
+# 进入交互模式后，执行以下命令：
+
+# 1. 列出当前数据库
+list
+
+# 2. 添加MySQL数据库配置
+add
+# 按提示输入：
+# - ID: demo-mysql
+# - 名称: MySQL Demo Database
+# - 类型: MySQL
+# - 主机: localhost
+# - 端口: 3306
+# - 数据库: dbpwd_demo
+# - 用户名: dbpwd
+# - 密码: dbpwd123
+
+# 3. 测试数据库连接
+test demo-mysql
+
+# 4. 列出配置确认
+list
+
+# 5. 退出
+exit
+```
+
+生成的配置文件位置：
+- 密钥文件: `~/.dbpwd/sm4.key`
+- 密码文件: `~/.dbpwd/db.pwd`
+
+#### 步骤3: 验证配置文件
+
+```bash
+# 查看生成的配置文件内容（可选）
+cat ~/.dbpwd/db.pwd
+cat ~/.dbpwd/sm4.key
+```
+
+#### 步骤4: 运行Demo应用
+
+配置文件生成后，可以运行各个Demo应用验证功能：
+
+```bash
+# 运行Simple JDBC Demo
+cd db-pwd-simple-jdbc-demo
+mvn clean package java -jar target/db-pwd-simple-jdbc-demo-1.0.0-jar-with-dependencies.jar
+
+# 运行Spring Boot Demo
+cd db-pwd-spring-boot-demo
+mvn clean package
+java -jar target/db-pwd-spring-boot-demo-1.0.0.jar
+
+# 运行Struts Demo
+cd db-pwd-struts-demo
+mvn clean package
+mvn exec:java -Dexec.mainClass="com.dbpwd.demo.StrutsDemo"
+```
 
 ### 构建所有模块
 
@@ -43,13 +158,20 @@ mvn clean install -DskipTests
 
 **功能**:
 - SM4-GCM加密功能演示
+- MySQL数据库连接测试
 - 密码格式化（ENC格式）
 - 加密解密验证
 - 随机IV验证
+- 完整的数据库CRUD操作演示
+
+**数据库**: MySQL 8.0
 
 **运行方式**:
 
 ```bash
+# 确保MySQL容器正在运行
+docker ps | grep dbpwd-mysql
+
 cd db-pwd-simple-jdbc-demo
 mvn clean package -DskipTests
 java -jar target/db-pwd-simple-jdbc-demo-1.0.0-jar-with-dependencies.jar
@@ -59,6 +181,7 @@ java -jar target/db-pwd-simple-jdbc-demo-1.0.0-jar-with-dependencies.jar
 ```
 === Simple JDBC Demo Application ===
 Demo: Database Password Manager - SM4 Encryption
+Database: MySQL (jdbc:mysql://localhost:3306/dbpwd_demo)
 SM4 key: 0123456789abcdef0123456789abcdef
 
 Step 1: Test SM4 Encryption
@@ -71,13 +194,20 @@ Step 2: Test SM4 Decryption
   Verification: SUCCESS
 
 Step 3: Test ENC Format
-  Database password: postgres_password
+  Database password: mysql_password
   Formatted encrypted: ENC(SM4-GCM:xxx)
-  Decrypted: postgres_password
+  Decrypted: mysql_password
   Verification: SUCCESS
+
+Step 4: Database Connection Test
+  Connecting to MySQL database...
+  Created demo tables
+  Inserted test data
+  Query results: [data from MySQL]
 
 === Demo Completed Successfully ===
 All SM4 encryption and decryption tests passed!
+MySQL database connection successful!
 ```
 
 ### 2. Spring Boot Demo
@@ -87,13 +217,18 @@ All SM4 encryption and decryption tests passed!
 **功能**:
 - Spring Boot Web应用
 - REST API接口
-- H2内存数据库
+- MySQL数据库连接
 - SM4-GCM加密功能演示
-- 数据库初始化
+- 数据库初始化和CRUD操作
+
+**数据库**: MySQL 8.0
 
 **运行方式**:
 
 ```bash
+# 确保MySQL容器正在运行
+docker ps | grep dbpwd-mysql
+
 cd db-pwd-spring-boot-demo
 mvn clean package -DskipTests
 java -jar target/db-pwd-spring-boot-demo-1.0.0.jar
@@ -130,7 +265,7 @@ curl http://localhost:8080/orders
 {
   "application": "Database Password Manager - Spring Boot Demo",
   "status": "running",
-  "database": "H2",
+  "database": "MySQL",
   "description": "Demo application with SM4-GCM encrypted password"
 }
 ```
@@ -141,14 +276,21 @@ curl http://localhost:8080/orders
 
 **功能**:
 - SM4-GCM加密解密验证
+- MySQL数据库连接测试
 - 多密码加密测试
 - 随机IV验证
 - ECB模式向后兼容
 - 认证标签验证
+- 数据库CRUD操作演示
+
+**数据库**: MySQL 8.0
 
 **运行方式**:
 
 ```bash
+# 确保MySQL容器正在运行
+docker ps | grep dbpwd-mysql
+
 cd db-pwd-struts-demo
 mvn clean package -DskipTests
 mvn exec:java -Dexec.mainClass="com.dbpwd.demo.StrutsDemo"
@@ -158,6 +300,7 @@ mvn exec:java -Dexec.mainClass="com.dbpwd.demo.StrutsDemo"
 ```
 === Struts Demo Application (Standalone) ===
 Demo: Database Password Manager - SM4-GCM Encryption
+Database: MySQL (jdbc:mysql://localhost:3306/dbpwd_demo)
 SM4 key: 0123456789abcdef0123456789abcdef
 
 Test 1: Basic SM4-GCM Encryption/Decryption
@@ -193,9 +336,16 @@ Test 5: Backward Compatibility with ECB Format
   ECB Decrypted: test_ecb_compat
   ECB decryption: OK
 
+Test 6: MySQL Database Connection
+  Connected successfully to MySQL
+  Created demo tables
+  Inserted test data
+  Query results: [data from MySQL]
+
 === Demo Completed Successfully ===
 All SM4-GCM encryption and decryption tests passed!
 GCM mode provides authenticated encryption and tamper protection.
+MySQL database connection successful!
 ```
 
 ## GCM模式详解
@@ -367,9 +517,46 @@ String sm4Key = Sm4GCMCipher.generateRandomHexKey(); // 生成安全的随机密
 ### Q4: 示例中使用的数据库是什么？
 
 **A**:
-- **Simple JDBC Demo**: 仅演示加密功能，不涉及数据库连接
-- **Spring Boot Demo**: 使用H2内存数据库
-- **Struts Demo**: 仅演示加密功能，不涉及数据库连接
+所有Demo应用都使用MySQL 8.0数据库：
+
+- **Simple JDBC Demo**: MySQL数据库，演示加密和数据库连接
+- **Spring Boot Demo**: MySQL数据库，Spring Boot + JdbcTemplate集成
+- **Struts Demo**: MySQL数据库，演示加密和数据库连接
+
+### Q5: 如何设置MySQL数据库？
+
+**A**:
+使用Docker运行MySQL容器（需要Docker Desktop已启动）：
+
+```bash
+# 启动MySQL容器
+docker run -d \
+  --name dbpwd-mysql \
+  --restart always \
+  -e MYSQL_ROOT_PASSWORD=rootpass123 \
+  -e MYSQL_DATABASE=dbpwd_demo \
+  -e MYSQL_USER=dbpwd \
+  -e MYSQL_PASSWORD=dbpwd123 \
+  -p 3306:3306 \
+  mysql:8.0
+
+# 验证MySQL启动状态
+docker logs -f dbpwd-mysql
+```
+
+### Q6: MySQL连接失败怎么办？
+
+**A**:
+1. 检查MySQL容器是否运行：`docker ps | grep dbpwd-mysql`
+2. 等待MySQL启动完成（约30秒）：`docker logs dbpwd-mysql`
+3. 检查端口3306是否被占用：`netstat -ano | findstr :3306` (Windows) 或 `lsof -i :3306` (Linux/Mac)
+4. 手动测试连接：
+   ```bash
+   docker exec -it dbpwd-mysql mysql -u dbpwd -p dbpwd_demo
+   # 输入密码: dbpwd123
+   ```
+
+### Q7: 旧系统使用ECB格式怎么办？
 
 ### Q5: 旧系统使用ECB格式怎么办？
 

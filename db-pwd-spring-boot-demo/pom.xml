@@ -19,7 +19,7 @@
 
     <properties>
         <spring-boot.version>2.7.18</spring-boot.version>
-        <h2.version>2.2.224</h2.version>
+        <mysql.version>8.0.33</mysql.version>
     </properties>
 
     <dependencyManagement>
@@ -54,11 +54,11 @@
             <artifactId>spring-jdbc</artifactId>
         </dependency>
 
-        <!-- H2 Database (in-memory for demo) -->
+        <!-- MySQL Database -->
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>${h2.version}</version>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql.version}</version>
         </dependency>
     </dependencies>
 

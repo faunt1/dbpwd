@@ -272,3 +272,62 @@
 ### Sprint 4 设计决策（已确认）
 - **装饰器命名**: `DataSourceDecorator`
 - **Druid实现**: 灵活方式（优先使用Druid Password Callback，回退到装饰器）
+
+---
+
+## Demo应用数据库配置
+
+### MySQL数据库配置
+
+三个Demo应用（Simple JDBC Demo、Spring Boot Demo、Struts Demo）使用MySQL数据库进行演示。
+
+#### 启动MySQL Docker容器
+
+使用以下命令启动MySQL容器（需要Docker Desktop已启动）：
+
+```bash
+docker run -d \
+  --name dbpwd-mysql \
+  --restart always \
+  -e MYSQL_ROOT_PASSWORD=rootpass123 \
+  -e MYSQL_DATABASE=dbpwd_demo \
+  -e MYSQL_USER=dbpwd \
+  -e MYSQL_PASSWORD=dbpwd123 \
+  -p 3306:3306 \
+  mysql:8.0
+```
+
+#### 验证MySQL连接
+
+```bash
+# 等待MySQL启动（约30秒）
+docker logs -f dbpwd-mysql
+
+# 连接测试
+docker exec -it dbpwd-mysql mysql -u dbpwd -p dbpwd_demo
+# 密码: dbpwd123
+```
+
+#### 数据库连接信息
+
+| 参数 | 值 |
+|------|-----|
+| 主机 | localhost |
+| 端口 | 3306 |
+| 数据库 | dbpwd_demo |
+| 用户名 | dbpwd |
+| 密码 | dbpwd123 |
+| JDBC URL | jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC |
+
+#### 停止和清理MySQL容器
+
+```bash
+# 停止容器
+docker stop dbpwd-mysql
+
+# 删除容器
+docker rm dbpwd-mysql
+
+# 删除数据卷（可选，会清空数据库数据）
+docker volume rm dbpwd-mysql-data
+```

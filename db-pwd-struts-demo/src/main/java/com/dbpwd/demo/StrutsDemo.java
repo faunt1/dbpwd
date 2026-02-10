@@ -4,16 +4,23 @@ import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.crypto.ENCFormat;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
 /**
  * Struts demo application
  *
- * Demo Database Password Manager SM4-GCM encryption functionality
+ * Demo Database Password Manager SM4-GCM encryption functionality with MySQL database
  *
  * Features:
  * 1. SM4-GCM encryption for database password (authenticated encryption)
  * 2. Password format handling
  * 3. Encryption/decryption verification
  * 4. Backward compatibility support for ECB format
+ * 5. MySQL database CRUD operations
  *
  * GCM模式优势：
  * - 认证加密：同时提供机密性和完整性保护
@@ -22,11 +29,16 @@ import com.dbpwd.crypto.ENCFormat;
  * - 并行处理：支持并行加密/解密，性能更优
  *
  * @author Database Password Manager
- * @version 4.5
+ * @version 5.0
  */
 public class StrutsDemo {
 
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
+
+    // MySQL database configuration
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC";
+    private static final String DB_USERNAME = "dbpwd";
+    private static final String DB_PASSWORD = "dbpwd123";
 
     /**
      * Database password utility
@@ -79,6 +91,7 @@ public class StrutsDemo {
     public static void main(String[] args) {
         System.out.println("=== Struts Demo Application (Standalone) ===");
         System.out.println("Demo: Database Password Manager - SM4-GCM Encryption");
+        System.out.println("Database: MySQL (" + DB_URL + ")");
         System.out.println("SM4 key: " + TEST_SM4_KEY);
         System.out.println();
 
@@ -156,13 +169,150 @@ public class StrutsDemo {
             System.out.println("  ECB decryption: " + (ecbPassword.equals(ecbDecrypted) ? "OK" : "FAIL"));
             System.out.println();
 
+            // Test 6: MySQL Database Connection
+            System.out.println("Test 6: MySQL Database Connection");
+
+            // Encrypt database password
+            String encryptedDbPassword = Sm4GCMCipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
+            String formattedEncrypted = ENCFormat.formatSM4GCM(encryptedDbPassword);
+            System.out.println("  Database password encrypted: " + formattedEncrypted);
+
+            // Decrypt database password
+            String decryptedDbPassword = Sm4GCMCipher.decrypt(encryptedDbPassword, TEST_SM4_KEY);
+            System.out.println("  Database password decrypted: " + decryptedDbPassword);
+            System.out.println("  Verification: " + (DB_PASSWORD.equals(decryptedDbPassword) ? "SUCCESS" : "FAILED"));
+
+            // Connect to MySQL
+            Connection connection = testDatabaseConnection(DB_URL, DB_USERNAME, decryptedDbPassword);
+            System.out.println("  MySQL connection successful!");
+
+            // Create demo tables
+            createTables(connection);
+            System.out.println("  Demo tables created!");
+
+            // Insert test data
+            insertTestData(connection);
+            System.out.println("  Test data inserted!");
+
+            // Display data
+            System.out.println();
+            System.out.println("  Query Results:");
+            queryAndDisplayData(connection);
+
+            // Close connection
+            connection.close();
+
+            System.out.println();
             System.out.println("=== Demo Completed Successfully ===");
             System.out.println("All SM4-GCM encryption and decryption tests passed!");
+            System.out.println("MySQL database connection and CRUD operations successful!");
             System.out.println("GCM mode provides authenticated encryption and tamper protection.");
 
         } catch (Exception e) {
             System.err.println("Demo failed: " + e.getMessage());
             e.printStackTrace();
+            System.exit(1);
         }
+    }
+
+    /**
+     * Test MySQL database connection
+     */
+    private static Connection testDatabaseConnection(String url, String username, String password) throws Exception {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection(url, username, password);
+            return connection;
+        } catch (ClassNotFoundException e) {
+            throw new Exception("MySQL JDBC driver not found", e);
+        }
+    }
+
+    /**
+     * Create demo tables
+     */
+    private static void createTables(Connection connection) throws Exception {
+        Statement stmt = connection.createStatement();
+
+        // Drop tables if exist
+        stmt.execute("DROP TABLE IF EXISTS orders");
+        stmt.execute("DROP TABLE IF EXISTS users");
+
+        // Create users table
+        stmt.execute("CREATE TABLE users (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "name VARCHAR(100) NOT NULL, " +
+                "email VARCHAR(255) NOT NULL UNIQUE, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+
+        // Create orders table
+        stmt.execute("CREATE TABLE orders (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "user_id INT NOT NULL, " +
+                "product_name VARCHAR(200) NOT NULL, " +
+                "amount DECIMAL(10,2) NOT NULL, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                "FOREIGN KEY (user_id) REFERENCES users(id))");
+
+        stmt.close();
+    }
+
+    /**
+     * Insert test data
+     */
+    private static void insertTestData(Connection connection) throws Exception {
+        Statement stmt = connection.createStatement();
+
+        // Insert users
+        stmt.executeUpdate("INSERT INTO users (name, email) VALUES " +
+                "('Alice', 'alice@example.com'), " +
+                "('Bob', 'bob@example.com'), " +
+                "('Charlie', 'charlie@example.com')");
+
+        // Insert orders
+        stmt.executeUpdate("INSERT INTO orders (user_id, product_name, amount) VALUES " +
+                "(1, 'Product A', 100.00), " +
+                "(2, 'Product B', 200.00), " +
+                "(1, 'Product C', 150.00)");
+
+        stmt.close();
+    }
+
+    /**
+     * Query and display data
+     */
+    private static void queryAndDisplayData(Connection connection) throws Exception {
+        // Query users
+        System.out.println("    Users:");
+        PreparedStatement userStmt = connection.prepareStatement(
+                "SELECT id, name, email, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at FROM users ORDER BY id");
+        ResultSet userRs = userStmt.executeQuery();
+        while (userRs.next()) {
+            System.out.println("      ID: " + userRs.getInt("id") +
+                    ", Name: " + userRs.getString("name") +
+                    ", Email: " + userRs.getString("email") +
+                    ", Created: " + userRs.getString("created_at"));
+        }
+        userRs.close();
+        userStmt.close();
+
+        System.out.println();
+
+        // Query orders with user names
+        System.out.println("    Orders:");
+        PreparedStatement orderStmt = connection.prepareStatement(
+                "SELECT o.id, u.name as user_name, o.product_name, o.amount, " +
+                "DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i:%s') as created_at " +
+                "FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id");
+        ResultSet orderRs = orderStmt.executeQuery();
+        while (orderRs.next()) {
+            System.out.println("      ID: " + orderRs.getInt("id") +
+                    ", User: " + orderRs.getString("user_name") +
+                    ", Product: " + orderRs.getString("product_name") +
+                    ", Amount: " + orderRs.getBigDecimal("amount") +
+                    ", Created: " + orderRs.getString("created_at"));
+        }
+        orderRs.close();
+        orderStmt.close();
     }
 }

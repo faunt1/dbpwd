@@ -19,23 +19,24 @@ import java.util.Map;
  * Spring Boot demo application
  *
  * Demo Database Password Manager in Spring Boot web application
- * Using H2 in-memory database
+ * Using MySQL database
  *
  * Features:
  * 1. Spring Boot web application with REST API
  * 2. JdbcTemplate for database access
  * 3. SM4 encryption for database password
- * 4. H2 in-memory database connection
+ * 4. MySQL database connection with CRUD operations
  *
  * @author Database Password Manager
- * @version 4.4
+ * @version 5.0
  */
 @SpringBootApplication
 public class SpringBootDemo {
 
-    private static final String DB_URL = "jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1";
-    private static final String DB_USERNAME = "sa";
-    private static final String DB_PASSWORD = ""; // H2 default: empty password
+    // MySQL database configuration
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC";
+    private static final String DB_USERNAME = "dbpwd";
+    private static final String DB_PASSWORD = "dbpwd123";
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
 
     static {
@@ -44,7 +45,7 @@ public class SpringBootDemo {
             String encryptedDbPassword = Sm4GCMCipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
             String formattedEncrypted = ENCFormat.formatSM4GCM(encryptedDbPassword);
             System.out.println("=== Spring Boot Demo Application ===");
-            System.out.println("Database: H2 In-Memory");
+            System.out.println("Database: MySQL");
             System.out.println("Database URL: " + DB_URL);
             System.out.println("Database password: " + DB_PASSWORD);
             System.out.println("SM4 key: " + TEST_SM4_KEY);
@@ -92,15 +93,15 @@ public class SpringBootDemo {
     @Bean
     public DataSource dataSource() {
         try {
-            Class.forName("org.h2.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
             DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setDriverClassName("org.h2.Driver");
+            dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
             dataSource.setUrl(DB_URL);
             dataSource.setUsername(DB_USERNAME);
             dataSource.setPassword(DB_PASSWORD);
             return dataSource;
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("H2 JDBC driver not found", e);
+            throw new RuntimeException("MySQL JDBC driver not found", e);
         }
     }
 
@@ -117,33 +118,38 @@ public class SpringBootDemo {
 
             // Create users table
             jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS users (" +
-                    "id IDENTITY PRIMARY KEY, " +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
                     "name VARCHAR(100) NOT NULL, " +
                     "email VARCHAR(255) NOT NULL UNIQUE, " +
-                    "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)");
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 
             // Create orders table
             jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS orders (" +
-                    "id IDENTITY PRIMARY KEY, " +
-                    "user_id BIGINT NOT NULL, " +
+                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "user_id INT NOT NULL, " +
                     "product_name VARCHAR(200) NOT NULL, " +
                     "amount DECIMAL(10,2) NOT NULL, " +
-                    "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                     "FOREIGN KEY (user_id) REFERENCES users(id))");
 
-            // Insert demo data
-            jdbcTemplate.update("INSERT INTO users (name, email) VALUES " +
-                    "('Alice', 'alice@example.com'), " +
-                    "('Bob', 'bob@example.com'), " +
-                    "('Charlie', 'charlie@example.com')");
+            // Check if data already exists
+            Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
+            if (userCount == 0) {
+                // Insert demo data
+                jdbcTemplate.update("INSERT INTO users (name, email) VALUES " +
+                        "('Alice', 'alice@example.com'), " +
+                        "('Bob', 'bob@example.com'), " +
+                        "('Charlie', 'charlie@example.com')");
 
-            jdbcTemplate.update("INSERT INTO orders (user_id, product_name, amount) VALUES " +
-                    "(1, 'Product A', 100.00), " +
-                    "(2, 'Product B', 200.00), " +
-                    "(1, 'Product C', 150.00)");
+                jdbcTemplate.update("INSERT INTO orders (user_id, product_name, amount) VALUES " +
+                        "(1, 'Product A', 100.00), " +
+                        "(2, 'Product B', 200.00), " +
+                        "(1, 'Product C', 150.00)");
 
-            int userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
-            System.out.println("Database initialized with " + userCount + " users");
+                System.out.println("Database initialized with 3 users and 3 orders");
+            } else {
+                System.out.println("Database already contains " + userCount + " users");
+            }
         };
     }
 
@@ -161,8 +167,9 @@ public class SpringBootDemo {
             Map<String, Object> result = new HashMap<>();
             result.put("application", "Database Password Manager - Spring Boot Demo");
             result.put("status", "running");
-            result.put("database", "SQLite");
-            result.put("description", "Demo application with encrypted database password");
+            result.put("database", "MySQL");
+            result.put("description", "Demo application with SM4-GCM encrypted database password");
+            result.put("encryption", "SM4-GCM (Authenticated Encryption)");
             return result;
         }
 
@@ -175,7 +182,7 @@ public class SpringBootDemo {
                 Map<String, Object> result = new HashMap<>();
                 result.put("status", "healthy");
                 result.put("user_count", count);
-                result.put("database", "connected");
+                result.put("database", "MySQL - connected");
                 return result;
             } catch (Exception e) {
                 Map<String, Object> result = new HashMap<>();
@@ -188,17 +195,46 @@ public class SpringBootDemo {
         @GetMapping("/users")
         public List<Map<String, Object>> getUsers() {
             return jdbcTemplate.queryForList(
-                "SELECT id, name, email, created_at as createdAt FROM users ORDER BY id"
+                "SELECT id, name, email, " +
+                "DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%s') as createdAt " +
+                "FROM users ORDER BY id"
             );
         }
 
         @GetMapping("/orders")
         public List<Map<String, Object>> getOrders() {
             return jdbcTemplate.queryForList(
-                "SELECT o.id, u.name as user_name, o.product_name as productName, " +
-                "o.amount, o.created_at " +
+                "SELECT o.id, u.name as userName, o.product_name as productName, " +
+                "o.amount, DATE_FORMAT(o.created_at, '%Y-%m-%dT%H:%i:%s') as createdAt " +
                 "FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id"
             );
+        }
+
+        @GetMapping("/stats")
+        public Map<String, Object> getStats() {
+            Map<String, Object> result = new HashMap<>();
+
+            try {
+                Integer userCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM users", Integer.class
+                );
+                Integer orderCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM orders", Integer.class
+                );
+                Double totalAmount = jdbcTemplate.queryForObject(
+                    "SELECT SUM(amount) FROM orders", Double.class
+                );
+
+                result.put("userCount", userCount);
+                result.put("orderCount", orderCount);
+                result.put("totalAmount", totalAmount != null ? totalAmount : 0.0);
+                result.put("status", "success");
+            } catch (Exception e) {
+                result.put("status", "error");
+                result.put("message", e.getMessage());
+            }
+
+            return result;
         }
     }
 }
