@@ -1,7 +1,6 @@
 package com.dbpwd.demo;
 
 import com.dbpwd.crypto.Sm4GCMCipher;
-import com.dbpwd.crypto.Sm4Cipher;
 import com.dbpwd.crypto.ENCFormat;
 
 import java.sql.Connection;
@@ -15,88 +14,44 @@ import java.sql.Statement;
  *
  * Demo Database Password Manager SM4-GCM encryption functionality with MySQL database
  *
- * Features:
- * 1. SM4-GCM encryption for database password (authenticated encryption)
- * 2. Password format handling
- * 3. Encryption/decryption verification
- * 4. Backward compatibility support for ECB format
- * 5. MySQL database CRUD operations
+ * 集成模式: 模式1（程序直接操作模式）
+ * 解密实现: 程序自己实现（完全手动处理加密解密流程）
+ * 占位符: struts_db
  *
- * GCM模式优势：
- * - 认证加密：同时提供机密性和完整性保护
- * - 防篡改：任何对密文的修改都会导致解密失败
- * - 随机IV：每次加密结果不同，防侧信道攻击
- * - 并行处理：支持并行加密/解密，性能更优
+ * 工作机制:
+ * 1. 程序独立启动，不依赖Spring框架
+ * 2. 直接调用 Sm4GCMCipher.encrypt() 和 Sm4GCMCipher.decrypt() API
+ * 3. 手动处理加密解密流程
+ * 4. 使用明文密码构建JDBC连接串
+ * 5. 建立数据库连接并执行CRUD操作
  *
  * @author Database Password Manager
- * @version 5.0
+ * @version 5.1
  */
 public class StrutsDemo {
 
     private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
+
+    // 占位符标识（用于标识不同的数据库配置）
+    private static final String DB_PLACEHOLDER = "struts_db";
 
     // MySQL database configuration
     private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     private static final String DB_USERNAME = "dbpwd";
     private static final String DB_PASSWORD = "dbpwd123";
 
-    /**
-     * Database password utility
-     */
-    public static class DbConfig {
-        public static final String SM4_KEY = "0123456789abcdef0123456789abcdef";
-
-        /**
-         * Get encrypted database password using SM4-GCM
-         *
-         * GCM模式提供认证加密，更安全
-         */
-        public static String getEncryptedPassword(String plainPassword) {
-            try {
-                String cipherText = Sm4GCMCipher.encrypt(plainPassword, SM4_KEY);
-                return ENCFormat.formatSM4GCM(cipherText);
-            } catch (Exception e) {
-                throw new RuntimeException("Encrypt database password failed: " + e.getMessage(), e);
-            }
-        }
-
-        /**
-         * Decrypt database password
-         *
-         * 支持GCM和ECB格式解析
-         */
-        public static String decryptPassword(String encryptedPassword) {
-            try {
-                String algorithm = ENCFormat.extractAlgorithm(encryptedPassword);
-                String cipherText = ENCFormat.extractCipherText(encryptedPassword);
-
-                if ("SM4".equalsIgnoreCase(algorithm)) {
-                    // 向后兼容ECB格式（仅用于兼容旧数据）
-                    return Sm4Cipher.decrypt(cipherText, SM4_KEY);
-                } else if ("SM4-GCM".equalsIgnoreCase(algorithm)) {
-                    // GCM认证加密（推荐）
-                    return Sm4GCMCipher.decrypt(cipherText, SM4_KEY);
-                } else {
-                    throw new IllegalArgumentException("Unsupported encryption algorithm: " + algorithm);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Decrypt password failed: " + e.getMessage(), e);
-            }
-        }
-    }
-
-    /**
-     * Main method for standalone testing
-     */
     public static void main(String[] args) {
         System.out.println("=== Struts Demo Application (Standalone) ===");
         System.out.println("Demo: Database Password Manager - SM4-GCM Encryption");
-        System.out.println("Database: MySQL (" + DB_URL + ")");
+        System.out.println("集成模式: 模式1（程序直接操作模式）");
+        System.out.println("解密实现: 程序自己实现（完全手动处理加密解密流程）");
+        System.out.println("占位符(Placeholder): " + DB_PLACEHOLDER);
+        System.out.println("实际数据库: dbpwd_demo");
         System.out.println("SM4 key: " + TEST_SM4_KEY);
         System.out.println();
 
         try {
-            // Test 1: Basic SM4-GCM encryption and decryption
+            // Test 1: Basic SM4-GCM Encryption/Decryption
             System.out.println("Test 1: Basic SM4-GCM Encryption/Decryption");
             String password1 = "struts_password_123";
             String encrypted1 = DbConfig.getEncryptedPassword(password1);
@@ -104,10 +59,14 @@ public class StrutsDemo {
             System.out.println("  Password: " + password1);
             System.out.println("  Encrypted: " + encrypted1);
             System.out.println("  Decrypted: " + decrypted1);
-            System.out.println("  Result: " + (password1.equals(decrypted1) ? "SUCCESS" : "FAILED"));
+            boolean test1Result = password1.equals(decrypted1);
+            System.out.println("  Result: " + (test1Result ? "SUCCESS" : "FAILED"));
+            if (!test1Result) {
+                throw new RuntimeException("Test 1 failed: Password decryption mismatch");
+            }
             System.out.println();
 
-            // Test 2: Different passwords
+            // Test 2: Multiple Password Encoding
             System.out.println("Test 2: Multiple Password Encoding");
             String[] passwords = {
                 "admin_pass",
@@ -116,61 +75,23 @@ public class StrutsDemo {
                 "production_db"
             };
 
+            boolean test2Result = true;
             for (String pwd : passwords) {
                 String enc = DbConfig.getEncryptedPassword(pwd);
                 String dec = DbConfig.decryptPassword(enc);
-                System.out.println("  " + pwd + " => " + (pwd.equals(dec) ? "OK" : "FAIL"));
+                boolean passed = pwd.equals(dec);
+                System.out.println("  " + pwd + " => " + (passed ? "OK" : "FAIL"));
+                if (!passed) {
+                    test2Result = false;
+                }
+            }
+            if (!test2Result) {
+                throw new RuntimeException("Test 2 failed: Multiple password encoding failed");
             }
             System.out.println();
 
-            // Test 3: Different SM4-GCM keys
-            System.out.println("Test 3: Different SM4-GCM Keys");
-            String testPassword = "test_db_password";
-            String key1 = "0123456789abcdef0123456789abcdef";
-            String key2 = "abcdef0123456789abcdef0123456789";
-
-            String enc1 = Sm4GCMCipher.encrypt(testPassword, key1);
-            String enc2 = Sm4GCMCipher.encrypt(testPassword, key2);
-
-            String dec1 = Sm4GCMCipher.decrypt(enc1, key1);
-            String dec2 = Sm4GCMCipher.decrypt(enc2, key2);
-
-            System.out.println("  Test password: " + testPassword);
-            System.out.println("  Encrypted with key1: " + ENCFormat.formatSM4GCM(enc1));
-            System.out.println("  Decrypted with key1: " + dec1 + " => " + (testPassword.equals(dec1) ? "OK" : "FAIL"));
-            System.out.println("  Encrypted with key2: " + ENCFormat.formatSM4GCM(enc2));
-            System.out.println("  Decrypted with key2: " + dec2 + " => " + (testPassword.equals(dec2) ? "OK" : "FAIL"));
-            System.out.println("  Keys produce different ciphers: " + (!enc1.equals(enc2) ? "YES" : "NO"));
-            System.out.println();
-
-            // Test 4: GCM random IV property (same password produces different ciphertexts)
-            System.out.println("Test 4: GCM Random IV Property");
-            String samePassword = "test_password_123";
-            String encA = Sm4GCMCipher.encrypt(samePassword, key1);
-            String encB = Sm4GCMCipher.encrypt(samePassword, key1);
-            System.out.println("  Password: " + samePassword);
-            System.out.println("  Encryption A: " + ENCFormat.formatSM4GCM(encA));
-            System.out.println("  Encryption B: " + ENCFormat.formatSM4GCM(encB));
-            System.out.println("  Different ciphertexts: " + (!encA.equals(encB) ? "YES (GCM property)" : "NO"));
-            System.out.println("  Both decrypt correctly: " + (samePassword.equals(Sm4GCMCipher.decrypt(encA, key1)) &&
-                                                     samePassword.equals(Sm4GCMCipher.decrypt(encB, key1)) ? "YES" : "NO"));
-            System.out.println();
-
-            // Test 5: Backward compatibility with ECB format
-            System.out.println("Test 5: Backward Compatibility with ECB Format");
-            String ecbPassword = "test_ecb_compat";
-            String ecbEncrypted = ENCFormat.formatSM4(Sm4Cipher.encrypt(ecbPassword, key1));
-            System.out.println("  ECB Password: " + ecbPassword);
-            System.out.println("  ECB Encrypted: " + ecbEncrypted);
-
-            // Test that we can still decrypt ECB format
-            String ecbDecrypted = DbConfig.decryptPassword(ecbEncrypted);
-            System.out.println("  ECB Decrypted: " + ecbDecrypted);
-            System.out.println("  ECB decryption: " + (ecbPassword.equals(ecbDecrypted) ? "OK" : "FAIL"));
-            System.out.println();
-
-            // Test 6: MySQL Database Connection
-            System.out.println("Test 6: MySQL Database Connection");
+            // Test 3: MySQL Database Connection
+            System.out.println("Test 3: MySQL Database Connection");
 
             // Encrypt database password
             String encryptedDbPassword = Sm4GCMCipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
@@ -180,10 +101,15 @@ public class StrutsDemo {
             // Decrypt database password
             String decryptedDbPassword = Sm4GCMCipher.decrypt(encryptedDbPassword, TEST_SM4_KEY);
             System.out.println("  Database password decrypted: " + decryptedDbPassword);
-            System.out.println("  Verification: " + (DB_PASSWORD.equals(decryptedDbPassword) ? "SUCCESS" : "FAILED"));
+            boolean verified = DB_PASSWORD.equals(decryptedDbPassword);
+            System.out.println("  Verification: " + (verified ? "SUCCESS" : "FAILED"));
+            if (!verified) {
+                throw new RuntimeException("Database password verification failed");
+            }
 
             // Connect to MySQL
-            Connection connection = testDatabaseConnection(DB_URL, DB_USERNAME, decryptedDbPassword);
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, decryptedDbPassword);
             System.out.println("  MySQL connection successful!");
 
             // Create demo tables
@@ -216,15 +142,42 @@ public class StrutsDemo {
     }
 
     /**
-     * Test MySQL database connection
+     * Database password utility class
      */
-    private static Connection testDatabaseConnection(String url, String username, String password) throws Exception {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection connection = DriverManager.getConnection(url, username, password);
-            return connection;
-        } catch (ClassNotFoundException e) {
-            throw new Exception("MySQL JDBC driver not found", e);
+    public static class DbConfig {
+        private static final String SM4_KEY = "0123456789abcdef0123456789abcdef";
+
+        /**
+         * Get encrypted database password using SM4-GCM
+         */
+        public static String getEncryptedPassword(String plainPassword) {
+            try {
+                String cipherText = Sm4GCMCipher.encrypt(plainPassword, SM4_KEY);
+                return ENCFormat.formatSM4GCM(cipherText);
+            } catch (Exception e) {
+                throw new RuntimeException("Encrypt database password failed: " + e.getMessage(), e);
+            }
+        }
+
+        /**
+         * Decrypt database password
+         *
+         * 支持GCM格式解析（仅用于SM4-GCM）
+         */
+        public static String decryptPassword(String encryptedPassword) {
+            try {
+                String algorithm = ENCFormat.extractAlgorithm(encryptedPassword);
+                String cipherText = ENCFormat.extractCipherText(encryptedPassword);
+
+                // 仅支持SM4-GCM格式
+                if ("SM4-GCM".equalsIgnoreCase(algorithm)) {
+                    return Sm4GCMCipher.decrypt(cipherText, SM4_KEY);
+                } else {
+                    throw new IllegalArgumentException("Unsupported encryption algorithm: " + algorithm + ". Only SM4-GCM is supported.");
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Decrypt password failed: " + e.getMessage(), e);
+            }
         }
     }
 

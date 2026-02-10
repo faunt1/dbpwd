@@ -1,5 +1,6 @@
 package com.dbpwd.demo;
 
+import com.dbpwd.framework.DataSourceDecorator;
 import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.crypto.ENCFormat;
 import org.springframework.boot.CommandLineRunner;
@@ -21,36 +22,47 @@ import java.util.Map;
  * Demo Database Password Manager in Spring Boot web application
  * Using MySQL database
  *
- * Features:
- * 1. Spring Boot web application with REST API
- * 2. JdbcTemplate for database access
- * 3. SM4 encryption for database password
- * 4. MySQL database connection with CRUD operations
+ * 集成模式: 模式2（配置文件装饰器模式）
+ * 解密实现: 框架实现（DataSourceDecorator自动拦截和替换）
+ * 占位符: @spring_boot_db@
+ *
+ * 工作机制:
+ * 1. Spring Boot应用启动时加载配置文件
+ * 2. DataSourceDecorator拦截DataSource初始化
+ * 3. 根据占位符 @spring_boot_db@ 查找 db.pwd 中的密文密码
+ * 4. 使用 sm4.key 解密密码
+ * 5. 将明文密码注入到DataSource配置中
+ * 6. 建立连接池和数据库连接
+ * 7. 应用正常使用数据库连接
  *
  * @author Database Password Manager
- * @version 5.0
+ * @version 5.1
  */
 @SpringBootApplication
 public class SpringBootDemo {
 
+    // 占位符标识（用于标识不同的数据库配置）
+    private static final String DB_PLACEHOLDER = "spring_boot_db";
+
     // MySQL database configuration
     private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     private static final String DB_USERNAME = "dbpwd";
-    private static final String DB_PASSWORD = "dbpwd123";
-    private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
+    private static final String SM4_KEY = "0123456789abcdef0123456789abcdef";
 
     static {
         // Test SM4-GCM encryption at class load time
         try {
-            String encryptedDbPassword = Sm4GCMCipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
+            String encryptedDbPassword = Sm4GCMCipher.encrypt("dbpwd123", SM4_KEY);
             String formattedEncrypted = ENCFormat.formatSM4GCM(encryptedDbPassword);
             System.out.println("=== Spring Boot Demo Application ===");
-            System.out.println("Database: MySQL");
+            System.out.println("集成模式: 模式2（配置文件装饰器模式）");
+            System.out.println("解密实现: 框架实现（DataSourceDecorator自动拦截和替换）");
+            System.out.println("占位符(Placeholder): @" + DB_PLACEHOLDER + "@");
+            System.out.println("实际数据库: dbpwd_demo");
             System.out.println("Database URL: " + DB_URL);
-            System.out.println("Database password: " + DB_PASSWORD);
-            System.out.println("SM4 key: " + TEST_SM4_KEY);
+            System.out.println("Database username: " + DB_USERNAME);
+            System.out.println("SM4 key: " + SM4_KEY);
             System.out.println("SM4-GCM Encryption Test:");
-            System.out.println("  Original password: " + DB_PASSWORD);
             System.out.println("  Encrypted password: " + formattedEncrypted);
             System.out.println();
         } catch (Exception e) {
@@ -65,9 +77,9 @@ public class SpringBootDemo {
         System.out.println("Access http://localhost:8080 for demo");
         System.out.println();
 
+        // Test SM4-GCM decryption after application started
         try {
-            // Test SM4-GCM decryption after application started
-            String formattedEncrypted = ENCFormat.formatSM4GCM(Sm4GCMCipher.encrypt(DB_PASSWORD, TEST_SM4_KEY));
+            String formattedEncrypted = ENCFormat.formatSM4GCM(Sm4GCMCipher.encrypt("dbpwd123", SM4_KEY));
             String algorithm = ENCFormat.extractAlgorithm(formattedEncrypted);
             String cipherText = ENCFormat.extractCipherText(formattedEncrypted);
 
@@ -77,12 +89,16 @@ public class SpringBootDemo {
                     "Unsupported encryption algorithm: " + algorithm + ". Only SM4-GCM is supported for new applications");
             }
 
-            String decryptedPassword = Sm4GCMCipher.decrypt(cipherText, TEST_SM4_KEY);
+            String decryptedPassword = Sm4GCMCipher.decrypt(cipherText, SM4_KEY);
 
             System.out.println("SM4-GCM Decryption Test:");
             System.out.println("  Algorithm: " + algorithm);
             System.out.println("  Decrypted password: " + decryptedPassword);
-            System.out.println("  Verification: " + (DB_PASSWORD.equals(decryptedPassword) ? "SUCCESS" : "FAILED"));
+            boolean verified = "dbpwd123".equals(decryptedPassword);
+            System.out.println("  Verification: " + (verified ? "SUCCESS" : "FAILED"));
+            if (!verified) {
+                throw new RuntimeException("密码解密验证失败");
+            }
             System.out.println();
             System.out.println("=== Demo Completed Successfully ===");
         } catch (Exception e) {
@@ -90,19 +106,55 @@ public class SpringBootDemo {
         }
     }
 
+    /**
+     * 创建DataSource Bean
+     *
+     * 配置文件中的密码使用占位符格式: @spring_boot_db@
+     * DataSourceDecorator会自动拦截并解密密码
+     */
     @Bean
-    public DataSource dataSource() {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-            dataSource.setUrl(DB_URL);
-            dataSource.setUsername(DB_USERNAME);
-            dataSource.setPassword(DB_PASSWORD);
+    public DataSource dataSource() throws Exception {
+        Class.forName("com.mysql.cj.jdbc.Driver");
+
+        // 创建原始数据源，密码使用占位符
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        dataSource.setUrl(DB_URL);
+        dataSource.setUsername(DB_USERNAME);
+
+        // 使用占位符作为密码（ DataSourceDecorator 将会解密）
+        String placeholderPassword = "@" + DB_PLACEHOLDER + "@";
+        dataSource.setPassword(placeholderPassword);
+
+        System.out.println("DataSource configured with placeholder password: " + placeholderPassword);
+        System.out.println("DataSourceDecorator will decrypt the password when connection is requested");
+        System.out.println();
+
+        // 使用DataSourceDecorator包装原始数据源
+        // 注意：实际使用中，Spring Boot会自动检测并装饰DataSource
+        return dataSource;
+    }
+
+    /**
+     * DataSource装饰器Bean
+     *
+     * 这个Bean会替换原始的DataSource，在获取连接时自动解密密码
+     */
+    @Bean
+    public DataSource dataSourceDecorator(DataSource dataSource) throws Exception {
+        // 如果已经是装饰器，直接返回
+        if (dataSource instanceof DataSourceDecorator) {
             return dataSource;
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("MySQL JDBC driver not found", e);
         }
+
+        // 使用装饰器包装原始数据源
+        DataSourceDecorator decorator = new DataSourceDecorator(dataSource, DB_PLACEHOLDER, SM4_KEY);
+
+        System.out.println("DataSourceDecorator created for: " + DB_PLACEHOLDER);
+        System.out.println("The placeholder password @" + DB_PLACEHOLDER + "@ will be replaced with decrypted password from db.pwd");
+        System.out.println();
+
+        return decorator;
     }
 
     @Bean
@@ -113,7 +165,6 @@ public class SpringBootDemo {
     @Bean
     public CommandLineRunner initDatabase(JdbcTemplate jdbcTemplate) {
         return args -> {
-            // Initialize demo database
             System.out.println("Initializing demo database...");
 
             // Create users table
@@ -170,6 +221,8 @@ public class SpringBootDemo {
             result.put("database", "MySQL");
             result.put("description", "Demo application with SM4-GCM encrypted database password");
             result.put("encryption", "SM4-GCM (Authenticated Encryption)");
+            result.put("integrationMode", "模式2（配置文件装饰器模式）");
+            result.put("placeholder", "@spring_boot_db@");
             return result;
         }
 
