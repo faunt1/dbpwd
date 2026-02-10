@@ -231,6 +231,7 @@
 - [JDK版本兼容](technical/jdk-compatibility.md) - JDK 8/11/17+支持对比
 
 ### 集成实现
+- [集成场景和方案](technical/integration-scenarios.md) - 6种集成场景详解和方案选择
 - [配置中心集成](technical/config-center.md) - 配置中心目录结构和同步策略
 - [命令行工具](technical/command-line.md) - CLI命令和参数说明
 - [连接池装饰器](technical/connection-pool.md) - 连接池装饰器实现
