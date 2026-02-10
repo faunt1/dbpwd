@@ -1,5 +1,6 @@
 package com.dbpwd.demo;
 
+import com.dbpwd.core.PasswordProvider;
 import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.crypto.ENCFormat;
 
@@ -15,22 +16,19 @@ import java.sql.Statement;
  * Demo Database Password Manager SM4-GCM encryption functionality with MySQL database
  *
  * 集成模式: 模式1（程序直接操作模式）
- * 解密实现: 程序自己实现（完全手动处理加密解密流程）
+ * 解密实现: 程序自己实现（调用PasswordProvider API）
  * 占位符: struts_db
  *
  * 工作机制:
  * 1. 程序独立启动，不依赖Spring框架
- * 2. 直接调用 Sm4GCMCipher.encrypt() 和 Sm4GCMCipher.decrypt() API
- * 3. 手动处理加密解密流程
- * 4. 使用明文密码构建JDBC连接串
- * 5. 建立数据库连接并执行CRUD操作
+ * 2. 调用PasswordProvider.getDatabasePassword()一步获取解密后的密码
+ * 3. 使用明文密码构建JDBC连接串
+ * 4. 建立数据库连接并执行CRUD操作
  *
  * @author Database Password Manager
- * @version 5.1
+ * @version 5.3
  */
 public class StrutsDemo {
-
-    private static final String TEST_SM4_KEY = "0123456789abcdef0123456789abcdef";
 
     // 占位符标识（用于标识不同的数据库配置）
     private static final String DB_PLACEHOLDER = "struts_db";
@@ -38,16 +36,14 @@ public class StrutsDemo {
     // MySQL database configuration
     private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
     private static final String DB_USERNAME = "dbpwd";
-    private static final String DB_PASSWORD = "dbpwd123";
 
     public static void main(String[] args) {
         System.out.println("=== Struts Demo Application (Standalone) ===");
         System.out.println("Demo: Database Password Manager - SM4-GCM Encryption");
         System.out.println("集成模式: 模式1（程序直接操作模式）");
-        System.out.println("解密实现: 程序自己实现（完全手动处理加密解密流程）");
+        System.out.println("解密实现: 程序自己实现（调用PasswordProvider API）");
         System.out.println("占位符(Placeholder): " + DB_PLACEHOLDER);
         System.out.println("实际数据库: dbpwd_demo");
-        System.out.println("SM4 key: " + TEST_SM4_KEY);
         System.out.println();
 
         try {
@@ -90,26 +86,16 @@ public class StrutsDemo {
             }
             System.out.println();
 
-            // Test 3: MySQL Database Connection
-            System.out.println("Test 3: MySQL Database Connection");
+            // Test 3: MySQL Database Connection using PasswordProvider
+            System.out.println("Test 3: MySQL Database Connection (using PasswordProvider)");
 
-            // Encrypt database password
-            String encryptedDbPassword = Sm4GCMCipher.encrypt(DB_PASSWORD, TEST_SM4_KEY);
-            String formattedEncrypted = ENCFormat.formatSM4GCM(encryptedDbPassword);
-            System.out.println("  Database password encrypted: " + formattedEncrypted);
-
-            // Decrypt database password
-            String decryptedDbPassword = Sm4GCMCipher.decrypt(encryptedDbPassword, TEST_SM4_KEY);
-            System.out.println("  Database password decrypted: " + decryptedDbPassword);
-            boolean verified = DB_PASSWORD.equals(decryptedDbPassword);
-            System.out.println("  Verification: " + (verified ? "SUCCESS" : "FAILED"));
-            if (!verified) {
-                throw new RuntimeException("Database password verification failed");
-            }
+            // 使用PasswordProvider获取解密后的数据库密码
+            String plainPassword = PasswordProvider.getDatabasePassword(DB_PLACEHOLDER);
+            System.out.println("  解密后的密码: " + plainPassword);
 
             // Connect to MySQL
             Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, decryptedDbPassword);
+            Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, plainPassword);
             System.out.println("  MySQL connection successful!");
 
             // Create demo tables
