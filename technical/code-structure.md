@@ -93,12 +93,12 @@ db-pwd/                                # 父项目 (打包类型: pom)
 
 #### crypto/ - 加密解密层
 
-| 类名 | 职责 | 说明 |
-|------|------|------|
+| 类名 | 职责 |
+|------|------|
 | Sm4Cipher | SM4-ECB模式加解密实现 |
 | Sm4GCMCipher | SM4-GCM认证加密模式实现 |
 | ENCFormat | ENC格式解析器，解析 `ENC(算法:密文)` 格式 |
-| PasswordEncryptor | 统一加密入口，支持ENC格式 |
+| PasswordEncryptor | 统一加密入口 |
 | PasswordDecryptor | 统一解密入口，自动格式检测 |
 
 #### framework/ - 框架集成

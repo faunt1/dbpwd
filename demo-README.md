@@ -12,16 +12,6 @@
 
 ## 为什么使用SM4-GCM？
 
-**SM4-GCM（Galois/Counter Mode）** 是SM4算法的认证加密模式，相比ECB模式有以下优势：
-
-| 特性 | ECB模式 | GCM模式 |
-|-----|--------|---------|
-| **认证加密** | ❌ 仅提供机密性 | ✅ 同时提供机密性和完整性保护 |
-| **防篡改** | ❌ 无法检测密文篡改 | ✅ 任何篡改都会导致解密失败 |
-| **随机IV** | ❌ 相同明文产生相同密文 | ✅ 每次加密结果不同 |
-| **抗侧信道** | ❌ 易受模式分析攻击 | ✅ 抗侧信道攻击能力更强 |
-| **标准符合** | 基础加密模式 | ✅ 符合NIST SP 800-38D标准 |
-
 ## 快速开始
 
 ### 前置要求
@@ -279,7 +269,6 @@ curl http://localhost:8080/orders
 - MySQL数据库连接测试
 - 多密码加密测试
 - 随机IV验证
-- ECB模式向后兼容
 - 认证标签验证
 - 数据库CRUD操作演示
 
@@ -330,13 +319,7 @@ Test 4: GCM Random IV Property
   Different ciphertexts: YES (GCM property)
   Both decrypt correctly: YES
 
-Test 5: Backward Compatibility with ECB Format
-  ECB Password: test_ecb_compat
-  ECB Encrypted: ENC(SM4:zzz)
-  ECB Decrypted: test_ecb_compat
-  ECB decryption: OK
-
-Test 6: MySQL Database Connection
+Test 5: MySQL Database Connection
   Connected successfully to MySQL
   Created demo tables
   Inserted test data
@@ -408,13 +391,13 @@ db-pwd/
 
 ### 核心类
 
-| 类名 | 功能 | 推荐模式 |
-|-----|------|---------|
-| `Sm4GCMCipher` | SM4-GCM加解密 | ✅ 推荐使用 |
-| `Sm4Cipher` | SM4-ECB加解密 | ⚠️ 仅用于向后兼容 |
-| `ENCFormat` | 密码格式化工具 | - |
-| `PasswordEncryptor` | 统一加密接口（推荐GCM） | ✅ 推荐使用 |
-| `PasswordDecryptor` | 统一解密接口（支持向后兼容） | ✅ 推荐使用 |
+| 类名 | 功能 |
+|-----|------|
+| `Sm4GCMCipher` | SM4-GCM加解密 |
+| `Sm4Cipher` | SM4-ECB加解密 |
+| `ENCFormat` | 密码格式化工具 |
+| `PasswordEncryptor` | 统一加密接口 |
+| `PasswordDecryptor` | 统一解密接口 |
 
 ## 集成到您的项目
 
@@ -444,31 +427,6 @@ System.out.println("Encrypted: " + formattedEncrypted);
 // 输出: Encrypted: ENC(SM4-GCM:xxx)
 ```
 
-### 解密密码（支持向后兼容）
-
-```java
-import com.dbpwd.crypto.Sm4GCMCipher;
-import com.dbpwd.crypto.Sm4Cipher;
-import com.dbpwd.crypto.ENCFormat;
-
-String encryptedPassword = "ENC(SM4-GCM:xxx)";
-String sm4Key = "0123456789abcdef0123456789abcdef";
-
-// 解密（自动识别算法）
-String algorithm = ENCFormat.extractAlgorithm(encryptedPassword);
-String cipherText = ENCFormat.extractCipherText(encryptedPassword);
-
-if ("SM4".equalsIgnoreCase(algorithm)) {
-    // 向后兼容ECB格式
-    String plainPassword = Sm4Cipher.decrypt(cipherText, sm4Key);
-} else if ("SM4-GCM".equalsIgnoreCase(algorithm)) {
-    // GCM认证加密
-    String plainPassword = Sm4GCMCipher.decrypt(cipherText, sm4Key);
-} else {
-    throw new IllegalArgumentException("Unsupported algorithm: " + algorithm);
-}
-```
-
 ### 使用推荐的高级接口
 
 ```java
@@ -482,22 +440,14 @@ String sm4Key = "0123456789abcdef0123456789abcdef";
 String encrypted = PasswordEncryptor.encrypt(plainPassword, sm4Key);
 // 得到: ENC(SM4-GCM:xxx)
 
-// 推荐：使用统一的解密接口（支持GCM和ECB）
+// 推荐：使用统一的解密接口
 String decrypted = PasswordDecryptor.decrypt(encrypted, sm4Key);
 // 自动识别算法并正确解密
 ```
 
 ## 常见问题
 
-### Q1: 为什么推荐使用SM4-GCM而不是ECB？
-
-**A**:
-- **安全性**：GCM提供认证加密，能检测密文篡改
-- **标准符合**：符合NIST SP 800-38D等国际标准
-- **随机IV**：每次加密结果不同，提高抗侧信道能力
-- **完整性验证**：防止重放攻击和选择明文攻击
-
-### Q2: 如何更换SM4-GCM密钥？
+### Q1: 如何更换SM4-GCM密钥？
 
 **A**: 修改代码中的`SM4_KEY`常量，密钥必须是16字节（32个十六进制字符）的十六进制字符串。建议使用`Sm4GCMCipher.generateRandomHexKey()`生成随机安全密钥：
 
@@ -556,36 +506,6 @@ docker logs -f dbpwd-mysql
    # 输入密码: dbpwd123
    ```
 
-### Q7: 旧系统使用ECB格式怎么办？
-
-### Q5: 旧系统使用ECB格式怎么办？
-
-**A**:
-系统支持向后兼容：
-- `PasswordDecryptor.decrypt()` 能自动识别ECB和GCM格式
-- 可以使用`PasswordEncryptor.migrateECBToGCM()`将旧密码迁移到GCM
-- 新密码建议全部使用SM4-GCM
-
-```java
-// 将ECB格式迁移到GCM
-String oldPassword = "ENC(SM4:old_ecb_cipher)";
-String newPassword = PasswordEncryptor.migrateECBToGCM(oldPassword, sm4Key);
-```
-
-## SM4-GCM vs ECB对比
-
-| 特性 | ECB模式 | GCM模式 | 说明 |
-|-----|--------|---------|------|
-| **加密算法** | SM4 | SM4 | 使用相同的SM4分组密码 |
-| **工作模式** | ECB | GCM | 分组加密/计数器模式 |
-| **完整性验证** | ❌ 无 | ✅ 16字节认证标签 | GCM提供完整性验证 |
-| **初始化向量** | ❌ 不使用 | ✅ 12字节随机IV | 每次加密IV不同 |
-| **相同明文** | ✅ 相同密文 | ❌ 不同密文 | GCM防模式分析 |
-| **侧信道攻击** | ❌ 易受 | ✅ 抗攻击 | GCM更安全 |
-| **并行处理** | ❌ 不支持 | ✅ 支持 | GCM性能更优 |
-| **符合标准** | 基础加密 | NIST SP 800-38D | GCM符合国际标准 |
-| **推荐度** | ⚠️ 约向后兼容 | ✅ 强烈推荐 | GCM更安全 |
-
 ## 技术支持
 
 如有问题，请参考主项目文档：
@@ -596,17 +516,7 @@ String newPassword = PasswordEncryptor.migrateECBToGCM(oldPassword, sm4Key);
 ## 版本信息
 
 - 版本: 1.0.0
-- 最后更新: 2026-02-09
+- 最后更新: 2026-02-10
 - Java版本: JDK 8+
 - 构建工具: Maven 3.6+
 - 加密算法: SM4-GCM（认证加密）
-
-## 迁移建议
-
-如果您正在使用ECB模式，建议按以下步骤迁移：
-
-1. **保留Sm4Cipher类**：以便支持向后兼容
-2. **新代码使用GCM**：所有新加密使用`Sm4GCMCipher`
-3. **使用高级接口**：使用`PasswordEncryptor`和`PasswordDecryptor`
-4. **文档更新**：更新文档说明使用GCM模式
-5. **密码迁移**：使用`migrateECBToGCM()`迁移旧密码
