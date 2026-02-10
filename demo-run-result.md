@@ -13,7 +13,7 @@
 | Java版本 | JDK 8+ |
 | 构建工具 | Maven 3.6+ |
 | 加密算法 | SM4-GCM（认证加密） |
-| MySQL版本 | MySQL 8.0.45 |
+| H2版本 | H2 Database Engine（内存数据库） |
 | 操作系统 | Windows |
 
 ---
@@ -53,8 +53,8 @@ $ mvn clean package -DskipTests -q
 | 集成模式 | 模式1（程序直接操作模式） |
 | 解密实现方式 | 程序自己实现（调用PasswordProvider API） |
 | 占位符 | `simple_jdbc_db` |
-| 实际数据库 | `dbpwd_demo` (MySQL) |
-| JDBC URL | jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true |
+| 实际数据库 | `dbpwd_demo` (H2) |
+| JDBC URL | jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1 |
 | SM4 Key | 0123456789abcdef0123456789abcdef (从sm4.key读取) |
 | 密码文件 | ~/.dbpwd/db.pwd |
 
@@ -88,8 +88,8 @@ INFO: SM4密钥加载成功: C:\Users\faunt/.dbpwd/sm4.key
 INFO: 密码文件加载成功: C:\Users\faunt/.dbpwd/db.pwd (加载 3 个数据库配置)
   解密后的密码: dbpwd123
 
-Step 2: 测试MySQL数据库连接
-  Connected to MySQL successfully
+Step 2: 测试H2数据库连接
+  Connected to H2 successfully
 
 Step 3: 创建数据库表
   表创建成功!
@@ -121,12 +121,12 @@ MySQL数据库连接成功！
 |--------|------|
 | PasswordProvider一步调用 | ✅ 通过 |
 | SM4-GCM加密解密 | ✅ 通过 |
-| MySQL数据库连接 | ✅ 通过 |
+| H2数据库连接 | ✅ 通过 |
 | 数据库CRUD操作 | ✅ 通过 |
 | 配置文件读取(sm4.key) | ✅ 通过 |
 | 配置文件读取(db.pwd) | ✅ 通过 |
 
-**总结**: Simple JDBC Demo验证成功，使用PasswordProvider.getDatabasePassword()一步调用成功获取解密后的密码，SM4-GCM认证加密功能正常，MySQL数据库连接和CRUD操作正常。
+**总结**: Simple JDBC Demo验证成功，使用PasswordProvider.getDatabasePassword()一步调用成功获取解密后的密码，SM4-GCM认证加密功能正常，H2内存数据库连接和CRUD操作正常。
 
 ---
 
@@ -139,8 +139,8 @@ MySQL数据库连接成功！
 | 集成模式 | 模式2（配置文件装饰器模式） |
 | 解密实现方式 | 框架实现（DataSourceDecorator） |
 | 占位符 | `spring_boot_db` |
-| 实际数据库 | `dbpwd_demo` (MySQL) |
-| JDBC URL | jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true |
+| 实际数据库 | `dbpwd_demo` (H2) |
+| JDBC URL | jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1 |
 | SM4 Key | 0123456789abcdef0123456789abcdef |
 | 服务端口 | 8080 |
 
@@ -157,8 +157,8 @@ java -jar target/db-pwd-spring-boot-demo-1.0.0.jar
 
 ```
 === Spring Boot Demo Application ===
-Database: MySQL
-Database URL: jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+Database: H2
+Database URL: jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1
 Database password: dbpwd123
 SM4 key: 0123456789abcdef0123456789abcdef
 SM4-GCM Encryption Test:
@@ -214,11 +214,11 @@ $ curl http://localhost:8080/stats
 |--------|------|
 | Spring Boot应用启动 | ✅ 通过（1.603秒） |
 | SM4-GCM加密解密 | ✅ 通过 |
-| MySQL数据库连接 | ✅ 通过 |
+| H2数据库连接 | ✅ 通过 |
 | REST API接口 | ✅ 全部正常运行 |
 | 数据库初始化 | ✅ 通过（3个用户、3个订单） |
 
-**总结**: Spring Boot Demo验证成功，SM4-GCM认证加密功能正常，MySQL数据库连接成功，所有REST API接口正常运行。
+**总结**: Spring Boot Demo验证成功，SM4-GCM认证加密功能正常，H2内存数据库连接成功，所有REST API接口正常运行。
 
 ---
 
@@ -231,8 +231,8 @@ $ curl http://localhost:8080/stats
 | 集成模式 | 模式1（程序直接操作模式） |
 | 解密实现方式 | 程序自己实现 |
 | 占位符 | `struts_db` |
-| 实际数据库 | `dbpwd_demo` (MySQL) |
-| JDBC URL | jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true |
+| 实际数据库 | `dbpwd_demo` (H2) |
+| JDBC URL | jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1 |
 | SM4 Key | 0123456789abcdef0123456789abcdef |
 
 ### 执行命令
@@ -248,7 +248,7 @@ mvn exec:java -Dexec.mainClass="com.dbpwd.demo.StrutsDemo"
 ```
 === Struts Demo Application (Standalone) ===
 Demo: Database Password Manager - SM4-GCM Encryption
-Database: MySQL (jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true)
+Database: H2 (jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1)
 SM4 key: 0123456789abcdef0123456789abcdef
 
 Test 1: Basic SM4-GCM Encryption/Decryption

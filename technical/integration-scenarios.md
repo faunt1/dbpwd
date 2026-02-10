@@ -227,7 +227,7 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     druid:
-      url: jdbc:mysql://192.168.1.100:3306/acdb_main
+      url: jdbc:h2:mem:acdb_main
       username: app_user
       password: prod_db_main  # 使用数据库ID作为占位符
       driver-class-name: com.mysql.cj.jdbc.Driver
@@ -252,9 +252,9 @@ public class SimpleDruidExample {
         DruidDataSource dataSource = DruidPasswordCallback.createDataSource(
             "prod_db_main",  // 数据库ID（密码占位符）
             new DatabaseConfig(
-                "jdbc:mysql://192.168.1.100:3306/acdb_main",
-                "app_user",
-                "com.mysql.cj.jdbc.Driver"
+                "jdbc:h2:mem:acdb_main",
+                "sa",
+                "org.h2.Driver"
             ),
             "~/.dbpwd/db.pwd",
             "~/.dbpwd/sm4.key"
@@ -1551,9 +1551,9 @@ public class DbPwdDruidDataSourceFactory implements DataSourceFactory {
         <environment id="development">
             <transactionManager type="JDBC"/>
             <dataSource type="com.dbpwd.mybatis.factory.DbPwdDataSourceFactory">
-                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
-                <property name="url" value="jdbc:mysql://192.168.1.100:3306/acdb_main"/>
-                <property name="username" value="app_user"/>
+                <property name="driver" value="org.h2.Driver"/>
+                <property name="url" value="jdbc:h2:mem:acdb_main"/>
+                <property name="username" value="sa"/>
                 <property name="password" value="prod_db_main"/>
 
                 <!-- 可选：配置密钥文件路径 -->
@@ -1581,9 +1581,9 @@ public class DbPwdDruidDataSourceFactory implements DataSourceFactory {
         <environment id="development">
             <transactionManager type="JDBC"/>
             <dataSource type="com.dbpwd.mybatis.factory.DbPwdDruidDataSourceFactory">
-                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
-                <property name="url" value="jdbc:mysql://192.168.1.100:3306/acdb_main"/>
-                <property name="username" value="app_user"/>
+                <property name="driver" value="org.h2.Driver"/>
+                <property name="url" value="jdbc:h2:mem:acdb_main"/>
+                <property name="username" value="sa"/>
                 <property name="password" value="prod_db_main"/>
 
                 <!-- 连接池参数 -->

@@ -15,53 +15,27 @@
 
 ---
 
-## MySQL数据库设置
+## H2数据库设置
 
-在运行Demo应用之前，需要先启动MySQL容器。
+所有Demo使用H2内存数据库，无需外部数据库服务。启动Demo时会自动创建内存数据库和表结构。
 
-### 启动MySQL容器
-
-```bash
-# 启动MySQL容器
-docker run -d \
-  --name dbpwd-mysql \
-  --restart always \
-  -e MYSQL_ROOT_PASSWORD=rootpass123 \
-  -e MYSQL_DATABASE=dbpwd_demo \
-  -e MYSQL_USER=dbpwd \
-  -e MYSQL_PASSWORD=dbpwd123 \
-  -p 3306:3306 \
-  mysql:8.0
-
-# 验证MySQL启动状态
-docker logs dbpwd-mysql
-```
-
-### 数据库连接信息
+**H2数据库配置**:
 
 | 参数 | 值 |
 |------|-----|
-| 主机 | localhost |
-| 端口 | 3306 |
-| 数据库 | dbpwd_demo |
-| 用户名 | dbpwd |
-| 密码 | dbpwd123 |
+| 用户名 | sa |
+| 密码（明文） | `dbpwd_h2_demo_password_2024` |
+| 存储方式 | 在db.pwd中经过SM4加密 |
 
 ### Demo占位符映射
 
-| Demo应用 | 占位符(在db.pwd中) | 实际数据库 | 说明 |
+| Demo应用 | 占位符(在db.pwd中) | H2数据库名 | 说明 |
 |---------|------------------|-----------|------|
 | Simple JDBC Demo | `simple_jdbc_db` | `dbpwd_demo` | 模式1示例 |
 | Spring Boot Demo | `spring_boot_db` | `dbpwd_demo` | 模式2示例 |
 | Struts Demo | `struts_db` | `dbpwd_demo` | 模式1示例 |
 
-**说明**: 三个Demo使用不同的占位符，但实际都指向同一个MySQL数据库 `dbpwd_demo`。这种设计展示了多应用共享同一数据库的不同配置方式。
-
-### 停止MySQL数据库
-
-```bash
-docker stop dbpwd-mysql
-```
+**说明**: 三个Demo使用不同的占位符，但实际都指向同一个H2内存数据库 `dbpwd_demo`。这种设计展示了多应用共享同一数据库的不同配置方式。
 
 ---
 
@@ -79,14 +53,14 @@ mvn clean package -DskipTests
 
 **Demo信息**:
 - **集成模式**: 模式1（程序直接操作模式）
-- **解密实现方式**: 程序自己实现（直接调用Sm4GCMCipher API）
-- **占位符**: `simple_jdbc_db`（指向实际MySQL数据库 `dbpwd_demo`）
-- **实际数据库**: `dbpwd_demo` (MySQL)
+- **解密实现方式**: 程序自己实现（直接调用PasswordProvider API）
+- **占位符**: `simple_jdbc_db`（指向实际H2数据库 `dbpwd_demo`）
+- **实际数据库**: `dbpwd_demo` (H2)
 
 **工作机制**:
-1. 程序直接调用 `Sm4GCMCipher.encrypt()` 加密密码
-2. 程序直接调用 `Sm4GCMCipher.decrypt()` 解密密码
-3. 使用明文密码构建JDBC连接串
+1. 程序直接到 `db.pwd` 中获取对应数据库的密文密码
+2. 调用解密程序生成密码密文
+3. 构建H2内存数据库JDBC连接串
 4. 建立数据库连接并执行CRUD操作
 
 #### 执行命令
@@ -157,8 +131,8 @@ GCM mode provides authenticated encryption with tamper protection.
 **Demo信息**:
 - **集成模式**: 模式2（配置文件装饰器模式）
 - **解密实现方式**: 框架实现（DataSourceDecorator自动拦截和替换）
-- **占位符**: `spring_boot_db`（指向实际MySQL数据库 `dbpwd_demo`）
-- **实际数据库**: `dbpwd_demo` (MySQL)
+- **占位符**: `spring_boot_db`（指向实际H2数据库 `dbpwd_demo`）
+- **实际数据库**: `dbpwd_demo` (H2)
 
 **工作机制**:
 1. Spring Boot应用启动时加载配置文件
@@ -250,14 +224,14 @@ SM4-GCM Decryption Test:
 **Demo信息**:
 - **集成模式**: 模式1（程序直接操作模式）
 - **解密实现方式**: 程序自己实现（独立应用，完全手动处理加密解密流程）
-- **占位符**: `struts_db`（指向实际MySQL数据库 `dbpwd_demo`）
-- **实际数据库**: `dbpwd_demo` (MySQL)
+- **占位符**: `struts_db`（指向实际H2数据库 `dbpwd_demo`）
+- **实际数据库**: `dbpwd_demo` (H2)
 
 **工作机制**:
 1. 程序独立启动，不依赖Spring框架
-2. 直接调用 `Sm4GCMCipher.encrypt()` 和 `Sm4GCMCipher.decrypt()` API
-3. 手动处理加密解密流程
-4. 使用明文密码构建JDBC连接串
+2. 直接到 `db.pwd` 中获取对应数据库的密文密码
+3. 调用解密程序生成密码密文
+4. 构建H2内存数据库JDBC连接串
 5. 建立数据库连接并执行CRUD操作
 
 #### 执行命令

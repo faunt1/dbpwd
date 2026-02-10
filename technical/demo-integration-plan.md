@@ -296,6 +296,22 @@ public class UserServlet extends HttpServlet {
 
 ## 统一数据库设计
 
+### H2数据库密码配置
+
+**重要决策**: 所有Demo使用方案B，即H2数据库设置加密密码。
+
+**H2密码方案说明**:
+- H2数据库设置密码（两层保护）
+- db.pwd中存储的是连接H2数据库的密码（SM4加密）
+- 更接近真实生产场景
+
+**H2内存数据库密码特点**:
+- 虽然是内存数据库，但仍需连接密码
+- JDBC连接时需要提供用户名和密码
+- 密码通过dbpwd管理，实现安全解密
+
+### 数据库表结构
+
 所有Demo共享相同的H2内存数据库结构：
 
 ```sql
@@ -319,6 +335,209 @@ CREATE TABLE posts (
 ---
 
 ## 统一db.pwd配置示例
+
+### H2数据库密码
+
+所有Demo使用相同的H2数据库密码（便于统一管理）：
+
+| 配置项 | 值 |
+|-------|-----|
+| H2用户名 | `sa` |
+| H2密码（明文） | `dbpwd_h2_demo_password_2024` |
+
+**注意**: H2密码需要在命令行工具中通过encrypt加密后存储到db.pwd中。
+
+### db.pwd完整配置示例
+
+```bash
+# 使用命令行工具加密6个Demo的H2数据库密码
+java -jar db-pwd-cli.jar encrypt \
+  --id simple_jdbc_db \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+
+# 对其他5个Demo重复执行相同操作
+java -jar db-pwd-cli.jar encrypt \
+  --id druid_demo_db \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:druid_demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+
+java -jar db-pwd-cli.jar encrypt \
+  --id spring_boot_db \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:spring_boot_demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+
+java -jar db-pwd-cli.jar encrypt \
+  --id spring_framework_db \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:spring_framework_demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+
+java -jar db-pwd-cli.jar encrypt \
+  --id mybatis_demo_db \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:mybatis_demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+
+java -jar db-pwd-cli.jar encrypt \
+  --id servlet_demo_db \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:servlet_demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+```
+
+### 生成的db.pwd配置文件
+
+```json
+{
+  "version": "1.0",
+  "databases": [
+    {
+      "id": "simple_jdbc_db",
+      "name": "Simple JDBC Demo Database",
+      "type": "h2",
+      "driverClassName": "org.h2.Driver",
+      "jdbcUrl": "jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1",
+      "hostname": "mem",
+      "port": 0,
+      "databaseName": "dbpwd_demo",
+      "url": "jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1",
+      "username": "sa",
+      "password": "ENC(SM4:密文)",
+      "encrypted": true,
+      "createdAt": "2026-02-11T00:00:00Z",
+      "updatedAt": "2026-02-11T00:00:00Z"
+    },
+    {
+      "id": "druid_demo_db",
+      "name": "Druid Demo Database",
+      "type": "h2",
+      "driverClassName": "org.h2.Driver",
+      "jdbcUrl": "jdbc:h2:mem:druid_demo;DB_CLOSE_DELAY=-1",
+      "hostname": "mem",
+      "port": 0,
+      "databaseName": "druid_demo",
+      "url": "jdbc:h2:mem:druid_demo;DB_CLOSE_DELAY=-1",
+      "username": "sa",
+      "password": "ENC(SM4:密文)",
+      "encrypted": true,
+      "createdAt": "2026-02-11T00:00:00Z",
+      "updatedAt": "2026-02-11T00:00:00Z"
+    },
+    {
+      "id": "spring_boot_db",
+      "name": "Spring Boot Demo Database",
+      "type": "h2",
+      "driverClassName": "org.h2.Driver",
+      "jdbcUrl": "jdbc:h2:mem:spring_boot_demo;DB_CLOSE_DELAY=-1",
+      "hostname": "mem",
+      "port": 0,
+      "databaseName": "spring_boot_demo",
+      "url": "jdbc:h2:mem:spring_boot_demo;DB_CLOSE_DELAY=-1",
+      "username": "sa",
+      "password": "ENC(SM4:密文)",
+      "encrypted": true,
+      "createdAt": "2026-02-11T00:00:00Z",
+      "updatedAt": "2026-02-11T00:00:00Z"
+    },
+    {
+      "id": "spring_framework_db",
+      "name": "Spring Framework Demo Database",
+      "type": "h2",
+      "driverClassName": "org.h2.Driver",
+      "jdbcUrl": "jdbc:h2:mem:spring_framework_demo;DB_CLOSE_DELAY=-1",
+      "hostname": "mem",
+      "port": 0,
+      "databaseName": "spring_framework_demo",
+      "url": "jdbc:h2:mem:spring_framework_demo;DB_CLOSE_DELAY=-1",
+      "username": "sa",
+      "password": "ENC(SM4:密文)",
+      "encrypted": true,
+      "createdAt": "2026-02-11T00:00:00Z",
+      "updatedAt": "2026-02-11T00:00:00Z"
+    },
+    {
+      "id": "mybatis_demo_db",
+      "name": "MyBatis Demo Database",
+      "type": "h2",
+      "driverClassName": "org.h2.Driver",
+      "jdbcUrl": "jdbc:h2:mem:mybatis_demo;DB_CLOSE_DELAY=-1",
+      "hostname": "mem",
+      "port": 0,
+      "databaseName": "mybatis_demo",
+      "url": "jdbc:h2:mem:mybatis_demo;DB_CLOSE_DELAY=-1",
+      "username": "sa",
+      "password": "ENC(SM4:密文)",
+      "encrypted": true,
+      "createdAt": "2026-02-11T00:00:00Z",
+      "updatedAt": "2026-02-11T00:00:00Z"
+    },
+    {
+      "id": "servlet_demo_db",
+      "name": "Servlet Demo Database",
+      "type": "h2",
+      "driverClassName": "org.h2.Driver",
+      "jdbcUrl": "jdbc:h2:mem:servlet_demo;DB_CLOSE_DELAY=-1",
+      "hostname": "mem",
+      "port": 0,
+      "databaseName": "servlet_demo",
+      "url": "jdbc:h2:mem:servlet_demo;DB_CLOSE_DELAY=-1",
+      "username": "sa",
+      "password": "ENC(SM4:密文)",
+      "encrypted": true,
+      "createdAt": "2026-02-11T00:00:00Z",
+      "updatedAt": "2026-02-11T00:00:00Z"
+    }
+  ],
+  "updatedAt": "2026-02-11T00:00:00Z"
+}
+```
+
+### 密码保护机制
+
+**两层保护设计**：
+1. **第一层**: H2数据库密码本身（dbpwd_h2_demo_password_2024）
+2. **第二层**: SM4加密存储在db.pwd中
+
+**解密流程**:
+```
+应用启动
+  → 读取db.pwd
+  → 使用sm4.key解密密码
+  → 获取明文密码 dbpwd_h2_demo_password_2024
+  → 连接H2数据库
+  → 验证用户名sa和密码
+  → 连接成功
+```
+
+### H2内存数据库参数说明
+
+| 参数 | 值 | 说明 |
+|------|---|------|
+| `DB_CLOSE_DELAY=-1` | 保持数据库直到JVM关闭 | 避免内存数据库自动关闭 |
+| `;` | 分隔URL参数 | H2使用分号分隔多个参数 |
+| `sa` | H2默认管理员用户 | H2默认用户名 |
+
+### 密码一致性策略
+
+**方案**: 所有Demo使用相同的H2密码
+
+| 说明 | 理由 |
+|-----|------|
+| 相同密码 | 简化配置，便于管理 |
+| 统一命名 | `dbpwd_h2_demo_password_2024` |
+| 可选配置 | 生产环境可为每个Demo设置不同密码 |
+
+如需为不同Demo设置不同密码，修改encrypt命令中的--password参数即可。
 
 ```json
 {

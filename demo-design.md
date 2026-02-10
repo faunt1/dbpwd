@@ -79,8 +79,8 @@ String decrypted = Sm4GCMCipher.decrypt(encryptedPassword, sm4Key);
 
 #### 步骤3: 构建JDBC连接串
 ```java
-String jdbcUrl = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-String username = "dbpwd";
+String jdbcUrl = "jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1";
+String username = "sa";
 String password = decrypted; // 使用解密后的明文密码
 
 Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
@@ -91,7 +91,7 @@ Connection conn = DriverManager.getConnection(jdbcUrl, username, password);
 | 配置项 | 值 |
 |--------|-----|
 | 占位符(数据库名) | `simple_jdbc_db` |
-| 实际MySQL数据库 | `dbpwd_demo` |
+| 实际H2数据库 | `dbpwd_demo` |
 | 说明 | 模式1示例，程序直接操作 |
 
 **占位符使用方式**:
@@ -194,8 +194,8 @@ Spring Boot Demo 采用**模式2（配置文件装饰器模式）**，展示如�
 #### 步骤1: 配置文件中的占位符
 ```yaml
 # application.properties 或 application.yml
-spring.datasource.url=jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-spring.datasource.username=dbpwd
+spring.datasource.url=jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1
+spring.datasource.username=sa
 spring.datasource.password=@spring_boot_db@  # 占位符，非真实密码
 ```
 
@@ -232,7 +232,7 @@ public class UserRepository {
 | 配置项 | 值 |
 |--------|-----|
 | 占位符(数据库名) | `spring_boot_db` |
-| 实际MySQL数据库 | `dbpwd_demo` |
+| 实际H2数据库 | `dbpwd_demo` |
 | 占位符格式 | `@spring_boot_db@` |
 | 说明 | 模式2示例，框架自动处理 |
 
@@ -385,7 +385,7 @@ String ecbDecrypted = DbConfig.decryptPassword(ecbEncrypted); // 自动识别ECB
 | 配置项 | 值 |
 |--------|-----|
 | 占位符(数据库名) | `struts_db` |
-| 实际MySQL数据库 | `dbpwd_demo` |
+| 实际H2数据库 | `dbpwd_demo` |
 | 说明 | 模式1示例，独立应用完全手动处理 |
 
 **占位符使用方式**:

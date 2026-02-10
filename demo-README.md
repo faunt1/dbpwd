@@ -37,16 +37,59 @@
 
 所有Demo使用H2内存数据库，无需外部MySQL或PostgreSQL。启动Demo时会自动创建内存数据库和表结构。
 
+**H2数据库密码配置**:
+
+所有Demo使用相同的H2数据库密码（经过SM4加密存储）：
+
+| 配置项 | 值 |
+|-------|-----|
+| H2用户名 | `sa` |
+| H2密码（明文） | `dbpwd_h2_demo_password_2024` |
+| 存储方式 | 在db.pwd中经过SM4加密 |
+
 **Demo占位符映射**:
 
-| Demo应用 | 占位符(在db.pwd中) | H2数据库名 | 说明 |
-|---------|------------------|-----------|------|
-| Simple JDBC Demo | `simple_jdbc_db` | `dbpwd_demo` | 模式5示例 |
-| Druid Demo | `druid_demo_db` | `druid_demo` | 模式1示例 |
-| Spring Boot Demo | `spring_boot_db` | `spring_demo` | 模式2示例 |
-| Spring Demo | `spring_framework_db` | `spring_fwk_demo` | 模式3示例 |
-| MyBatis Demo | `mybatis_demo_db` | `mybatis_demo` | 模式4示例 |
-| Servlet Demo | `servlet_demo_db` | `servlet_demo` | 模式6示例 |
+| Demo应用 | 占位符(在db.pwd中) | H2数据库名 | JDBC URL |
+|---------|------------------|-----------|----------|
+| Simple JDBC Demo | `simple_jdbc_db` | `dbpwd_demo` | `jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1` |
+| Druid Demo | `druid_demo_db` | `druid_demo` | `jdbc:h2:mem:druid_demo;DB_CLOSE_DELAY=-1` |
+| Spring Boot Demo | `spring_boot_db` | `spring_demo` | `jdbc:h2:mem:spring_boot_demo;DB_CLOSE_DELAY=-1` |
+| Spring Demo | `spring_framework_db` | `spring_fwk_demo` | `jdbc:h2:mem:spring_framework_demo;DB_CLOSE_DELAY=-1` |
+| MyBatis Demo | `mybatis_demo_db` | `mybatis_demo` | `jdbc:h2:mem:mybatis_demo;DB_CLOSE_DELAY=-1` |
+| Servlet Demo | `servlet_demo_db` | `servlet_demo` | `jdbc:h2:mem:servlet_demo;DB_CLOSE_DELAY=-1` |
+
+**生成db.pwd配置的命令**:
+
+```bash
+# 方式1：逐个生成（推荐）
+java -jar db-pwd-cli.jar encrypt \
+  --id simple_jdbc_db \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+
+# 方式2：使用CLI交互模式
+java -jar db-pwd-cli.jar
+# 输入: add
+# 然后按提示输入每个Demo的配置
+
+# 方式3：批量生成（需要手动编辑输出文件）
+java -jar db-pwd-cli.jar encrypt \
+  --id demo_general \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+```
+
+**H2内存数据库参数说明**:
+
+| 参数 | 值 | 说明 |
+|------|---|------|
+| `DB_CLOSE_DELAY=-1` | 保持数据库直到JVM关闭 | 避免内存数据库自动关闭 |
+| `;` | 分隔URL参数 | H2使用分号分隔多个参数 |
+| `sa` | H2默认管理员用户 | H2默认用户名 |
 
 ---
 
@@ -208,7 +251,7 @@ System.out.println("Encrypted: " + formattedEncrypted);
 String decrypted = Sm4GCMCipher.decrypt(cipherText, sm4Key);
 
 // 使用解密后的密码建立数据库连接
-String jdbcUrl = "jdbc:mysql://localhost:3306/mydb";
+String jdbcUrl = "jdbc:h2:mem:mydb;DB_CLOSE_DELAY=-1";
 Connection conn = DriverManager.getConnection(jdbcUrl, username, decrypted);
 ```
 
@@ -253,8 +296,8 @@ public class DatabaseManager {
 
 **application.properties**:
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/mydb?useSSL=false
-spring.datasource.username=dbuser
+spring.datasource.url=jdbc:h2:mem:mydb;DB_CLOSE_DELAY=-1
+spring.datasource.username=sa
 spring.datasource.password=@my_database@  # 使用占位符
 ```
 
@@ -262,8 +305,8 @@ spring.datasource.password=@my_database@  # 使用占位符
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/mydb?useSSL=false
-    username: dbuser
+    url: jdbc:h2:mem:mydb;DB_CLOSE_DELAY=-1
+    username: sa
     password: "@my_database@"  # 使用占位符
 ```
 

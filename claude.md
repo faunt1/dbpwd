@@ -354,4 +354,4 @@ java -jar db-pwd-cli.jar encrypt --id <database_id> --password <plain_password>
 - **模式1（程序直接操作模式）**: 程序直接调用 Sm4GCMCipher API，从 db.pwd 中根据占位符查找密文密码，使用 sm4.key 解密，构建 JDBC 连接串
 - **模式2（配置文件装饰器模式）**: DataSourceDecorator 拦截 DataSource 初始化，根据占位符从 db.pwd 中查找密文密码，使用 sm4.key 解密，将明文密码注入到 DataSource 配置中
 
-> 详细的Demo应用验证步骤、MySQL数据库配置、占位符映射表和db.pwd文件结构示例请参考 [Demo应用验证文档](./demo-README.md)。
+> 详细的Demo应用验证步骤、H2数据库配置、占位符映射表和db.pwd文件结构示例请参考 [Demo应用验证文档](./demo-README.md)。
