@@ -23,8 +23,8 @@
 ```xml
 <dependency>
     <groupId>org.bouncycastle</groupId>
-    <artifactId>bcprov-jdk15on</artifactId>
-    <version>1.70</version>
+    <artifactId>bcprov-jdk18on</artifactId>
+    <version>1.78</version>
 </dependency>
 ```
 
