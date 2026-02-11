@@ -22,6 +22,7 @@
         <module>db-pwd-web</module>
         <module>db-pwd-simple-jdbc-demo</module>
         <module>db-pwd-spring-boot-demo</module>
+        <module>db-pwd-spring-demo</module>
         <module>db-pwd-struts-demo</module>
     </modules>
 
