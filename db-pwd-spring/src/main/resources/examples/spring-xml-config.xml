@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- 配置DataSourcePasswordProcessor -->
+    <bean id="dataSourcePasswordProcessor"
+          class="com.dbpwd.spring.DataSourcePasswordProcessor">
+        <!-- SM4密钥文件路径（可选，默认：~/.dbpwd/sm4.key） -->
+        <property name="keyFilePath" value="/path/to/.dbpwd/sm4.key"/>
+        <!-- 密码文件路径（可选，默认：~/.dbpwd/db.pwd） -->
+        <property name="pwdFilePath" value="/path/to/.dbpwd/db.pwd"/>
+        <!-- 排除的DataSource bean名称（可选） -->
+        <property name="excludedBeanNames">
+            <set>
+                <value>excludedDataSource</value>
+            </set>
+        </property>
+    </bean>
+
+    <!-- 配置Druid DataSource（密码使用ENC格式） -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="url" value="jdbc:mysql://localhost:3306/mydb"/>
+        <property name="username" value="root"/>
+        <!-- 使用ENC(SM4-GCM:xxx)格式的加密密码 -->
+        <property name="password" value="ENC(SM4-GCM:your-encrypted-password-here)"/>
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="initialSize" value="5"/>
+        <property name="maxActive" value="20"/>
+        <property name="maxWait" value="60000"/>
+    </bean>
+
+    <!-- 配置另一个DataSource -->
+    <bean id="anotherDataSource" class="com.alibaba.druid.pool.DruidDataSource" destroy-method="close">
+        <property name="url" value="jdbc:postgresql://localhost:5432/mydb"/>
+        <property name="username" value="postgres"/>
+        <property name="password" value="ENC(SM4-GCM:another-encrypted-password-here)"/>
+        <property name="driverClassName" value="org.postgresql.Driver"/>
+    </bean>
+
+    <!-- 使用JdbcTemplate -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+</beans>

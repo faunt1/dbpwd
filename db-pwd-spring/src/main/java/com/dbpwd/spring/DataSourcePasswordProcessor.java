@@ -130,21 +130,27 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
             // 获取当前密码
             String currentPassword = getPasswordFromDataSource((DataSource) bean);
 
-            // 如果密码为空或已解密（非占位符格式），跳过
-            if (currentPassword == null || currentPassword.isEmpty() || !isEncryptedPassword(currentPassword)) {
-                logger.debug("DataSource [{}] password not encrypted or empty, skipping", beanName);
+            // 如果密码为空，跳过
+            if (currentPassword == null || currentPassword.isEmpty()) {
+                logger.debug("DataSource [{}] password is empty, skipping", beanName);
                 return bean;
             }
 
-            logger.info("Processing DataSource [{}] with encrypted password", beanName);
+            logger.info("Processing DataSource [{}] with password", beanName);
 
-            // 解密密码
+            // 解密密码（支持ENC格式和占位符格式）
             String plainPassword = decryptPassword(currentPassword, keyFilePath);
+
+            // 如果解密失败（返回原密码），跳过
+            if (plainPassword == null || plainPassword.equals(currentPassword)) {
+                logger.debug("DataSource [{}] password not encrypted, skipping", beanName);
+                return bean;
+            }
 
             // 将明文密码设置回DataSource
             setPasswordToDataSource((DataSource) bean, plainPassword);
 
-            logger.info("Successfully decrypted password forDataSource [{}]", beanName);
+            logger.info("Successfully decrypted password for DataSource [{}]", beanName);
 
         } catch (Exception e) {
             logger.error("Failed to process DataSource [" + beanName + "]: " + e.getMessage(), e);
