@@ -1,6 +1,6 @@
 # 开发计划
 
-> 文档版本: v6.1
+> 文档版本: v6.2
 > 最后更新: 2026-02-11
 
 ## 目录
@@ -249,12 +249,12 @@ db-pwd/
 
 #### 任务清单
 
-**6.1 方案5: 纯JDBC StandalonePasswordDecryptor集成**（在db-pwd-core中实现）
-- [ ] 实现StandalonePasswordDecryptor工具类
-- [ ] 实现decrypt()静态方法（获取解密密码）
-- [ ] 实现getConnection()静态方法（获取数据库连接）
-- [ ] 实现DbUtil简化工具类（query/update方法）
-- [ ] 编写StandalonePasswordDecryptor单元测试
+**6.1 方案5: 纯JDBC StandalonePasswordDecryptor集成**（在db-pwd-core中实现）✅ 已完成 (2026-02-11)
+- [x] 实现StandalonePasswordDecryptor工具类
+- [x] 实现getPlainPassword()静态方法（获取解密密码）
+- [x] 实现getConnection()静态方法（获取数据库连接）
+- [x] 实现DbUtil简化工具类（query/update/batchUpdate等方法）
+- [x] 编写StandalonePasswordDecryptor单元测试（10个测试全部通过）
 - [ ] 提供使用示例和文档
 
 **6.2 方案1: Druid DruidPasswordCallback集成**（db-pwd-druid模块）
@@ -315,7 +315,7 @@ db-pwd/
 
 #### 验收标准
 - [ ] 所有6个集成子模块创建成功，编译通过
-- [ ] StandalonePasswordDecryptor API功能完整，单元测试通过
+- [x] StandalonePasswordDecryptor API功能完整，单元测试通过（10/10）
 - [ ] Druid PasswordCallback集成正常，密码自动解密
 - [ ] Spring BeanPostProcessor正常拦截DataSource
 - [ ] Spring Boot Starter自动配置正常
@@ -325,7 +325,7 @@ db-pwd/
 - [ ] 依赖关系正确，模块间通过db-pwd-core通信
 
 #### 测试要求
-- [ ] StandalonePasswordDecryptor单元测试覆盖率≥80%
+- [x] StandalonePasswordDecryptor单元测试覆盖率≥80%（10/10 通过）
 - [ ] Druid集成模块单元测试覆盖率≥80%
 - [ ] Spring集成模块单元测试覆盖率≥80%
 - [ ] Spring Boot Starter集成测试完整
