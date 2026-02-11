@@ -15,11 +15,14 @@
 
     <modules>
         <module>db-pwd-core</module>
+        <module>db-pwd-druid</module>
+        <module>db-pwd-spring</module>
+        <module>db-pwd-spring-boot-starter</module>
         <module>db-pwd-simple-jdbc-demo</module>
         <module>db-pwd-spring-boot-demo</module>
         <module>db-pwd-struts-demo</module>
         <!-- Sprint 6 待创建的模块 -->
-        <!-- <module>db-pwd-druid</module> -->
+        <!-- <module>db-pwd-mybatis</module> -->
         <!-- <module>db-pwd-spring</module> -->
         <!-- <module>db-pwd-spring-boot-starter</module> -->
         <!-- <module>db-pwd-mybatis</module> -->
