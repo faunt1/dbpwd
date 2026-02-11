@@ -54,8 +54,7 @@ public class DataSourcePasswordProcessorTest {
                 "  \"lastModified\": \"2026-02-11T00:00:00Z\",\n" +
                 "  \"databases\": [\n" +
                 "    {\n" +
-                "      \"id\": \"" + TEST_DB_ID + "\",
-\n" +
+                "      \"id\": \"" + TEST_DB_ID + "\",\n" +
                 "      \"name\": \"Test Database\",\n" +
                 "      \"type\": \"mysql\",\n" +
                 "      \"url\": \"jdbc:mysql://localhost:3306/test_db\",\n" +
