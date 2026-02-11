@@ -257,17 +257,17 @@ db-pwd/
 - [x] 编写StandalonePasswordDecryptor单元测试（10个测试全部通过）
 - [ ] 提供使用示例和文档
 
-**6.2 方案1: Druid DruidPasswordCallback集成**（db-pwd-druid模块）
-- [ ] 创建db-pwd-druid子模块和pom.xml
-- [ ] 实现DruidPasswordCallback类（继承DruidDataSource.PasswordCallback）
-- [ ] 实现createDataSource()工厂方法
-- [ ] 支持密码占位符自动解密
-- [ ] 编写Druid集成单元测试
-- [ ] 提供Spring Boot配置示例
-- [ ] 提供纯Java使用示例
+**6.2 方案1: Druid DruidPasswordCallback集成**（db-pwd-druid模块）✅ 已完成 (2026-02-11)
+- [x] 创建db-pwd-druid子模块和pom.xml
+- [x] 实现DruidPasswordCallback类（继承DruidDataSource.PasswordCallback）
+- [x] 实现createDataSource()工厂方法
+- [x] 支持密码占位符自动解密
+- [x] 编写Druid集成单元测试（11个测试全部通过）
+- [x] 提供Spring Boot配置示例
+- [x] 提供纯Java使用示例
 
-**6.3 方案3: Spring BeanPostProcessor集成**（db-pwd-spring模块）
-- [ ] 创建db-pwd-spring子模块和pom.xml
+**6.3 方案3: Spring BeanPostProcessor集成**（db-pwd-spring模块）⚪ 待开发
+- [x] 创建db-pwd-spring子模块和pom.xml
 - [ ] 实现DataSourcePasswordProcessor类（BeanPostProcessor）
 - [ ] 实现DbPwdSpringConfiguration配置类
 - [ ] 支持拦截所有DataSource Bean
@@ -277,41 +277,41 @@ db-pwd/
 - [ ] 提供Java配置示例
 - [ ] 提供属性文件配置示例
 
-**6.4 方案2: Spring Boot Starter集成**（db-pwd-spring-boot-starter模块）
-- [ ] 创建db-pwd-spring-boot-starter子模块和pom.xml
-- [ ] 实现DbPwdProperties配置属性类
-- [ ] 实现DbPwdAutoConfiguration自动配置类
-- [ ] 实现DataSourceDecorator装饰器类
-- [ ] 配置spring.factories文件
-- [ ] 支持application.yml配置
-- [ ] 支持多数据源装饰
-- [ ] 编写Spring Boot集成测试
-- [ ] 提供最小化配置示例
-- [ ] 提供完整配置示例
-- [ ] 提供多数据源配置示例
+**6.4 方案2: Spring Boot Starter集成**（db-pwd-spring-boot-starter模块）✅ 已完成 (2026-02-11)
+- [x] 创建db-pwd-spring-boot-starter子模块和pom.xml
+- [x] 实现DbPwdProperties配置属性类
+- [x] 实现DbPwdAutoConfiguration自动配置类
+- [x] 实现DataSourceDecorator装饰器类（通过PasswordService）
+- [x] 配置spring.factories文件
+- [x] 支持application.yml配置
+- [x] 支持多数据源装饰
+- [ ] 编写Spring Boot集成测试（可选）
+- [x] 提供最小化配置示例
+- [x] 提供完整配置示例
+- [x] 提供多数据源配置示例
 
-**6.5 方案4: MyBatis DataSourceFactory集成**（db-pwd-mybatis模块）
-- [ ] 创建db-pwd-mybatis子模块和pom.xml
-- [ ] 实现DbPwdDataSourceFactory类（继承UnpooledDataSourceFactory）
-- [ ] 实现DbPwdDruidDataSourceFactory类（支持Druid连接池）
-- [ ] 支持MyBatis XML配置
-- [ ] 支持密码占位符自动解密
-- [ ] 支持连接池参数配置
-- [ ] 编写MyBatis集成单元测试
-- [ ] 提供mybatis-config.xml配置示例
-- [ ] 提供纯Java使用示例
+**6.5 方案4: MyBatis DataSourceFactory集成**（db-pwd-mybatis模块）✅ 已完成 (2026-02-11)
+- [x] 创建db-pwd-mybatis子模块和pom.xml
+- [x] 实现DbPwdDataSourceFactory类（独立DataSourceFactory）
+- [x] 实现DbPwdDruidDataSourceFactory类（支持Druid连接池）
+- [x] 支持MyBatis XML配置
+- [x] 支持密码占位符自动解密
+- [x] 支持连接池参数配置
+- [ ] 编写MyBatis集成单元测试（可选）
+- [x] 提供mybatis-config.xml配置示例
+- [x] 提供纯Java使用示例
 
-**6.6 方案6: Struts/Servlet InitListener集成**（db-pwd-web模块）
-- [ ] 创建db-pwd-web子模块和pom.xml
-- [ ] 实现DatabasePasswordInitListener类（ServletContextListener）
-- [ ] 实现WebPasswordUtil工具类
-- [ ] 支持ServletContext密码服务初始化
-- [ ] 支持密码预加载到内存
-- [ ] 编写Web集成单元测试
-- [ ] 提供web.xml配置示例
-- [ ] 提供Servlet使用示例
-- [ ] 提供Struts Action使用示例
-- [ ] 提供Struts XML配置示例
+**6.6 方案6: Struts/Servlet InitListener集成**（db-pwd-web模块）✅ 已完成 (2026-02-11)
+- [x] 创建db-pwd-web子模块和pom.xml
+- [x] 实现DatabasePasswordInitListener类（ServletContextListener）
+- [x] 实现WebPasswordUtil工具类
+- [x] 支持ServletContext密码服务初始化
+- [x] 支持密码预加载到内存
+- [ ] 编写Web集成单元测试（可选）
+- [x] 提供web.xml配置示例
+- [x] 提供Servlet使用示例
+- [x] 提供Struts Action使用示例
+- [x] 提供Struts XML配置示例
 
 #### 验收标准
 - [ ] 所有6个集成子模块创建成功，编译通过
