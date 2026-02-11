@@ -4,7 +4,6 @@ import com.dbpwd.crypto.ENCFormat;
 import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.model.DatabaseEntry;
 
-import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
