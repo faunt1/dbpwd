@@ -231,6 +231,7 @@
 - [JDK版本兼容](technical/jdk-compatibility.md) - JDK 8/11/17+支持对比
 
 ### 集成实现
+- [集成场景和方案](technical/integration-scenarios.md) - 6种集成场景详解和方案选择
 - [配置中心集成](technical/config-center.md) - 配置中心目录结构和同步策略
 - [命令行工具](technical/command-line.md) - CLI命令和参数说明
 - [连接池装饰器](technical/connection-pool.md) - 连接池装饰器实现
@@ -353,4 +354,4 @@ java -jar db-pwd-cli.jar encrypt --id <database_id> --password <plain_password>
 - **模式1（程序直接操作模式）**: 程序直接调用 Sm4GCMCipher API，从 db.pwd 中根据占位符查找密文密码，使用 sm4.key 解密，构建 JDBC 连接串
 - **模式2（配置文件装饰器模式）**: DataSourceDecorator 拦截 DataSource 初始化，根据占位符从 db.pwd 中查找密文密码，使用 sm4.key 解密，将明文密码注入到 DataSource 配置中
 
-> 详细的Demo应用验证步骤、MySQL数据库配置、占位符映射表和db.pwd文件结构示例请参考 [Demo应用验证文档](./demo-README.md)。
+> 详细的Demo应用验证步骤、H2数据库配置、占位符映射表和db.pwd文件结构示例请参考 [Demo应用验证文档](./demo-README.md)。

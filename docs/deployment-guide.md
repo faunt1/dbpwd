@@ -90,11 +90,9 @@ java -jar dbpwd.jar
 java -jar dbpwd.jar add \
   --id main-db \
   --name "生产数据库" \
-  --type mysql \
-  --host 192.168.1.100 \
-  --port 3306 \
-  --database myapp \
-  --username myapp_user \
+  --type h2 \
+  --url jdbc:h2:mem:myapp;DB_CLOSE_DELAY=-1 \
+  --username sa \
   --password "secure_password_here"
 ```
 
@@ -119,10 +117,10 @@ dbpwd:
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
-    url: jdbc:mysql://192.168.1.100:3306/myapp
-    username: myapp_user
+    url: jdbc:h2:mem:myapp;DB_CLOSE_DELAY=-1
+    username: sa
     password: main-db  # 使用数据库ID
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.h2.Driver
 
 # 确保dbpwd在spring.datasource之前加载
 ```

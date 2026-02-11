@@ -39,11 +39,11 @@
 java -jar db-pwd.jar generate-key
 
 # 加密密码并生成配置
-java -jar db-pwd.jar encrypt --database=mysql_prod \
-    --url="jdbc:mysql://localhost:3306/prod" \
-    --username=prod_user \
+java -jar db-pwd.jar encrypt --database=h2_prod \
+    --url="jdbc:h2:mem:prod" \
+    --username=sa \
     --password="your_password" \
-    --driver="com.mysql.cj.jdbc.Driver"
+    --driver="org.h2.Driver"
 
 # 显示生成的加密密码
 java -jar db-pwd.jar show --id=mysql_prod

@@ -1,18 +1,27 @@
 # Database Password Manager - Demo应用集成指南
 
-这是一个数据库密码管理系统的演示应用集合，展示了SM4-GCM国密认证加解密功能。
+这是一个数据库密码管理系统的演示应用集合，展示了6种集成场景下的SM4-GCM国密认证加解密功能。
 
 ## 概述
 
-本项目包含三个演示应用，展示了在不同场景下使用Database Password Manager进行密码加密和管理的方式：
+本项目包含6个演示应用，涵盖了主流Java应用技术栈的集成场景：
 
-1. **Simple JDBC Demo** - 基础JDBC应用，演示核心SM4-GCM加解密功能
-2. **Spring Boot Demo** - Spring Boot Web应用，演示与Spring框架集成
-3. **Struts Demo** - 独立应用，演示密码加密解密验证
+| Demo应用 | 集成方案 | 集成模块 | 状态 |
+|---------|---------|---------|------|
+| **Simple JDBC Demo** | 方案5: StandalonePasswordDecryptor | db-pwd-core | ✅ 实现 |
+| **Druid Demo** | 方案1: Druid PasswordCallback | db-pwd-druid | ⚪ 待开发 |
+| **Spring Boot Demo** | 方案2: Spring Boot Starter | db-pwd-spring-boot-starter | ✅ 实现 |
+| **Spring Demo** | 方案3: Spring BeanPostProcessor | db-pwd-spring | ⚪ 待开发 |
+| **MyBatis Demo** | 方案4: MyBatis DataSourceFactory | db-pwd-mybatis | ⚪ 待开发 |
+| **Servlet Demo** | 方案6: Servlet InitListener | db-pwd-web | ⚪ 待开发 |
+
+> **详细规划**：请查看 [Demo集成方案规划](./technical/demo-integration-plan.md)
 
 ## 相关文档
 
-- [Demo应用设计文档](./demo-design.md) - 三个Demo的详细设计架构、工作机制和适用场景
+- [Demo集成方案规划](./technical/demo-integration-plan.md) - 6个Demo的详细设计和技术方案
+- [集成场景和方案](./technical/integration-scenarios.md) - 6种集成场景详解
+- [Demo应用设计文档](./demo-design.md) - Demo的详细设计架构、工作机制和适用场景
 - [Demo应用演示步骤](./demo-run-step.md) - Demo应用的完整演示执行步骤
 - [demo-run-result.md](./demo-run-result.md) - 所有Demo的详细执行输出
 
@@ -22,57 +31,172 @@
 
 - JDK 8+
 - Maven 3.6+
-- Docker Desktop（用于运行MySQL数据库）
+- H2内存数据库（Demo内置，无需外部数据库）
 
-### MySQL数据库设置
+### 数据库配置
 
-在运行Demo应用之前，需要先启动MySQL容器：
+所有Demo使用H2内存数据库，无需外部MySQL或PostgreSQL。启动Demo时会自动创建内存数据库和表结构。
 
-```bash
-# 启动MySQL容器
-docker run -d \
-  --name dbpwd-mysql \
-  --restart always \
-  -e MYSQL_ROOT_PASSWORD=rootpass123 \
-  -e MYSQL_DATABASE=dbpwd_demo \
-  -e MYSQL_USER=dbpwd \
-  -e MYSQL_PASSWORD=dbpwd123 \
-  -p 3306:3306 \
-  mysql:8.0
+**H2数据库密码配置**:
 
-# 验证MySQL启动状态
-docker logs dbpwd-mysql
-```
+所有Demo使用相同的H2数据库密码（经过SM4加密存储）：
 
-数据库连接信息：
-
-| 参数 | 值 |
-|------|-----|
-| 主机 | localhost |
-| 端口 | 3306 |
-| 数据库 | dbpwd_demo |
-| 用户名 | dbpwd |
-| 密码 | dbpwd123 |
+| 配置项 | 值 |
+|-------|-----|
+| H2用户名 | `sa` |
+| H2密码（明文） | `dbpwd_h2_demo_password_2024` |
+| 存储方式 | 在db.pwd中经过SM4加密 |
 
 **Demo占位符映射**:
 
-| Demo应用 | 占位符(在db.pwd中) | 实际数据库 | 说明 |
-|---------|------------------|-----------|------|
-| Simple JDBC Demo | `simple_jdbc_db` | `dbpwd_demo` | 模式1示例 |
-| Spring Boot Demo | `spring_boot_db` | `dbpwd_demo` | 模式2示例 |
-| Struts Demo | `struts_db` | `dbpwd_demo` | 模式1示例 |
+| Demo应用 | 占位符(在db.pwd中) | H2数据库名 | JDBC URL |
+|---------|------------------|-----------|----------|
+| Simple JDBC Demo | `simple_jdbc_db` | `dbpwd_demo` | `jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1` |
+| Druid Demo | `druid_demo_db` | `druid_demo` | `jdbc:h2:mem:druid_demo;DB_CLOSE_DELAY=-1` |
+| Spring Boot Demo | `spring_boot_db` | `spring_demo` | `jdbc:h2:mem:spring_boot_demo;DB_CLOSE_DELAY=-1` |
+| Spring Demo | `spring_framework_db` | `spring_fwk_demo` | `jdbc:h2:mem:spring_framework_demo;DB_CLOSE_DELAY=-1` |
+| MyBatis Demo | `mybatis_demo_db` | `mybatis_demo` | `jdbc:h2:mem:mybatis_demo;DB_CLOSE_DELAY=-1` |
+| Servlet Demo | `servlet_demo_db` | `servlet_demo` | `jdbc:h2:mem:servlet_demo;DB_CLOSE_DELAY=-1` |
 
-**说明**: 三个Demo使用不同的占位符，但实际都指向同一个MySQL数据库 `dbpwd_demo`。这种设计展示了多应用共享同一数据库的不同配置方式。
-
-### 停止MySQL数据库
+**生成db.pwd配置的命令**:
 
 ```bash
-docker stop dbpwd-mysql
+# 方式1：逐个生成（推荐）
+java -jar db-pwd-cli.jar encrypt \
+  --id simple_jdbc_db \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:dbpwd_demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+
+# 方式2：使用CLI交互模式
+java -jar db-pwd-cli.jar
+# 输入: add
+# 然后按提示输入每个Demo的配置
+
+# 方式3：批量生成（需要手动编辑输出文件）
+java -jar db-pwd-cli.jar encrypt \
+  --id demo_general \
+  --password dbpwd_h2_demo_password_2024 \
+  --url jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1 \
+  --username sa \
+  --driver org.h2.Driver
+```
+
+**H2内存数据库参数说明**:
+
+| 参数 | 值 | 说明 |
+|------|---|------|
+| `DB_CLOSE_DELAY=-1` | 保持数据库直到JVM关闭 | 避免内存数据库自动关闭 |
+| `;` | 分隔URL参数 | H2使用分号分隔多个参数 |
+| `sa` | H2默认管理员用户 | H2默认用户名 |
+
+---
+
+## Demo应用说明
+
+### 1. Simple JDBC Demo (方案5)
+
+**集成方式**: StandalonePasswordDecryptor工具类
+
+**特点**: 无框架依赖，纯JDBC API
+
+**运行方式**:
+```bash
+# 进入demo目录
+cd db-pwd-simple-jdbc-demo
+
+# 编译打包
+mvn clean package
+
+# 运行（确保db.pwd和sm4.key已生成）
+mvn exec:java
+```
+
+**关键代码**:
+```java
+// 使用工具类获取连接
+Connection conn = StandalonePasswordDecryptor.getConnection("simple_jdbc_db");
+
+// 使用DbUtil简化查询
+DbUtil.query("simple_jdbc_db", "SELECT * FROM users", rs -> { ... });
 ```
 
 ---
 
-## 集成模式概述
+### 2. Druid Demo (方案1)
+
+**集成方式**: Druid PasswordCallback
+
+**特点**: 利用Druid原生回调机制，零侵入
+
+**状态**: ⚪ 待开发
+
+---
+
+### 3. Spring Boot Demo (方案2)
+
+**集成方式**: Spring Boot Starter自动配置
+
+**特点**: 最小配置，自动装饰DataSource
+
+**运行方式**:
+```bash
+# 进入demo目录
+cd db-pwd-spring-boot-demo
+
+# 编译打包
+mvn clean package
+
+# 运行
+mvn spring-boot:run
+
+# 或使用jar包
+java -jar target/db-pwd-spring-boot-demo.jar
+```
+
+**API测试**:
+```bash
+# 查询用户列表
+curl http://localhost:8080/api/users
+
+# 创建用户
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"test","email":"test@example.com"}'
+```
+
+---
+
+### 4. Spring Demo (方案3)
+
+**集成方式**: Spring BeanPostProcessor
+
+**特点**: 传统Spring应用（非Boot），拦截DataSource
+
+**状态**: ⚪ 待开发
+
+---
+
+### 5. MyBatis Demo (方案4)
+
+**集成方式**: MyBatis DataSourceFactory
+
+**特点**: 纯MyBatis应用，无Spring依赖
+
+**状态**: ⚪ 待开发
+
+---
+
+### 6. Servlet Demo (方案6)
+
+**集成方式**: ServletContextListener
+
+**特点**: 纯Servlet应用，通过ServletContext共享密码服务
+
+**状态**: ⚪ 待开发
+
+---
 
 Database Password Manager 支持两种集成模式：
 
@@ -127,7 +251,7 @@ System.out.println("Encrypted: " + formattedEncrypted);
 String decrypted = Sm4GCMCipher.decrypt(cipherText, sm4Key);
 
 // 使用解密后的密码建立数据库连接
-String jdbcUrl = "jdbc:mysql://localhost:3306/mydb";
+String jdbcUrl = "jdbc:h2:mem:mydb;DB_CLOSE_DELAY=-1";
 Connection conn = DriverManager.getConnection(jdbcUrl, username, decrypted);
 ```
 
@@ -172,8 +296,8 @@ public class DatabaseManager {
 
 **application.properties**:
 ```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/mydb?useSSL=false
-spring.datasource.username=dbuser
+spring.datasource.url=jdbc:h2:mem:mydb;DB_CLOSE_DELAY=-1
+spring.datasource.username=sa
 spring.datasource.password=@my_database@  # 使用占位符
 ```
 
@@ -181,8 +305,8 @@ spring.datasource.password=@my_database@  # 使用占位符
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/mydb?useSSL=false
-    username: dbuser
+    url: jdbc:h2:mem:mydb;DB_CLOSE_DELAY=-1
+    username: sa
     password: "@my_database@"  # 使用占位符
 ```
 

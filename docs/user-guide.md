@@ -111,12 +111,9 @@ java -cp db-pwd-core/target/dbpwd-1.0.0-jar-with-dependencies.jar \
   com.dbpwd.cli.DBPasswordCLI add \
   --id db001 \
   --name "主数据库" \
-  --type mysql \
-  --host 192.168.1.100 \
-  --port 3306 \
-  --database mydb \
-  --url "jdbc:mysql://192.168.1.100:3306/mydb" \
-  --username admin \
+  --type h2 \
+  --url jdbc:h2:mem:mydb;DB_CLOSE_DELAY=-1 \
+  --username sa \
   --password "your_password_here"
 ```
 

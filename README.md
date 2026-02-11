@@ -36,17 +36,12 @@ chmod 600 ~/.dbpwd/sm4.key
   "databases": [
     {
       "id": "db001",
-      "name": "主数据库",
-      "type": "mysql",
-      "host": "192.168.1.100",
-      "port": 3306,
-      "database": "mydb",
-      "url": "jdbc:mysql://192.168.1.100:3306/mydb",
-      "username": "admin",
+      "name": "H2内存数据库",
+      "type": "h2",
+      "url": "jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1",
+      "username": "sa",
       "password": "ENC(SM4:r7X9k3mP8nQ2vL5wY1zA4cD6eF8gH0iJ=)",
-      "encrypted": true,
-      "createdAt": "2026-01-15T08:00:00Z",
-      "updatedAt": "2026-02-08T10:30:45Z"
+      "encrypted": true
     }
   ]
 }
