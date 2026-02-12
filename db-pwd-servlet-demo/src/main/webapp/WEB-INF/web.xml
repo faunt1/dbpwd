@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+
+    <display-name>Database Password Manager - Servlet Demo</display-name>
+
+    <description>
+        Servlet集成Demo，演示如何在Servlet/Struts应用中使用db-pwd-web模块
+        通过ServletContextListener初始化密码管理服务
+    </description>
+
+    <!-- 配置DatabasePasswordInitListener -->
+    <listener>
+        <listener-class>com.dbpwd.web.DatabasePasswordInitListener</listener-class>
+    </listener>
+
+    <!-- 可选：自定义配置路径 -->
+    <!--
+    <context-param>
+        <param-name>dbpwd.keyFile</param-name>
+        <param-value>/path/to/sm4.key</param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>dbpwd.pwdFile</param-name>
+        <param-value>/path/to/db.pwd</param-value>
+    </context-param>
+
+    <context-param>
+        <param-name>dbpwd.preload</param-name>
+        <param-value>true</param-value>
+    </context-param>
+    -->
+
+    <!-- 字符编码过滤器 -->
+    <filter>
+        <filter-name>encodingFilter</filter-name>
+        <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-character-encoding>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>encodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <!-- 欢迎页面 -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+</web-app>

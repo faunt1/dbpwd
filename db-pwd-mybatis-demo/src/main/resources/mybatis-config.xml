@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <settings>
+        <!-- 启用驼峰命名转换 -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!-- 启用日志 -->
+        <setting name="logImpl" value="SLF4J"/>
+    </settings>
+
+    <!-- 类型别名 -->
+    <typeAliases>
+        <typeAlias type="com.dbpwd.demo.mybatis.model.Product" alias="Product"/>
+    </typeAliases>
+
+    <!-- Mapper注册 -->
+    <mappers>
+        <mapper class="com.dbpwd.demo.mybatis.dao.ProductMapper"/>
+    </mappers>
+</configuration>

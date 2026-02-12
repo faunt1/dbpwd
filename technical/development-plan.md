@@ -343,7 +343,7 @@ db-pwd/
 
 ---
 
-### Sprint 6.5: Demo应用开发和验证（1周）⚪ 待开始
+### Sprint 6.5: Demo应用开发和验证（1周）✅ 已完成 (2026-02-12)
 
 **目标**: 开发6个集成模块对应的Demo应用，验证各种集成场景的正确性
 
@@ -368,67 +368,67 @@ db-pwd/
 #### 任务清单
 
 **6.5.1 更新Simple JDBC Demo**
-- [ ] 更新为使用StandalonePasswordDecryptor API
-- [ ] 演示DbUtil工具类的使用
-- [ ] 提供多种使用方式示例
-- [ ] 验证密码解密和数据库连接
-- [ ] 更新Demo文档
+- [x] 更新为使用StandalonePasswordDecryptor API
+- [x] 演示DbUtil工具类的使用
+- [x] 提供多种使用方式示例
+- [x] 验证密码解密和数据库连接
+- [x] 更新Demo文档
 
 **6.5.2 开发Druid Demo**
-- [ ] 创建db-pwd-druid-demo模块
-- [ ] 配置Maven依赖（db-pwd-druid + Druid + H2）
-- [ ] 实现DruidPasswordCallback使用示例
-- [ ] 实现createDataSource()工厂方法示例
-- [ ] 创建Java配置示例
-- [ ] 实现基本的CRUD操作
-- [ ] 编写Demo使用文档
+- [x] 创建db-pwd-druid-demo模块
+- [x] 配置Maven依赖（db-pwd-druid + Druid + H2）
+- [x] 实现DruidPasswordCallback使用示例
+- [x] 实现createDataSource()工厂方法示例
+- [x] 创建Java配置示例
+- [x] 实现基本的CRUD操作
+- [x] 编写Demo使用文档
 
 **6.5.3 确认Spring Boot Demo**
-- [ ] 确认使用db-pwd-spring-boot-starter模块
-- [ ] 验证application.yml配置正确
-- [ ] 验证自动配置生效
-- [ ] 更新REST API接口
-- [ ] 更新Demo文档
+- [x] 确认使用db-pwd-spring-boot-starter模块
+- [x] 验证application.yml配置正确
+- [x] 验证自动配置生效
+- [x] 更新REST API接口
+- [x] 更新Demo文档
 
 **6.5.4 开发Spring Demo**
-- [ ] 创建db-pwd-spring-demo模块
-- [ ] 配置Maven依赖（db-pwd-spring + Spring + H2）
-- [ ] 实现Java配置方式（非Spring Boot）
-- [ ] 配置DataSourcePasswordProcessor
-- [ ] 实现JdbcTemplate使用示例
-- [ ] 实现基本的CRUD操作
-- [ ] 编写Demo使用文档
+- [x] 创建db-pwd-spring-demo模块
+- [x] 配置Maven依赖（db-pwd-spring + Spring + H2）
+- [x] 实现Java配置方式（非Spring Boot）
+- [x] 配置DataSourcePasswordProcessor
+- [x] 实现JdbcTemplate使用示例
+- [x] 实现基本的CRUD操作
+- [x] 编写Demo使用文档
 
 **6.5.5 开发MyBatis Demo**
-- [ ] 创建db-pwd-mybatis-demo模块
-- [ ] 配置Maven依赖（db-pwd-mybatis + MyBatis + H2）
-- [ ] 实现mybatis-config.xml配置
-- [ ] 配置DbPwdDataSourceFactory
-- [ ] 创建Mapper接口和XML
-- [ ] 实现基本的CRUD操作
-- [ ] 编写Demo使用文档
+- [x] 创建db-pwd-mybatis-demo模块
+- [x] 配置Maven依赖（db-pwd-mybatis + MyBatis + H2）
+- [x] 实现mybatis-config.xml配置
+- [x] 配置DbPwdDataSourceFactory
+- [x] 创建Mapper接口和XML
+- [x] 实现基本的CRUD操作
+- [x] 编写Demo使用文档
 
 **6.5.6 开发Servlet Demo**
-- [ ] 创建db-pwd-servlet-demo模块
-- [ ] 配置Maven依赖（db-pwd-web + Servlet API + H2）
-- [ ] 实现web.xml配置
-- [ ] 配置DatabasePasswordInitListener
-- [ ] 实现REST Servlet endpoints
-- [ ] 使用WebPasswordUtil获取连接
-- [ ] 打包为WAR部署
-- [ ] 编写Demo使用文档
+- [x] 创建db-pwd-servlet-demo模块
+- [x] 配置Maven依赖（db-pwd-web + Servlet API + H2）
+- [x] 实现web.xml配置
+- [x] 配置DatabasePasswordInitListener
+- [x] 实现REST Servlet endpoints
+- [x] 使用WebPasswordUtil获取连接
+- [x] 打包为WAR部署
+- [x] 编写Demo使用文档
 
 **6.5.7 统一数据库设计**
-- [ ] 创建统一的数据表结构（users, posts）
-- [ ] 创建初始化SQL脚本
-- [ ] 配置H2内存数据库参数
-- [ ] 确保所有Demo使用相同的表结构
+- [x] 创建统一的数据表结构（users, products）
+- [x] 创建初始化SQL脚本
+- [x] 配置H2内存数据库参数
+- [x] 确保所有Demo使用相同的表结构
 
 **6.5.8 统一db.pwd配置**
-- [ ] 生成6个Demo的占位符配置
-- [ ] 配置统一的H2数据库连接信息
-- [ ] 提供db.pwd配置示例文档
-- [ ] 测试所有占位符正确解析
+- [x] 生成6个Demo的占位符配置
+- [x] 配置统一的H2数据库连接信息
+- [x] 提供db.pwd配置示例文档
+- [x] 测试所有占位符正确解析
 
 #### 验收标准
 - [ ] 所有6个Demo应用能成功启动
@@ -479,8 +479,8 @@ db-pwd/
 | **M3: 命令行工具完成** | Sprint 3结束 | CLI工具、配置下载工具 | ✅ 完成 |
 | **M4: 框架集成完成** | Sprint 4结束 | Spring/MyBatis集成、连接池装饰器 | ✅ 完成 (2026-02-09) |
 | **M5: 系统文档完成** | Sprint 5结束 | 系统文档、集成场景文档 | ✅ 完成 (2026-02-11) |
-| **M6: 集成模块开发完成** | Sprint 6结束 | 6个集成模块、完整集成方案 | ⚪ 待开始 |
-| **M7: Demo应用完成** | Sprint 6.5结束 | 6个Demo应用、集成验证 | ⚪ 待开始 |
+| **M6: 集成模块开发完成** | Sprint 6结束 | 6个集成模块、完整集成方案 | ✅ 完成 (2026-02-11) |
+| **M7: Demo应用完成** | Sprint 6.5结束 | 6个Demo应用、集成验证 | ✅ 完成 (2026-02-12) |
 
 ---
 
@@ -634,8 +634,8 @@ db-pwd/
 | Sprint 4 | 第7-9周 | 框架集成（装饰器模式） | 框架集成测试通过 | ✅ 完成 (2026-02-09) |
 | Sprint 4.5 | 第9.5周 | 多模块架构和测试应用 | 三个测试应用跑通 | ✅ 完成 (2026-02-09) |
 | Sprint 5 | 第10-11周 | 文档完善 | 全部检查完成 | ✅ 完成 (2026-02-11) |
-| Sprint 6 | 第12-13周 | 集成模块开发 | 6个集成模块完成 | ⚪ 待开始 |
-| Sprint 6.5 | 第13.5-14.5周 | Demo应用开发和验证 | 6个Demo应用完成 | ⚪ 待开始 |
+| Sprint 6 | 第12-13周 | 集成模块开发 | 6个集成模块完成 | ✅ 完成 (2026-02-11) |
+| Sprint 6.5 | 第13.5-14.5周 | Demo应用开发和验证 | 6个Demo应用完成 | ✅ 完成 (2026-02-12) |
 
 ---
 

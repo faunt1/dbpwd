@@ -8,12 +8,12 @@
 
 | Demo应用 | 集成方案 | 集成模块 | 状态 |
 |---------|---------|---------|------|
-| **Simple JDBC Demo** | 方案5: StandalonePasswordDecryptor | db-pwd-core | ✅ 实现 |
-| **Druid Demo** | 方案1: Druid PasswordCallback | db-pwd-druid | ⚪ 待开发 |
-| **Spring Boot Demo** | 方案2: Spring Boot Starter | db-pwd-spring-boot-starter | ✅ 实现 |
-| **Spring Demo** | 方案3: Spring BeanPostProcessor | db-pwd-spring | ⚪ 待开发 |
-| **MyBatis Demo** | 方案4: MyBatis DataSourceFactory | db-pwd-mybatis | ⚪ 待开发 |
-| **Servlet Demo** | 方案6: Servlet InitListener | db-pwd-web | ⚪ 待开发 |
+| **Simple JDBC Demo** | 方案5: StandalonePasswordDecryptor | db-pwd-core | ✅ 完成 |
+| **Druid Demo** | 方案1: Druid PasswordCallback | db-pwd-druid | ✅ 完成 |
+| **Spring Boot Demo** | 方案2: Spring Boot Starter | db-pwd-spring-boot-starter | ✅ 完成 |
+| **Spring Demo** | 方案3: Spring BeanPostProcessor | db-pwd-spring | ✅ 完成 |
+| **MyBatis Demo** | 方案4: MyBatis DataSourceFactory | db-pwd-mybatis | ✅ 完成 |
+| **Servlet Demo** | 方案6: Servlet InitListener | db-pwd-web | ✅ 完成 |
 
 > **详细规划**：请查看 [Demo集成方案规划](./technical/demo-integration-plan.md)
 
