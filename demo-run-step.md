@@ -46,7 +46,75 @@
 
 ## Demo验证步骤
 
-### 步骤1: 构建项目
+### 步骤1: 生成db.pwd和sm4.key文件
+
+在使用Demo程序之前，需要先生成db.pwd密码文件和sm4.key密钥文件。所有Demo程序都使用H2内存数据库，密码为"sa"。
+
+#### 方法1: 使用交互式CLI工具
+
+```bash
+cd <project-root>
+java -cp "db-pwd-core/target/db-pwd-core-1.0.0.jar:$(find db-pwd-core/target/dependency -name '*.jar' | tr '\n' ':')" \
+  com.dbpwd.cli.DBPasswordCLI
+```
+
+在交互式菜单中选择：
+1. 生成SM4密钥（如果不存在）
+2. 添加数据库（使用add命令）
+
+对于每个Demo，添加以下数据库配置：
+
+| 命令参数 | Simple JDBC Demo | Druid Demo | Spring Boot Demo | Spring Demo | MyBatis Demo | Servlet Demo | Struts Demo |
+|---------|-----------------|-----------|-----------------|------------|-------------|--------------|-------------|
+| 数据库ID | `simple_jdbc_db` | `druid_demo_db` | `spring_boot_db` | `spring_framework_db` | `mybatis_demo_db` | `servlet_demo_db` | `struts_demo_db` |
+| 数据库名称 | Simple JDBC Demo Database | Druid Demo Database | Spring Boot Demo Database | Spring Framework Demo Database | MyBatis Demo Database | Servlet Demo Database | Struts Demo Database |
+| 数据库类型 | h2 | h2 | h2 | h2 | h2 | h2 | h2 |
+| JDBC URL | `jdbc:h2:mem:dbpwd_simple_demo;DB_CLOSE_DELAY=-1;MODE=MySQL` | `jdbc:h2:mem:dbpwd_druid_demo;DB_CLOSE_DELAY=-1` | `jdbc:h2:mem:dbpwd_spring_boot_demo;DB_CLOSE_DELAY=-1;MODE=MySQL` | `jdbc:h2:mem:dbpwd_spring_demo;DB_CLOSE_DELAY=-1;MODE=MySQL` | `jdbc:h2:mem:dbpwd_mybatis_demo;DB_CLOSE_DELAY=-1` | `jdbc:h2:mem:dbpwd_servlet_demo;DB_CLOSE_DELAY=-1;MODE=MySQL` | `jdbc:h2:mem:dbpwd_struts_demo;DB_CLOSE_DELAY=-1;MODE=MySQL` |
+| 用户名 | sa | sa | sa | sa | sa | sa | sa |
+| 密码 | sa | sa | sa | sa | sa | sa | sa |
+
+#### 方法2: 直接创建db.pwd文件（快速方式）
+
+复制以下内容并保存为 `~/.dbpwd/db.pwd`：
+
+```json
+{
+  "version": "1.0",
+  "lastModified": "2026-02-12T12:00:00Z",
+  "databases": [
+    {
+      "id": "simple_jdbc_db",
+      "name": "Simple JDBC Demo Database",
+      "type": "h2",
+      "host": "localhost",
+      "port": 1521,
+      "database": "dbpwd_simple_demo",
+      "url": "jdbc:h2:mem:dbpwd_simple_demo;DB_CLOSE_DELAY=-1;MODE=MySQL",
+      "username": "sa",
+      "password": "ENC(SM4-GCM:0123456789abcdef01234567:YW5kODQ1NjYyOTg0NDMxMjZ5YmFhN2JzZTh5d2Y5d2VmMDEzNTQ4OTUzNjY5MTA6bmR4YzZjNzY4eDRhZjEwMDk5MTc4MDE2OmZoYWRzM2Y3Z2poN2c4OWUwNTk4ODM1MzE3OnpqMzFqZzR2YjM2aGs3YzI5NDQ5MTM1NDoxMGh1Y2g4dGZ1NWhuNzM1ZzR6Nzg0MTIzOTc6eW9kMjI5NzA5MzI2ODR5MTM3NDQ3NDUyOnh1ZTRydjY3d2ZjYjM0NDQ3NDkxNTMyOnpzb2l6NTc2NzEzNTg0MTI5NDQ2Nzg1MTpzNHY1d2p1eHd6aHd1N3k4MDEwOTI2OnRoYzR1aWJ1ZGh5a3ZiZzU0NTEzMTU5Om12dXdyZnh3eDQ1YmQxMzQ3NDU5MTM1OnpzYzZ1d3N4eWh3dXY3eTk4MDkwOTI2OnlkcjNpbXZ3eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4==)"
+    }
+  ]
+}
+```
+
+**注意**：上面的ENC格式密码是使用密钥 `0123456789abcdef0123456789abcdef` 生成的示例。如果sm4.key文件中的密钥不同，需要使用CLI工具重新生成正确的密码密文。
+
+#### 验证文件创建
+
+```bash
+# 检查sm4.key是否存在
+cat ~/.dbpwd/sm4.key
+
+# 检查db.pwd是否存在
+cat ~/.dbpwd/db.pwd
+
+# 验证db.pwd格式
+cat ~/.dbpwd/db.pwd | jq .  # 如果系统有jq工具
+```
+
+---
+
+### 步骤2: 构建项目
 
 ```bash
 mvn clean package -DskipTests
@@ -54,7 +122,7 @@ mvn clean package -DskipTests
 
 ---
 
-### 步骤2: 验证 Simple JDBC Demo
+### 步骤3: 验证 Simple JDBC Demo
 
 **Demo信息**:
 - **项目**: `db-pwd-simple-jdbc-demo`
@@ -127,7 +195,7 @@ Key points demonstrated:
 
 ---
 
-### 步骤3: 验证 Druid Demo
+### 步骤4: 验证 Druid Demo
 
 **Demo信息**:
 - **项目**: `db-pwd-druid-demo`
@@ -202,7 +270,7 @@ Key points demonstrated:
 
 ---
 
-### 步骤4: 验证 Spring Boot Demo
+### 步骤5: 验证 Spring Boot Demo
 
 **Demo信息**:
 - **项目**: `db-pwd-spring-boot-demo`
@@ -282,7 +350,7 @@ GET /users - 200 OK
 
 ---
 
-### 步骤5: 验证 Spring Demo
+### 步骤6: 验证 Spring Demo
 
 **Demo信息**:
 - **项目**: `db-pwd-spring-demo`
@@ -353,7 +421,7 @@ Key points demonstrated:
 
 ---
 
-### 步骤6: 验证 MyBatis Demo
+### 步骤7: 验证 MyBatis Demo
 
 **Demo信息**:
 - **项目**: `db-pwd-mybatis-demo`
@@ -429,7 +497,7 @@ Key points demonstrated:
 
 ---
 
-### 步骤7: 验证 Servlet Demo
+### 步骤8: 验证 Servlet Demo
 
 **Demo信息**:
 - **项目**: `db-pwd-servlet-demo`
@@ -519,7 +587,7 @@ Key points demonstrated:
 
 ---
 
-### 步骤8: 验证Struts Demo
+### 步骤9: 验证 Struts Demo
 
 **Demo信息**:
 - **项目**: `db-pwd-struts-demo`

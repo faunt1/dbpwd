@@ -18,7 +18,7 @@
     <description>Simple JDBC demo application demonstrating SM4 encryption</description>
 
     <properties>
-        <mysql.version>8.0.33</mysql.version>
+        <h2.version>2.2.224</h2.version>
     </properties>
 
     <dependencies>
@@ -29,11 +29,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- MySQL Database -->
+        <!-- H2 In-memory Database -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql.version}</version>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
         </dependency>
 
         <!-- JDBC -->

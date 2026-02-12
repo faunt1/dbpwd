@@ -44,7 +44,11 @@
 | H2用户名 | `sa` |
 | H2密码（明文） | `dbpwd_h2_demo_password_2024` |
 
-**注意**: 所有Demo在 db.pwd 中存储的是连接H2数据库的密码（SM4加密）。
+**核心设计原则**：
+1. **所有Demo程序中，程序或配置的数据库密码字段都必须使用占位符，而非明文密码**
+2. 所有Demo在 db.pwd 中存储的是连接H2数据库的密码（SM4加密）
+3. 占位符格式统一为：`db_id`（如 `simple_jdbc_db`）或特定格式的占位符（如 `@db_id@`）
+4. 程序运行时通过占位符从db.pwd中查找对应的密文密码并解密获取明文密码
 
 ### 数据库表结构
 
@@ -638,14 +642,14 @@ public class UserServlet extends HttpServlet {
 
 所有Demo共享一个db.pwd配置文件：
 
-| 数据库ID | Demo应用 | 说明 |
-|---------|---------|------|
-| `simple_jdbc_db` | Simple JDBC Demo | 纯JDBC工具 |
-| `druid_demo_db` | Druid Demo | Druid连接池 |
-| `spring_boot_db` | Spring Boot Demo | Spring Boot自动配置 |
-| `spring_demo_db` | Spring Demo | Spring BeanPostProcessor |
-| `mybatis_demo_db` | MyBatis Demo | MyBatis DataSourceFactory |
-| `servlet_demo_db` | Servlet Demo | Servlet InitListener |
+| 数据库ID | Demo应用 | 说明 | 程序/配置中的占位符使用位置 |
+|---------|---------|------|-------------------|
+| `simple_jdbc_db` | Simple JDBC Demo | 纯JDBC工具 | 程序中传递给PasswordProvider的参数 |
+| `druid_demo_db` | Druid Demo | Druid连接池 | DruidDataSource的password字段 |
+| `spring_boot_db` | Spring Boot Demo | Spring Boot自动配置 | application.yml中的spring.datasource.password |
+| `spring_demo_db` | Spring Demo | Spring BeanPostProcessor | JavaConfig中的dataSource Bean的password |
+| `mybatis_demo_db` | MyBatis Demo | MyBatis DataSourceFactory | mybatis-config.xml中的dbId属性 |
+| `servlet_demo_db` | Servlet Demo | Servlet InitListener | WebPasswordUtil.getPlainPassword()的参数 |
 
 ### 生成db.pwd命令示例
 

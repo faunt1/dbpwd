@@ -149,9 +149,147 @@ public class DBPasswordCLI {
     }
 
     private void commandMode(String[] args) {
-        // 暂未实现命令行参数模式
-        System.err.println("命令行参数模式暂未实现，请使用交互式模式");
-        System.exit(1);
+        boolean generateKey = false;
+        boolean addDatabase = false;
+        boolean demoMode = false;
+        String dbId = null;
+        String dbName = null;
+        String dbType = null;
+        String dbUrl = null;
+        String dbUsername = null;
+        String dbPassword = null;
+
+        for (int i = 0; i < args.length; i++) {
+            if ("--generate-key".equals(args[i]) || "-k".equals(args[i])) {
+                generateKey = true;
+            } else if ("--add".equals(args[i]) || "-a".equals(args[i])) {
+                addDatabase = true;
+            } else if ("--demo".equals(args[i])) {
+                demoMode = true;
+            } else if ("--id".equals(args[i]) && i + 1 < args.length) {
+                dbId = args[++i];
+            } else if ("--name".equals(args[i]) && i + 1 < args.length) {
+                dbName = args[++i];
+            } else if ("--type".equals(args[i]) && i + 1 < args.length) {
+                dbType = args[++i];
+            } else if ("--url".equals(args[i]) && i + 1 < args.length) {
+                dbUrl = args[++i];
+            } else if ("--username".equals(args[i]) && i + 1 < args.length) {
+                dbUsername = args[++i];
+            } else if ("--password".equals(args[i]) && i + 1 < args.length) {
+                dbPassword = args[++i];
+            }
+        }
+
+        try {
+            String sm4Key = loadOrGenerateKey(generateKey);
+
+            if (demoMode) {
+                createDemoDatabases(sm4Key);
+                System.out.println("Demo databases created successfully in: " + passwordFile);
+                System.out.println(" databases: 6");
+                return;
+            }
+
+            if (addDatabase) {
+                if (dbId == null || dbUrl == null || dbUsername == null || dbPassword == null) {
+                    System.err.println("Error: --add requires --id, --url, --username and --password");
+                    System.exit(1);
+                }
+                addDatabaseCommand(sm4Key, dbId, dbName, dbType, dbUrl, dbUsername, dbPassword);
+                System.out.println("Database '" + dbId + "' added successfully");
+            } else {
+                System.err.println("Error: Please specify --add, --generate-key or --demo");
+                System.exit(1);
+            }
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    private String loadOrGenerateKey(boolean generate) throws Exception {
+        Sm4KeyLoader keyLoader = new Sm4KeyLoader(keyFile);
+
+        try {
+            return keyLoader.loadKey();
+        } catch (Sm4KeyLoader.FileNotFoundException e) {
+            if (generate) {
+                return generateKey();
+            } else {
+                throw new RuntimeException("SM4 key file not found: " + keyFile);
+            }
+        }
+    }
+
+    private String generateKey() throws Exception {
+        String newKey = Sm4Cipher.generateRandomHexKey();
+        Files.write(Paths.get(keyFile), newKey.getBytes());
+        try {
+            FilePermissionChecker.setPermission600(keyFile);
+        } catch (Exception ex) {
+            logger.warning("Cannot set file permissions: " + ex.getMessage());
+        }
+        System.out.println("SM4 key generated: " + keyFile);
+        return newKey;
+    }
+
+    private void createDemoDatabases(String sm4Key) throws Exception {
+        PasswordFileManager manager;
+        if (Files.exists(Paths.get(passwordFile))) {
+            manager = PasswordFileManager.loadFromFile(passwordFile);
+            manager.clear();
+        } else {
+            manager = new PasswordFileManager(passwordFile);
+        }
+
+        String encPassword = PasswordEncryptor.encrypt("sa", sm4Key);
+
+        addDatabaseEntry(manager, sm4Key,
+            "simple_jdbc_db", "Simple JDBC Demo Database", "h2",
+            "jdbc:h2:mem:dbpwd_simple_demo;DB_CLOSE_DELAY=-1;MODE=MySQL", "sa", "sa");
+        addDatabaseEntry(manager, sm4Key,
+            "druid_demo_db", "Druid Demo Database", "h2",
+            "jdbc:h2:mem:dbpwd_druid_demo;DB_CLOSE_DELAY=-1", "sa", "sa");
+        addDatabaseEntry(manager, sm4Key,
+            "spring_boot_db", "Spring Boot Demo Database", "h2",
+            "jdbc:h2:mem:dbpwd_spring_boot_demo;DB_CLOSE_DELAY=-1;MODE=MySQL", "sa", "sa");
+        addDatabaseEntry(manager, sm4Key,
+            "spring_framework_db", "Spring Framework Demo Database", "h2",
+            "jdbc:h2:mem:dbpwd_spring_demo;DB_CLOSE_DELAY=-1;MODE=MySQL", "sa", "sa");
+        addDatabaseEntry(manager, sm4Key,
+            "mybatis_demo_db", "MyBatis Demo Database", "h2",
+            "jdbc:h2:mem:dbpwd_mybatis_demo;DB_CLOSE_DELAY=-1", "sa", "sa");
+        addDatabaseEntry(manager, sm4Key,
+            "servlet_demo_db", "Servlet Demo Database", "h2",
+            "jdbc:h2:mem:dbpwd_servlet_demo;DB_CLOSE_DELAY=-1;MODE=MySQL", "sa", "sa");
+        addDatabaseEntry(manager, sm4Key,
+            "struts_demo_db", "Struts Demo Database", "h2",
+            "jdbc:h2:mem:dbpwd_struts_demo;DB_CLOSE_DELAY=-1;MODE=MySQL", "sa", "sa");
+
+        manager.save();
+    }
+
+    private void addDatabaseCommand(String sm4Key, String id, String name, String type,
+            String url, String username, String password) throws Exception {
+        PasswordFileManager manager;
+        if (Files.exists(Paths.get(passwordFile))) {
+            manager = PasswordFileManager.loadFromFile(passwordFile);
+        } else {
+            manager = new PasswordFileManager(passwordFile);
+        }
+
+        addDatabaseEntry(manager, sm4Key, id, name, type, url, username, password);
+        manager.save();
+    }
+
+    private void addDatabaseEntry(PasswordFileManager manager, String sm4Key, String id,
+            String name, String type, String url, String username, String password) throws Exception {
+        String encryptedPassword = PasswordEncryptor.encrypt(password, sm4Key);
+        DatabaseEntry entry = new DatabaseEntry(id, name, type, url, username, encryptedPassword);
+        entry.setEncrypted(true);
+        manager.addDatabase(entry);
     }
 
     private String loadOrGenerateKey(Scanner scanner) throws Exception {
@@ -427,22 +565,32 @@ public class DBPasswordCLI {
     private static void printHelp() {
         System.out.println("数据库密码管理命令行工具 v3.0");
         System.out.println();
-        System.out.println("用法: java -jar dbpwd-cli.jar [选项]");
+        System.out.println("用法: java -jar dbpwd-cli.jar [选项] [命令]");
         System.out.println();
         System.out.println("选项:");
         System.out.println("  --password-file <path>  密码文件路径 (默认: ~/.dbpwd/db.pwd)");
         System.out.println("  --key-file <path>       SM4密钥文件路径 (默认: ~/.dbpwd/sm4.key)");
         System.out.println("  -h, --help               显示帮助信息");
         System.out.println();
+        System.out.println("命令行模式:");
+        System.out.println("  --demo                   生成所有Demo所需的数据库配置");
+        System.out.println("  --generate-key, -k       生成SM4密钥文件");
+        System.out.println("  --add, -a                添加数据库配置");
+        System.out.println("    --id <id>              数据库ID (必填)");
+        System.out.println("    --name <name>          数据库名称");
+        System.out.println("    --type <type>          数据库类型");
+        System.out.println("    --url <url>            JDBC URL (必填)");
+        System.out.println("    --username <username>  用户名 (必填)");
+        System.out.println("    --password <password>  密码 (必填)");
+        System.out.println();
+        System.out.println("示例:");
+        System.out.println("  # 生成Demo数据库配置");
+        System.out.println("  java -jar dbpwd-cli.jar --demo --generate-key");
+        System.out.println();
+        System.out.println("  # 添加单个数据库");
+        System.out.println("  java -jar dbpwd-cli.jar --add --id mydb --url jdbc:mysql://localhost:3306/mydb --username root --password secret");
+        System.out.println();
         System.out.println("交互式命令:");
-        System.out.println("  list     列出所有数据库");
-        System.out.println("  add      添加新数据库");
-        System.out.println("  update   更新数据库配置");
-        System.out.println("  delete   删除数据库配置");
-        System.out.println("  test     测试数据库连接");
-        System.out.println("  encrypt  加密密码");
-        System.out.println("  decrypt  解密密码");
-        System.out.println("  info     显示配置信息");
-        System.out.println("  exit     退出程序");
+        System.out.println("  (无参数) 进入交互式模式");
     }
 }
