@@ -85,29 +85,29 @@ public class DatabasePasswordInitListener implements ServletContextListener {
     /**
      * 获取或创建密码服务
      */
-    private WebPasswordService getOrCreateService(javax.servlet.ServletContext context, 
-                                                  String customKeyFile, 
+    private WebPasswordService getOrCreateService(javax.servlet.ServletContext context,
+                                                  String customKeyFile,
                                                   String customPwdFile) {
         String keyFile = (customKeyFile != null && !customKeyFile.isEmpty())
-            ? customKeyFile : WebPasswordUtil.DEFAULT_KEY_PATH;
+            ? customKeyFile : WebPasswordService.DEFAULT_KEY_PATH;
         String pwdFile = (customPwdFile != null && !customPwdFile.isEmpty())
             ? customPwdFile : System.getProperty("user.home") + "/.dbpwd/db.pwd";
 
         WebPasswordService service = (WebPasswordService) context.getAttribute(
-            WebPasswordUtil.PASSWORD_SERVICE_KEY);
-        
+            WebPasswordService.PASSWORD_SERVICE_KEY);
+
         if (service == null) {
             synchronized (DatabasePasswordInitListener.class) {
                 service = (WebPasswordService) context.getAttribute(
-                    WebPasswordUtil.PASSWORD_SERVICE_KEY);
+                    WebPasswordService.PASSWORD_SERVICE_KEY);
                 if (service == null) {
                     service = new WebPasswordService(keyFile, pwdFile);
-                    context.setAttribute(WebPasswordUtil.PASSWORD_SERVICE_KEY, service);
+                    context.setAttribute(WebPasswordService.PASSWORD_SERVICE_KEY, service);
                     System.out.println("[DbPwd] WebPasswordService created");
                 }
             }
         }
-        
+
         return service;
     }
 }

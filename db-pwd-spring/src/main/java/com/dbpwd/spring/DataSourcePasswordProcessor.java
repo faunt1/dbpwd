@@ -9,13 +9,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.jdbc.datasource.AbstractDataSource;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Method;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
-import java.util.logging.FileHandler;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * DataSource密码处理器
@@ -62,6 +62,15 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
     // 排除的DataSource bean名称
     private final Set<String> excludedBeanNames = new HashSet<>();
 
+    // 缓存：SM4密钥
+    private String cachedSm4Key;
+
+    // 缓存：密码文件管理器
+    private PasswordFileManager cachedPasswordManager;
+
+    // 缓存：明文密码缓存 (dbId -> plainPassword)
+    private final Map<String, String> passwordCache = new ConcurrentHashMap<>();
+
     /**
      * 构造函数
      */
@@ -76,6 +85,8 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
      */
     public void setKeyFilePath(String keyFilePath) {
         this.keyFilePath = keyFilePath;
+        // 清除缓存以强制重新加载
+        this.cachedSm4Key = null;
     }
 
     /**
@@ -85,6 +96,9 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
      */
     public void setPwdFilePath(String pwdFilePath) {
         this.pwdFilePath = pwdFilePath;
+        // 清除缓存以强制重新加载
+        this.cachedPasswordManager = null;
+        this.passwordCache.clear();
     }
 
     /**
@@ -139,7 +153,7 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
             logger.info("Processing DataSource [{}] with password", beanName);
 
             // 解密密码（支持ENC格式和占位符格式）
-            String plainPassword = decryptPassword(currentPassword, keyFilePath);
+            String plainPassword = decryptPassword(currentPassword);
 
             // 如果解密失败（返回原密码），跳过
             if (plainPassword == null || plainPassword.equals(currentPassword)) {
@@ -176,30 +190,6 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
     }
 
     /**
-     * 判断密码是否为加密格式（占位符格式）
-     *
-     * 判断逻辑：
-     * - 密码格式为 "ENC(SM4-GCM:xxx)" - 不是占位符，需要解密
-     * - 密码不是该格式 - 可能是占位符或明文密码
-     *
-     * 这里我们简化处理：如果密码包含加密格式标记，则解密
-     * 否则假设是占位符，从db.pwd查找
-     */
-    private boolean isEncryptedPassword(String password) {
-        if (password == null) {
-            return false;
-        }
-
-        // 如果密码格式为 ENC(SM4-GCM:...)，直接返回true
-        if (password.startsWith("ENC(SM4-")) {
-            return true;
-        }
-
-        // 否则，假设密码是占位符，需要从db.pwd查找
-        return false;
-    }
-
-    /**
      * 从DataSource获取密码
      */
     private String getPasswordFromDataSource(DataSource dataSource) {
@@ -228,36 +218,13 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
     }
 
     /**
-     * 获取明文密码
-     */
-    private String getPlainPassword(String dbPlaceholder) throws Exception {
-        // 1. 加载SM4密钥
-        String sm4Key = loadSm4Key(keyFilePath);
-
-        // 2. 加载密码文件并查找数据库配置
-        DatabaseEntry entry = loadDatabaseEntry(pwdFilePath, dbPlaceholder);
-
-        if (entry == null) {
-            throw new IllegalArgumentException("未找到数据库配置，占位符: " + dbPlaceholder);
-        }
-
-        String encryptedPassword = entry.getPassword();
-        if (encryptedPassword == null || encryptedPassword.isEmpty()) {
-            throw new IllegalArgumentException("数据库密码为空: " + dbPlaceholder);
-        }
-
-        // 3. 解密密码
-        return decryptPassword(encryptedPassword, sm4Key);
-    }
-
-    /**
      * 解密密码（从占位符或加密密文）
+     * 使用缓存优化性能
      */
-    private String decryptPassword(String passwordOrPlaceholder, String keyFilePath) throws Exception {
+    private String decryptPassword(String passwordOrPlaceholder) throws Exception {
         // 如果是加密格式，直接解密
         if (passwordOrPlaceholder.startsWith("ENC(SM4-")) {
-            String sm4Key = loadSm4Key(keyFilePath);
-            return decryptGCMPassword(passwordOrPlaceholder, sm4Key);
+            return decryptGCMPassword(passwordOrPlaceholder);
         }
 
         // 否则，假设是占位符，从db.pwd查找并解密
@@ -265,9 +232,40 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
     }
 
     /**
-     * 解密GCM格式密码
+     * 获取明文密码（带缓存）
      */
-    private String decryptGCMPassword(String encryptedPassword, String sm4Key) throws Exception {
+    private String getPlainPassword(String dbPlaceholder) throws Exception {
+        // 先检查缓存
+        if (passwordCache.containsKey(dbPlaceholder)) {
+            return passwordCache.get(dbPlaceholder);
+        }
+
+        // 加载密码文件并查找数据库配置
+        DatabaseEntry entry = loadDatabaseEntry(dbPlaceholder);
+
+        if (entry == null) {
+            // 未找到配置，返回原值（可能是明文密码）
+            return dbPlaceholder;
+        }
+
+        String encryptedPassword = entry.getPassword();
+        if (encryptedPassword == null || encryptedPassword.isEmpty()) {
+            throw new IllegalArgumentException("数据库密码为空: " + dbPlaceholder);
+        }
+
+        // 解密密码
+        String plainPassword = decryptGCMPassword(encryptedPassword);
+
+        // 缓存结果
+        passwordCache.put(dbPlaceholder, plainPassword);
+
+        return plainPassword;
+    }
+
+    /**
+     * 解密GCM格式密码（带缓存）
+     */
+    private String decryptGCMPassword(String encryptedPassword) throws Exception {
         String algorithm = ENCFormat.extractAlgorithm(encryptedPassword);
         String cipherText = ENCFormat.extractCipherText(encryptedPassword);
 
@@ -277,22 +275,38 @@ public class DataSourcePasswordProcessor implements BeanPostProcessor {
                     "不支持的加密算法: " + algorithm + "。仅支持SM4-GCM格式（新应用必须使用GCM认证加密）");
         }
 
+        String sm4Key = loadSm4Key();
         return Sm4GCMCipher.decrypt(cipherText, sm4Key);
     }
 
     /**
-     * 加载SM4密钥
+     * 加载SM4密钥（带缓存）
      */
-    private String loadSm4Key(String keyFilePath) throws Exception {
-        Sm4KeyLoader loader = new Sm4KeyLoader(keyFilePath);
-        return loader.loadKey(true);
+    private String loadSm4Key() throws Exception {
+        if (cachedSm4Key == null) {
+            Sm4KeyLoader loader = new Sm4KeyLoader(keyFilePath);
+            cachedSm4Key = loader.loadKey(true);
+        }
+        return cachedSm4Key;
     }
 
     /**
-     * 加载数据库配置
+     * 加载数据库配置（带缓存）
      */
-    private DatabaseEntry loadDatabaseEntry(String pwdFilePath, String dbPlaceholder) throws Exception {
-        PasswordFileManager manager = PasswordFileManager.loadFromFile(pwdFilePath);
-        return manager.getById(dbPlaceholder);
+    private DatabaseEntry loadDatabaseEntry(String dbPlaceholder) throws Exception {
+        if (cachedPasswordManager == null) {
+            cachedPasswordManager = PasswordFileManager.loadFromFile(pwdFilePath);
+        }
+        return cachedPasswordManager.getById(dbPlaceholder);
+    }
+
+    /**
+     * 清除缓存
+     */
+    public void clearCache() {
+        cachedSm4Key = null;
+        cachedPasswordManager = null;
+        passwordCache.clear();
+        logger.info("DataSourcePasswordProcessor cache cleared");
     }
 }

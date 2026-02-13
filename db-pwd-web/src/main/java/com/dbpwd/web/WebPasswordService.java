@@ -21,6 +21,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class WebPasswordService {
 
+    // ServletContext属性键名常量
+    public static final String PASSWORD_SERVICE_KEY = "dbpwd.passwordService";
+    public static final String DEFAULT_KEY_PATH = System.getProperty("user.home") + "/.dbpwd/sm4.key";
+
     private String keyFilePath;
     private String pwdFilePath;
     private String sm4Key;

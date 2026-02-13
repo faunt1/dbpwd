@@ -34,11 +34,8 @@ public class WebPasswordUtil {
 
     private static final Logger logger = Logger.getLogger(WebPasswordUtil.class.getName());
 
-    // ServletContext中存储密码服务的属性名
-    public static final String PASSWORD_SERVICE_KEY = "dbpwd.password.service";
-
     // 默认密钥和密码文件路径
-    public static final String DEFAULT_KEY_PATH = System.getProperty("user.home") + "/.dbpwd/sm4.key";
+    public static final String DEFAULT_KEY_PATH = WebPasswordService.DEFAULT_KEY_PATH;
     public static final String DEFAULT_PWD_PATH = System.getProperty("user.home") + "/.dbpwd/db.pwd";
 
     /**
@@ -133,14 +130,14 @@ public class WebPasswordUtil {
     // ============ Private Methods ============
 
     private static WebPasswordService getOrCreateService(ServletContext context) {
-        WebPasswordService service = (WebPasswordService) context.getAttribute(PASSWORD_SERVICE_KEY);
+        WebPasswordService service = (WebPasswordService) context.getAttribute(WebPasswordService.PASSWORD_SERVICE_KEY);
         if (service == null) {
             // 使用线程安全的初始化
             synchronized (WebPasswordUtil.class) {
-                service = (WebPasswordService) context.getAttribute(PASSWORD_SERVICE_KEY);
+                service = (WebPasswordService) context.getAttribute(WebPasswordService.PASSWORD_SERVICE_KEY);
                 if (service == null) {
                     service = new WebPasswordService(DEFAULT_KEY_PATH, DEFAULT_PWD_PATH);
-                    context.setAttribute(PASSWORD_SERVICE_KEY, service);
+                    context.setAttribute(WebPasswordService.PASSWORD_SERVICE_KEY, service);
                     logger.info("WebPasswordService initialized and stored in ServletContext");
                 }
             }

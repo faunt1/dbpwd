@@ -6,30 +6,47 @@ import com.dbpwd.core.Sm4KeyLoader;
 import com.dbpwd.model.DatabaseEntry;
 import com.dbpwd.crypto.ENCFormat;
 import com.dbpwd.crypto.Sm4GCMCipher;
+import org.apache.ibatis.datasource.DataSourceFactory;
 
 import javax.sql.DataSource;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * 集成场景和方案 - 方案4: MyBatis DataSourceFactory集成
  *
  * MyBatis密码管理Druid DataSource工厂
+ * 实现MyBatis的DataSourceFactory接口，支持在MyBatis XML配置中使用
  *
- * 使用方式：在mybatis-config.xml中配置
+ * 使用方式1：在mybatis-config.xml中配置
  * <pre>
  * &lt;dataSource type="com.dbpwd.mybatis.DbPwdDruidDataSourceFactory"&gt;
  *   &lt;property name="dbId" value="my_database"/&gt;
+ *   &lt;property name="initialSize" value="5"/&gt;
+ *   &lt;property name="maxActive" value="20"/&gt;
  * &lt;/dataSource&gt;
+ * </pre>
+ *
+ * 使用方式2：纯Java配置
+ * <pre>
+ * DbPwdDruidDataSourceFactory factory = new DbPwdDruidDataSourceFactory();
+ * Properties props = new Properties();
+ * props.setProperty("dbId", "my_database");
+ * factory.setProperties(props);
+ * DataSource dataSource = factory.getDataSource();
  * </pre>
  *
  * @author Database Password Manager
  * @version 5.3
  */
-public class DbPwdDruidDataSourceFactory {
+public class DbPwdDruidDataSourceFactory implements DataSourceFactory {
+
+    private static final Logger logger = Logger.getLogger(DbPwdDruidDataSourceFactory.class.getName());
 
     private static final String DEFAULT_KEY_PATH = System.getProperty("user.home") + "/.dbpwd/sm4.key";
     private static final String DEFAULT_PWD_PATH = System.getProperty("user.home") + "/.dbpwd/db.pwd";
 
+    private DruidDataSource dataSource;
     private String dbId;
     private String keyFile;
     private String pwdFile;
@@ -38,20 +55,38 @@ public class DbPwdDruidDataSourceFactory {
     private Properties properties = new Properties();
 
     public DbPwdDruidDataSourceFactory() {
+        this.dataSource = new DruidDataSource();
     }
 
     public DbPwdDruidDataSourceFactory(String dbId) {
+        this();
         this.dbId = dbId;
     }
 
     /**
-     * 设置属性
+     * 实现DataSourceFactory接口 - 设置属性
+     * MyBatis会调用此方法传入配置属性
      */
+    @Override
     public void setProperties(Properties properties) {
         this.properties.putAll(properties);
         this.dbId = properties.getProperty("dbId");
         this.keyFile = properties.getProperty("keyFile", DEFAULT_KEY_PATH);
         this.pwdFile = properties.getProperty("pwdFile", DEFAULT_PWD_PATH);
+
+        // 设置Druid连接池参数
+        if (properties.containsKey("initialSize")) {
+            dataSource.setInitialSize(Integer.parseInt(properties.getProperty("initialSize")));
+        }
+        if (properties.containsKey("minIdle")) {
+            dataSource.setMinIdle(Integer.parseInt(properties.getProperty("minIdle")));
+        }
+        if (properties.containsKey("maxActive")) {
+            dataSource.setMaxActive(Integer.parseInt(properties.getProperty("maxActive")));
+        }
+        if (properties.containsKey("maxWait")) {
+            dataSource.setMaxWait(Long.parseLong(properties.getProperty("maxWait")));
+        }
     }
 
     /**
@@ -83,45 +118,41 @@ public class DbPwdDruidDataSourceFactory {
     }
 
     /**
-     * 获取数据源（Druid连接池，密码自动解密）
+     * 实现DataSourceFactory接口 - 获取数据源
+     * MyBatis会调用此方法获取DataSource
      */
-    public DataSource getDataSource() throws Exception {
-        if (dbId == null || dbId.isEmpty()) {
-            throw new IllegalStateException("dbId must be set");
+    @Override
+    public DataSource getDataSource() {
+        try {
+            // 如果设置了dbId，从db.pwd加载配置
+            if (dbId != null && !dbId.isEmpty()) {
+                loadPasswordManager();
+                DatabaseEntry entry = passwordManager.getById(dbId);
+                if (entry == null) {
+                    throw new IllegalArgumentException("未找到数据库配置: " + dbId);
+                }
+
+                // 设置配置（如果未手动设置）
+                if (dataSource.getUrl() == null || dataSource.getUrl().isEmpty()) {
+                    dataSource.setUrl(entry.getUrl());
+                }
+                if (dataSource.getUsername() == null || dataSource.getUsername().isEmpty()) {
+                    dataSource.setUsername(entry.getUsername());
+                }
+
+                // 解密并设置密码
+                String plainPassword = decryptPassword(entry.getPassword());
+                dataSource.setPassword(plainPassword);
+
+                logger.info("成功创建Druid数据源，dbId: " + dbId);
+            }
+
+            return dataSource;
+
+        } catch (Exception e) {
+            logger.severe("创建Druid数据源失败: " + e.getMessage());
+            throw new RuntimeException("创建Druid数据源失败: " + e.getMessage(), e);
         }
-
-        loadPasswordManager();
-        DatabaseEntry entry = passwordManager.getById(dbId);
-        if (entry == null) {
-            throw new IllegalArgumentException("未找到数据库配置: " + dbId);
-        }
-
-        DruidDataSource dataSource = new DruidDataSource();
-
-        // 设置连接属性（优先从属性文件，回退到db.pwd）
-        String url = properties.getProperty("url", entry.getUrl());
-        String username = properties.getProperty("username", entry.getUsername());
-        String password = decryptPassword(entry.getPassword());
-
-        dataSource.setUrl(url);
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
-
-        // 设置Druid连接池参数
-        String initialSize = properties.getProperty("initialSize");
-        if (initialSize != null) {
-            dataSource.setInitialSize(Integer.parseInt(initialSize));
-        }
-        String maxActive = properties.getProperty("maxActive");
-        if (maxActive != null) {
-            dataSource.setMaxActive(Integer.parseInt(maxActive));
-        }
-        String minIdle = properties.getProperty("minIdle");
-        if (minIdle != null) {
-            dataSource.setMinIdle(Integer.parseInt(minIdle));
-        }
-
-        return dataSource;
     }
 
     // ============ Private Methods ============

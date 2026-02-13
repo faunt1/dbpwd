@@ -1,7 +1,8 @@
 # 集成场景和方案
 
-> 文档版本: v1.0
-> 最后更新: 2026-02-11
+> 文档版本: v2.0
+> 最后更新: 2026-02-13
+> 变更说明: 根据实际代码实现更新文档，确保文档与代码一致
 
 ## 概述
 
@@ -91,183 +92,142 @@
 ```java
 package com.dbpwd.druid;
 
+import com.alibaba.druid.util.DruidPasswordCallback;
+import com.dbpwd.core.PasswordProvider;
+
+import java.util.Properties;
+import java.util.logging.Logger;
+
 /**
  * Druid连接池密码回调处理器
- * 负责在Druid初始化时拦截密码字段并自动解密
+ *
+ * 继承DruidPasswordCallback，利用Druid原生的密码回调机制
+ * 在Druid初始化时自动解密数据库密码
+ *
+ * 使用方式：
+ * <pre>
+ * // 使用DruidDataSourceFactory和properties配置
+ * Properties props = new Properties();
+ * props.setProperty("url", "jdbc:mysql://localhost:3306/mydb");
+ * props.setProperty("username", "user");
+ * props.setProperty("password", "db_placeholder");  // 使用占位符
+ * props.setProperty("passwordCallbackClassName", "com.dbpwd.druid.DbPwdDruidPasswordCallback");
+ * DataSource ds = DruidDataSourceFactory.createDataSource(props);
+ *
+ * // 或者直接设置DruidDataSource（需要手动触发properties设置）
+ * DruidDataSource dataSource = new DruidDataSource();
+ * dataSource.setUrl("jdbc:mysql://localhost:3306/mydb");
+ * dataSource.setUsername("user");
+ *
+ * DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+ * Properties props = new Properties();
+ * props.setProperty("password", "db_placeholder");
+ * callback.setProperties(props);  // 手动设置properties
+ * dataSource.setPasswordCallback(callback);
+ * </pre>
  */
-public class DruidPasswordCallback extends DruidDataSource.PasswordCallback {
+public class DbPwdDruidPasswordCallback extends DruidPasswordCallback {
 
-    private static final Logger logger = LoggerFactory.getLogger(DruidPasswordCallback.class);
-
-    // 密码文件和密钥文件路径
-    private String passwordFilePath;
-    private String keyFilePath;
+    private static final Logger logger = Logger.getLogger(DbPwdDruidPasswordCallback.class.getName());
 
     /**
-     * 构造函数
-     *
-     * @param passwordFilePath 密码文件路径
-     * @param keyFilePath 密钥文件路径
+     * 默认构造函数
      */
-    public DruidPasswordCallback(String passwordFilePath, String keyFilePath) {
-        this.passwordFilePath = passwordFilePath;
-        this.keyFilePath = keyFilePath;
+    public DbPwdDruidPasswordCallback() {
+        super("Password:", false);
     }
 
+    /**
+     * 重写setProperties方法，DruidDataSourceFactory会调用此方法
+     */
     @Override
-    protected char[] getPassword() {
-        try {
-            // 1. 获取占位符（数据库名或ID）
-            String dbId = super.getPassword() != null ? super.getPassword().toString() : null;
+    public void setProperties(Properties properties) {
+        super.setProperties(properties);
 
-            if (dbId == null || dbId.trim().isEmpty()) {
-                throw new IllegalArgumentException("密码占位符不能为空，请配置数据库ID");
+        try {
+            // 从properties中获取密码（可能是明文、占位符或密文）
+            String encryptedPwd = properties.getProperty("password");
+
+            if (encryptedPwd == null || encryptedPwd.trim().isEmpty()) {
+                throw new IllegalArgumentException("密码不能为空");
             }
 
-            // 2. 使用PasswordService获取解密密码
-            PasswordService passwordService = new PasswordServiceImpl(passwordFilePath, keyFilePath);
-            String plainPassword = passwordService.getDecryptedPassword(dbId);
+            // 解密密码（PasswordProvider会自动判断是占位符还是密文格式）
+            String plainPassword = PasswordProvider.getDatabasePassword(encryptedPwd);
 
-            logger.info("成功解密数据库 {} 的密码", dbId);
-
-            // 3. 返回明文密码
-            return plainPassword.toCharArray();
+            // 设置解密后的密码
+            setPassword(plainPassword.toCharArray());
 
         } catch (Exception e) {
-            logger.error("解密数据库密码失败", e);
+            logger.severe("解密数据库密码失败: " + e.getMessage());
             throw new RuntimeException("数据库密码解密失败: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * 工厂方法：创建并配置DruidDataSource
-     *
-     * @param dbId 数据库ID（作为密码占位符）
-     * @param dbConfig 数据库配置
-     * @param passwordFilePath 密码文件路径
-     * @param keyFilePath 密钥文件路径
-     * @return 配置好的DruidDataSource
-     */
-    public static DruidDataSource createDataSource(
-            String dbId,
-            DatabaseConfig dbConfig,
-            String passwordFilePath,
-            String keyFilePath) {
-
-        DruidDataSource dataSource = new DruidDataSource();
-
-        // 设置基本配置
-        dataSource.setUrl(dbConfig.getJdbcUrl());
-        dataSource.setUsername(dbConfig.getUsername());
-        dataSource.setPassword(dbId);  // 使用dbId作为占位符
-        dataSource.setDriverClassName(dbConfig.getDriverClassName());
-
-        // 设置密码回调
-        dataSource.setPasswordCallback(new DruidPasswordCallback(passwordFilePath, keyFilePath));
-
-        // 设置连接池参数（可选）
-        setPoolParameters(dataSource);
-
-        return dataSource;
-    }
-
-    /**
-     * 设置Druid连接池基础参数
-     */
-    private static void setPoolParameters(DruidDataSource dataSource) {
-        dataSource.setInitialSize(5);
-        dataSource.setMinIdle(5);
-        dataSource.setMaxActive(20);
-        dataSource.setMaxWait(60000);
-        dataSource.setTimeBetweenEvictionRunsMillis(60000);
-        dataSource.setMinEvictableIdleTimeMillis(300000);
-        dataSource.setTestWhileIdle(true);
-        dataSource.setTestOnBorrow(false);
-        dataSource.setTestOnReturn(false);
-        dataSource.setValidationQuery("SELECT 1");
     }
 }
 ```
 
 ### 使用方式
 
-#### 方式1：Java配置
+#### 方式1：使用DruidDataSourceFactory配置
 
 ```java
-@Configuration
-public class DruidDataSourceConfig {
+import com.alibaba.druid.pool.DruidDataSourceFactory;
+import javax.sql.DataSource;
+import java.util.Properties;
 
-    @Value("${dbpwd.password-file:~/.dbpwd/db.pwd}")
-    private String passwordFilePath;
+public class DruidExample {
+    public static void main(String[] args) throws Exception {
+        Properties props = new Properties();
+        props.setProperty("url", "jdbc:h2:mem:acdb_main");
+        props.setProperty("username", "sa");
+        props.setProperty("password", "my_database");  // 使用数据库ID作为占位符
+        props.setProperty("driverClassName", "org.h2.Driver");
+        props.setProperty("passwordCallbackClassName",
+            "com.dbpwd.druid.DbPwdDruidPasswordCallback");
 
-    @Value("${dbpwd.key-file:~/.dbpwd/sm4.key}")
-    private String keyFilePath;
+        DataSource dataSource = DruidDataSourceFactory.createDataSource(props);
 
-    @Bean
-    public DataSource dataSource() {
-        // 使用dbId作为密码占位符
-        String dbId = "prod_db_main";
-
-        // 从db.pwd读取数据库配置
-        DatabaseConfig dbConfig = getDatabaseConfig(dbId);
-
-        // 创建配置了密码回调的Druid数据源
-        return DruidPasswordCallback.createDataSource(
-            dbId, dbConfig, passwordFilePath, keyFilePath
-        );
+        // 使用dataSource获取连接...
     }
 }
 ```
 
-#### 方式2：Spring Boot配置（自动配置）
+#### 方式2：Spring Boot配置（application.yml）
 
 ```yaml
 # application.yml
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:acdb_main
+    username: sa
+    password: my_database  # 使用数据库ID作为占位符
     druid:
-      url: jdbc:h2:mem:acdb_main
-      username: app_user
-      password: prod_db_main  # 使用数据库ID作为占位符
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      password-callback-class: com.dbpwd.druid.DruidPasswordCallback
-      password-callback-args:
-        password-file: ~/.dbpwd/db.pwd
-        key-file: ~/.dbpwd/sm4.key
-
-dbpwd:
-  druid:
-    enabled: true
-    password-file: ~/.dbpwd/db.pwd
-    key-file: ~/.dbpwd/sm4.key
+      password-callback-class-name: com.dbpwd.druid.DbPwdDruidPasswordCallback
 ```
 
-#### 方式3：纯Java使用
+#### 方式3：直接配置DruidDataSource
 
 ```java
-public class SimpleDruidExample {
+import com.alibaba.druid.pool.DruidDataSource;
+import com.dbpwd.druid.DbPwdDruidPasswordCallback;
+import java.util.Properties;
+
+public class DirectDruidExample {
     public static void main(String[] args) throws Exception {
-        // 创建带密码回调的Druid数据源
-        DruidDataSource dataSource = DruidPasswordCallback.createDataSource(
-            "prod_db_main",  // 数据库ID（密码占位符）
-            new DatabaseConfig(
-                "jdbc:h2:mem:acdb_main",
-                "sa",
-                "org.h2.Driver"
-            ),
-            "~/.dbpwd/db.pwd",
-            "~/.dbpwd/sm4.key"
-        );
+        DruidDataSource dataSource = new DruidDataSource();
+        dataSource.setUrl("jdbc:h2:mem:acdb_main");
+        dataSource.setUsername("sa");
 
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM user")) {
+        // 配置密码回调
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+        Properties props = new Properties();
+        props.setProperty("password", "my_database");  // 数据库ID作为占位符
+        callback.setProperties(props);
+        dataSource.setPasswordCallback(callback);
 
-            if (rs.next()) {
-                System.out.println("User count: " + rs.getInt(1));
-            }
-        }
+        // 使用dataSource获取连接...
     }
 }
 ```
@@ -319,15 +279,14 @@ public class SimpleDruidExample {
               ▼
 ┌─────────────────────────────────────────┐
 │   注册Beans                             │
-│   - PasswordService                     │
-│   - DataSourceDecorator                 │
-│   - DataSourceInitializer               │
+│   - DbPwdPasswordService                │
+│   - DbPwdPlaceholderResolver            │
 └─────────────┬───────────────────────────┘
               │
               ▼
 ┌─────────────────────────────────────────┐
-│   DataSource自动解密                    │
-│   拦占DataSource初始化，解密密码        │
+│   占位符解析                            │
+│   @db_id@ 格式 → 明文密码               │
 └─────────────────────────────────────────┘
 ```
 
@@ -343,12 +302,10 @@ db-pwd-spring-boot-starter/
 ├── pom.xml
 └── src/main/
     ├── java/com/dbpwd/boot/
-    │   ├── autoconfigure/
-    │   │   └── DbPwdAutoConfiguration.java
-    │   ├── properties/
-    │   │   └── DbPwdProperties.java
-    │   └── decorator/
-    │       └── DataSourceDecorator.java
+    │   ├── DbPwdAutoConfiguration.java
+    │   ├── DbPwdProperties.java
+    │   ├── DbPwdPasswordService.java
+    │   └── DbPwdPlaceholderResolver.java
     └── resources/
         └── META-INF/
             └── spring.factories
@@ -384,7 +341,7 @@ db-pwd-spring-boot-starter/
 ##### 1. 配置属性类
 
 ```java
-package com.dbpwd.boot.properties;
+package com.dbpwd.boot;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -397,7 +354,7 @@ public class DbPwdProperties {
     /**
      * 是否启用DBPWD功能
      */
-    private boolean enabled = false;
+    private boolean enabled = true;
 
     /**
      * 密码文件路径
@@ -410,14 +367,19 @@ public class DbPwdProperties {
     private String keyFile = "~/.dbpwd/sm4.key";
 
     /**
-     * 是否启用自动装饰DataSource
+     * 占位符前缀
      */
-    private boolean autoDecorate = true;
+    private String placeholderPrefix = "@";
 
     /**
-     * 密码占位符前缀（可选）
+     * 占位符后缀
      */
-    private String passwordPlaceholder;
+    private String placeholderSuffix = "@";
+
+    /**
+     * 是否启用占位符替换
+     */
+    private boolean placeholderReplacement = true;
 
     // Getters and Setters
     public boolean isEnabled() { return enabled; }
@@ -426,226 +388,232 @@ public class DbPwdProperties {
     public void setPasswordFile(String passwordFile) { this.passwordFile = passwordFile; }
     public String getKeyFile() { return keyFile; }
     public void setKeyFile(String keyFile) { this.keyFile = keyFile; }
-    public boolean isAutoDecorate() { return autoDecorate; }
-    public void setAutoDecorate(boolean autoDecorate) { this.autoDecorate = autoDecorate; }
-    public String getPasswordPlaceholder() { return passwordPlaceholder; }
-    public void setPasswordPlaceholder(String passwordPlaceholder) { this.passwordPlaceholder = passwordPlaceholder; }
+    public String getPlaceholderPrefix() { return placeholderPrefix; }
+    public void setPlaceholderPrefix(String placeholderPrefix) { this.placeholderPrefix = placeholderPrefix; }
+    public String getPlaceholderSuffix() { return placeholderSuffix; }
+    public void setPlaceholderSuffix(String placeholderSuffix) { this.placeholderSuffix = placeholderSuffix; }
+    public boolean isPlaceholderReplacement() { return placeholderReplacement; }
+    public void setPlaceholderReplacement(boolean placeholderReplacement) { this.placeholderReplacement = placeholderReplacement; }
 }
 ```
 
 ##### 2. 自动配置类
 
 ```java
-package com.dbpwd.boot.autoconfigure;
+package com.dbpwd.boot;
 
-import com.dbpwd.core.service.PasswordService;
-import com.dbpwd.core.service.impl.PasswordServiceImpl;
-import com.dbpwd.boot.properties.DbPwdProperties;
-import com.dbpwd.boot.decorator.DataSourceDecorator;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-
-import javax.sql.DataSource;
 
 /**
  * Database Password Manager Spring Boot 自动配置
  */
 @Configuration
-@ConditionalOnClass({PasswordService.class})
-@ConditionalOnProperty(prefix = "dbpwd", name = "enabled", havingValue = "true")
 @EnableConfigurationProperties(DbPwdProperties.class)
-@AutoConfigureAfter(DataSourceAutoConfiguration.class)
+@ConditionalOnProperty(prefix = "dbpwd", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class DbPwdAutoConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(DbPwdAutoConfiguration.class);
 
     /**
      * 创建密码服务Bean
      */
     @Bean
-    public PasswordService passwordService(DbPwdProperties properties) throws Exception {
-        return new PasswordServiceImpl(
-            expandPath(properties.getPasswordFile()),
-            expandPath(properties.getKeyFile())
+    public DbPwdPasswordService dbPwdPasswordService(DbPwdProperties properties) {
+        log.info("Initializing Database Password Manager...");
+        log.info("  Password file: {}", properties.getPasswordFile());
+        log.info("  Key file: {}", properties.getKeyFile());
+
+        DbPwdPasswordService service = new DbPwdPasswordService(
+            properties.getPasswordFile(),
+            properties.getKeyFile()
         );
-    }
 
-    /**
-     * 创建DataSource装饰器Bean
-     */
-    @Bean
-    public DataSourceDecorator dataSourceDecorator(
-            PasswordService passwordService,
-            DbPwdProperties properties) {
-        return new DataSourceDecorator(passwordService, properties);
-    }
-
-    /**
-     * 装饰DataSource Bean（当autoDecorate=true时）
-     */
-    @Bean
-    @Primary
-    @ConditionalOnProperty(prefix = "dbpwd", name = "auto-decorate", havingValue = "true")
-    public DataSource decoratedDataSource(
-            DataSource originalDataSource,
-            DataSourceDecorator decorator) {
-        return decorator.decorate(originalDataSource);
-    }
-
-    /**
-     * 展开路径中的~符号
-     */
-    private String expandPath(String path) {
-        if (path.startsWith("~/")) {
-            return System.getProperty("user.home") + path.substring(1);
+        // 预加载密码到缓存
+        try {
+            service.preloadPasswords();
+            log.info("Database Password Manager initialized successfully");
+        } catch (Exception e) {
+            log.warn("Failed to preload passwords: {}", e.getMessage());
         }
-        return path;
+
+        return service;
+    }
+
+    /**
+     * 创建密码替换器Bean（如果启用占位符替换）
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "dbpwd", name = "placeholder-replacement", havingValue = "true", matchIfMissing = true)
+    public DbPwdPlaceholderResolver dbPwdPlaceholderResolver(DbPwdProperties properties, DbPwdPasswordService passwordService) {
+        log.info("Initializing Placeholder Resolver with prefix='{}', suffix='{}'",
+            properties.getPlaceholderPrefix(), properties.getPlaceholderSuffix());
+        return new DbPwdPlaceholderResolver(
+            passwordService,
+            properties.getPlaceholderPrefix(),
+            properties.getPlaceholderSuffix()
+        );
     }
 }
 ```
 
-##### 3. DataSource装饰器
+##### 3. 密码服务类
 
 ```java
-package com.dbpwd.boot.decorator;
+package com.dbpwd.boot;
 
-import com.dbpwd.core.model.DatabaseEntry;
-import com.dbpwd.core.service.PasswordService;
-import com.dbpwd.core.util.ENCFormat;
-import com.dbpwd.boot.properties.DbPwdProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.dbpwd.core.PasswordFileManager;
+import com.dbpwd.core.Sm4KeyLoader;
+import com.dbpwd.model.DatabaseEntry;
+import com.dbpwd.crypto.ENCFormat;
+import com.dbpwd.crypto.Sm4GCMCipher;
 
-import javax.sql.DataSource;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DataSource 装饰器
- * 拦截DataSource的密码字段并自动解密
+ * 密码服务类
+ * 负责从配置文件中加载和缓存密码，提供解密服务
  */
-public class DataSourceDecorator {
+public class DbPwdPasswordService {
 
-    private static final Logger logger = LoggerFactory.getLogger(DataSourceDecorator.class);
+    private final String passwordFilePath;
+    private final String keyFilePath;
 
-    private final PasswordService passwordService;
-    private final DbPwdProperties properties;
+    // 密码缓存：dbId -> plainPassword
+    private final Map<String, String> passwordCache = new ConcurrentHashMap<>();
 
-    public DataSourceDecorator(PasswordService passwordService, DbPwdProperties properties) {
-        this.passwordService = passwordService;
-        this.properties = properties;
+    // 密文缓存：dbId -> encryptedPassword
+    private final Map<String, String> encryptedCache = new ConcurrentHashMap<>();
+
+    private String sm4Key;
+    private PasswordFileManager passwordManager;
+
+    public DbPwdPasswordService(String passwordFilePath, String keyFilePath) {
+        this.passwordFilePath = passwordFilePath;
+        this.keyFilePath = keyFilePath;
     }
 
     /**
-     * 装饰DataSource
+     * 预加载所有密码到缓存
      */
-    public DataSource decorate(DataSource originalDataSource) {
-        if (originalDataSource == null) {
-            return null;
-        }
+    public void preloadPasswords() throws Exception {
+        loadSm4Key();
+        loadPasswordFile();
 
-        try {
-            // 尝试获取当前密码
-            String currentPassword = getPasswordFromDataSource(originalDataSource);
-
-            // 如果密码是加密格式或占位符，则解密
-            if (needDecrypt(currentPassword)) {
-                String decryptedPassword = decryptPassword(currentPassword);
-                setDecryptedPassword(originalDataSource, decryptedPassword);
-                logger.info("成功解密DataSource的密码");
+        for (DatabaseEntry entry : passwordManager.getAllDatabases()) {
+            String dbId = entry.getId();
+            if (entry.getPassword() != null && !entry.getPassword().isEmpty()) {
+                encryptedCache.put(dbId, entry.getPassword());
+                try {
+                    String plainPassword = decrypt(entry.getPassword());
+                    passwordCache.put(dbId, plainPassword);
+                } catch (Exception e) {
+                    // 记录但不中断加载
+                }
             }
-
-        } catch (Exception e) {
-            logger.warn("DataSource密码解密失败，继续使用原密码", e);
         }
-
-        return originalDataSource;
     }
 
     /**
-     * 判断密码是否需要解密
+     * 获取数据库明文密码
      */
-    private boolean needDecrypt(String password) {
-        if (password == null || password.isEmpty()) {
-            return false;
+    public String getPlainPassword(String dbId) throws Exception {
+        // 先从缓存查找
+        if (passwordCache.containsKey(dbId)) {
+            return passwordCache.get(dbId);
         }
 
-        // 检查是否为ENC格式
-        if (ENCFormat.isEncrypted(password)) {
-            return true;
-        }
+        // 缓存未命中，解密
+        String encrypted = getEncryptedPassword(dbId);
+        String plain = decrypt(encrypted);
 
-        // 检查是否为占位符格式
-        if (properties.getPasswordPlaceholder() != null) {
-            return password.startsWith(properties.getPasswordPlaceholder());
-        }
+        // 加入缓存
+        passwordCache.put(dbId, plain);
 
-        // 默认：检查是否在db.pwd中有对应的ID
-        return passwordService.getConfig(password) != null;
+        return plain;
     }
 
     /**
-     * 解密密码
+     * 获取数据库配置
      */
-    private String decryptPassword(String encryptedOrPlaceholder) throws Exception {
-        // 如果是ENC格式，使用标准解密
-        if (ENCFormat.isEncrypted(encryptedOrPlaceholder)) {
-            return PasswordDecryptor.decrypt(encryptedOrPlaceholder, passwordService.getSm4Key());
-        }
-
-        // 如果是占位符，通过PasswordService解密
-        DatabaseEntry entry = passwordService.getConfig(encryptedOrPlaceholder);
+    public DatabaseEntry getDatabaseEntry(String dbId) throws Exception {
+        loadPasswordFileIfNecessary();
+        DatabaseEntry entry = passwordManager.getById(dbId);
         if (entry == null) {
-            throw new IllegalArgumentException("未找到数据库配置: " + encryptedOrPlaceholder);
+            throw new IllegalArgumentException("未找到数据库配置: " + dbId);
         }
-
-        return passwordService.getDecryptedPassword(encryptedOrPlaceholder);
+        return entry;
     }
 
     /**
-     * 从DataSource获取当前密码
+     * 检查是否包含指定的数据库配置
      */
-    private String getPasswordFromDataSource(DataSource dataSource) throws Exception {
-        if (dataSource instanceof DruidDataSource) {
-            return ((DruidDataSource) dataSource).getPassword();
-        } else if (dataSource instanceof HikariDataSource) {
-            return ((HikariDataSource) dataSource).getPassword();
-        } else {
-            // 使用反射获取password属性
-            try {
-                Method getPassword = dataSource.getClass().getMethod("getPassword");
-                return (String) getPassword.invoke(dataSource);
-            } catch (Exception e) {
-                logger.warn("无法获取DataSource的密码字段", e);
-                return null;
-            }
-        }
+    public boolean containsDatabase(String dbId) throws Exception {
+        loadPasswordFileIfNecessary();
+        return passwordManager.getById(dbId) != null;
+    }
+
+    // ... 其他私有方法省略
+}
+```
+
+##### 4. 占位符解析器
+
+```java
+package com.dbpwd.boot;
+
+/**
+ * 占位符解析器
+ * 负责将@db_id@格式的占位符替换为明文密码
+ */
+public class DbPwdPlaceholderResolver {
+
+    private final DbPwdPasswordService passwordService;
+    private final String placeholderPrefix;
+    private final String placeholderSuffix;
+
+    public DbPwdPlaceholderResolver(DbPwdPasswordService passwordService,
+                                    String placeholderPrefix,
+                                    String placeholderSuffix) {
+        this.passwordService = passwordService;
+        this.placeholderPrefix = placeholderPrefix;
+        this.placeholderSuffix = placeholderSuffix;
     }
 
     /**
-     * 将解密后的密码设置到DataSource
+     * 解析占位符并返回明文密码
      */
-    private void setDecryptedPassword(DataSource dataSource, String decryptedPassword) throws Exception {
-        if (dataSource instanceof DruidDataSource) {
-            ((DruidDataSource) dataSource).setPassword(decryptedPassword);
-        } else if (dataSource instanceof HikariDataSource) {
-            // HikariCP的密码是final的，需要重新创建
-            logger.warn("HikariCP需要重新创建数据源来更新密码");
-        } else {
-            // 使用反射设置password属性
-            try {
-                Method setPassword = dataSource.getClass().getMethod("setPassword", String.class);
-                setPassword.invoke(dataSource, decryptedPassword);
-            } catch (Exception e) {
-                logger.warn("无法设置DataSource的密码字段", e);
-            }
+    public String resolve(String value) throws Exception {
+        if (value == null || value.isEmpty()) {
+            return value;
         }
+
+        if (isPlaceholder(value)) {
+            String dbId = extractDbId(value);
+            return passwordService.getPlainPassword(dbId);
+        }
+
+        return value;
+    }
+
+    /**
+     * 检查是否是占位符
+     */
+    private boolean isPlaceholder(String value) {
+        return value.startsWith(placeholderPrefix) && value.endsWith(placeholderSuffix);
+    }
+
+    /**
+     * 从占位符中提取数据库ID
+     */
+    private String extractDbId(String placeholder) {
+        return placeholder.substring(placeholderPrefix.length(),
+            placeholder.length() - placeholderSuffix.length());
     }
 }
 ```
@@ -655,7 +623,7 @@ public class DataSourceDecorator {
 ```properties
 # src/main/resources/META-INF/spring.factories
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-com.dbpwd.boot.autoconfigure.DbPwdAutoConfiguration
+com.dbpwd.boot.DbPwdAutoConfiguration
 ```
 
 ### 使用方式
@@ -672,10 +640,10 @@ dbpwd:
 
 spring:
   datasource:
-    url: jdbc:mysql://192.168.1.100:3306/acdb_main
-    username: app_user
-    password: prod_db_main  # 使用数据库ID作为占位符
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:h2:mem:mydb
+    username: sa
+    password: "@my_database@"  # 使用@db_id@格式占位符
+    driver-class-name: org.h2.Driver
 ```
 
 #### 完整配置
@@ -683,17 +651,18 @@ spring:
 ```yaml
 dbpwd:
   enabled: true
-  auto-decorate: true
   password-file: /secure/dbpwd/db.pwd
   key-file: /secure/dbpwd/sm4.key
-  password-placeholder: "ENC:"  # 可选：自定义占位符前缀
+  placeholder-prefix: "@"
+  placeholder-suffix: "@"
+  placeholder-replacement: true
 
 spring:
   datasource:
-    url: jdbc:mysql://192.168.1.100:3306/acdb_main
-    username: app_user
-    password: ENC:prod_db_main  # 使用自定义前缀
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:h2:mem:mydb
+    username: sa
+    password: "@my_database@"  # 占位符格式
+    driver-class-name: org.h2.Driver
     type: com.alibaba.druid.pool.DruidDataSource
 
     # Druid配置
@@ -703,32 +672,30 @@ spring:
       max-active: 20
 ```
 
-#### 多数据源配置
+#### 在代码中使用
 
 ```java
-@Configuration
-public class MultiDataSourceConfig {
+@RestController
+public class UserController {
 
-    @Primary
-    @Bean
-    @ConfigurationProperties(prefix = "spring.datasource.primary")
-    public DataSource primaryDataSource() {
-        return DataSourceBuilder.create().build();
+    @Autowired
+    private DbPwdPasswordService passwordService;
+
+    @Autowired
+    private DbPwdPlaceholderResolver placeholderResolver;
+
+    @GetMapping("/password")
+    public String getPassword() throws Exception {
+        // 方式1：直接获取密码
+        String password = passwordService.getPlainPassword("my_database");
+
+        // 方式2：解析占位符
+        String resolved = placeholderResolver.resolve("@my_database@");
+
+        return "Password retrieved successfully";
     }
-
-    @Bean
-    @ConfigurationProperties(prefix = "spring.datasource.secondary")
-    public DataSource secondaryDataSource() {
-        return DataSourceBuilder.create().build();
-    }
-
-    @Bean
-    public PasswordService passwordService(DbPwdProperties properties) throws Exception {
-        return new PasswordServiceImpl(properties.getPasswordFile(), properties.getKeyFile());
-    }
-
-    // 自动配置会装饰以上两个DataSource
 }
+```
 ```
 
 ### 优势与限制
@@ -1210,31 +1177,29 @@ dbpwd.excluded-beans=testDataSource,secondaryDataSource
 
 ```
 ┌─────────────────────────────────────┐
-│   MyBatis配置文件                    │
-│   mybatis-config.xml                 │
-│   <dataSource type="DbPwdFactory"/>  │
-└─────────────┬───────────────────────┘
-              │
-              ▼
-┌─────────────────────────────────────┐
-│   UnpooledDataSourceFactory         │
-│   （基类，MyBatis内置）              │
+│   应用代码 / MyBatis配置             │
+│   DbPwdDataSourceFactory            │
+│   dbId: "my_database"                │
 └─────────────┬───────────────────────┘
               │
               ▼
 ┌─────────────────────────────────────┐
 │   DbPwdDataSourceFactory            │
-│   （继承UnpooledDataSourceFactory）  │
 │   - 读取db.pwd和sm4.key              │
+│   - 根据dbId查找配置                 │
 │   - 解密密码                         │
 │   - 创建DataSource                  │
 └─────────────┬───────────────────────┘
               │
               ▼
 ┌─────────────────────────────────────┐
-│   返回配置好的DataSource             │
+│   返回配置好的UnpooledDataSource     │
 └─────────────────────────────────────┘
 ```
+
+**注意**: 本方案提供了两种工厂类：
+- `DbPwdDataSourceFactory` - 使用MyBatis内置的UnpooledDataSource
+- `DbPwdDruidDataSourceFactory` - 使用Druid连接池
 
 ### 实现设计
 
@@ -1247,10 +1212,8 @@ dbpwd.excluded-beans=testDataSource,secondaryDataSource
 db-pwd-mybatis/
 ├── pom.xml
 └── src/main/java/com/dbpwd/mybatis/
-    ├── factory/
-    │   └── DbPwdDataSourceFactory.java
-    └── config/
-        └── MyBatisConfiguration.java
+    ├── DbPwdDataSourceFactory.java
+    └── DbPwdDruidDataSourceFactory.java
 ```
 
 #### 依赖关系
@@ -1273,210 +1236,169 @@ db-pwd-mybatis/
 
 #### 核心类
 
-##### DataSourceFactory实现
+##### DbPwdDataSourceFactory（使用MyBatis UnpooledDataSource）
 
 ```java
-package com.dbpwd.mybatis.factory;
+package com.dbpwd.mybatis;
 
-import com.dbpwd.core.service.PasswordService;
-import com.dbpwd.core.service.impl.PasswordServiceImpl;
+import com.dbpwd.core.PasswordFileManager;
+import com.dbpwd.core.Sm4KeyLoader;
+import com.dbpwd.model.DatabaseEntry;
+import com.dbpwd.crypto.ENCFormat;
+import com.dbpwd.crypto.Sm4GCMCipher;
 import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
-import org.apache.ibatis.datasource.unpooled.UnpooledDataSourceFactory;
 
 import javax.sql.DataSource;
 import java.util.Properties;
 
 /**
- * DBPWD DataSourceFactory
- * 继承MyBatis的UnpooledDataSourceFactory，实现密码自动解密
+ * MyBatis密码管理DataSource工厂
+ *
+ * 使用方式1：在mybatis-config.xml中配置
+ * <pre>
+ * &lt;dataSource type="com.dbpwd.mybatis.DbPwdDataSourceFactory"&gt;
+ *   &lt;property name="dbId" value="my_database"/&gt;
+ * &lt;/dataSource&gt;
+ * </pre>
+ *
+ * 使用方式2：纯Java配置
+ * <pre>
+ * DbPwdDataSourceFactory factory = new DbPwdDataSourceFactory();
+ * factory.setDbId("my_database");
+ * DataSource dataSource = factory.getDataSource();
+ * </pre>
  */
-public class DbPwdDataSourceFactory extends UnpooledDataSourceFactory {
+public class DbPwdDataSourceFactory {
 
-    private static final Logger logger = LoggerFactory.getLogger(DbPwdDataSourceFactory.class);
+    private static final String DEFAULT_KEY_PATH = System.getProperty("user.home") + "/.dbpwd/sm4.key";
+    private static final String DEFAULT_PWD_PATH = System.getProperty("user.home") + "/.dbpwd/db.pwd";
 
-    // 配置参数
-    private String passwordFile = "~/.dbpwd/db.pwd";
-    private String keyFile = "~/.dbpwd/sm4.key";
-
-    // 密码服务
-    private PasswordService passwordService;
+    private String dbId;
+    private String keyFile;
+    private String pwdFile;
+    private String sm4Key;
+    private String url;
+    private String username;
+    private String password;
+    private String driverClassName;
+    private PasswordFileManager passwordManager;
 
     public DbPwdDataSourceFactory() {
-        initializePasswordService();
+    }
+
+    public DbPwdDataSourceFactory(String dbId) {
+        this.dbId = dbId;
     }
 
     /**
-     * 初始化密码服务
+     * 设置属性（MyBatis调用）
      */
-    private void initializePasswordService() {
-        try {
-            String expandedPasswordFile = expandPath(passwordFile);
-            String expandedKeyFile = expandPath(keyFile);
-            this.passwordService = new PasswordServiceImpl(expandedPasswordFile, expandedKeyFile);
-        } catch (Exception e) {
-            logger.error("初始化PasswordService失败", e);
-            throw new RuntimeException("初始化密码服务失败", e);
-        }
+    public void setProperties(Properties properties) {
+        this.dbId = properties.getProperty("dbId");
+        this.keyFile = properties.getProperty("keyFile", DEFAULT_KEY_PATH);
+        this.pwdFile = properties.getProperty("pwdFile", DEFAULT_PWD_PATH);
+        this.url = properties.getProperty("url");
+        this.username = properties.getProperty("username");
+        this.password = properties.getProperty("password");
+        this.driverClassName = properties.getProperty("driverClassName");
     }
 
     /**
-     * 覆盖父类方法，创建带解密密码的DataSource
+     * 设置数据库ID占位符
      */
-    @Override
-    public DataSource getDataSource() {
-        Properties properties = getProperties();
+    public void setDbId(String dbId) {
+        this.dbId = dbId;
+    }
 
-        // 获取配置的参数
-        String driver = properties.getProperty("driver");
-        String url = properties.getProperty("url");
-        String username = properties.getProperty("username");
-        String password = properties.getProperty("password");
-
-        // 解密密码（如果需要）
-        String decryptedPassword = decryptPassword(password);
-
-        // 直接设置到父类的dataSource
-        if (dataSource == null) {
-            dataSource = new UnpooledDataSource();
+    /**
+     * 获取数据源（密码自动解密）
+     */
+    public DataSource getDataSource() throws Exception {
+        if (dbId == null || dbId.isEmpty()) {
+            throw new IllegalStateException("dbId must be set");
         }
 
-        if (dataSource instanceof UnpooledDataSource) {
-            UnpooledDataSource unpooledDataSource = (UnpooledDataSource) dataSource;
-            if (driver != null) unpooledDataSource.setDriver(driver);
-            if (url != null) unpooledDataSource.setUrl(url);
-            if (username != null) unpooledDataSource.setUsername(username);
-            if (decryptedPassword != null) unpooledDataSource.setPassword(decryptedPassword);
-
-            logger.info("成功创建带解密密码的DataSource");
+        loadPasswordManager();
+        DatabaseEntry entry = passwordManager.getById(dbId);
+        if (entry == null) {
+            throw new IllegalArgumentException("未找到数据库配置: " + dbId);
         }
+
+        // 解密密码
+        String plainPassword = decryptPassword(entry.getPassword());
+
+        // 使用db.pwd中的配置，可以被手动设置的值覆盖
+        String actualUrl = (url != null && !url.isEmpty()) ? url : entry.getUrl();
+        String actualUsername = (username != null && !username.isEmpty()) ? username : entry.getUsername();
+        String actualDriver = (driverClassName != null && !driverClassName.isEmpty()) ? driverClassName : "org.h2.Driver";
+
+        UnpooledDataSource dataSource = new UnpooledDataSource();
+        dataSource.setUrl(actualUrl);
+        dataSource.setUsername(actualUsername);
+        dataSource.setPassword(plainPassword);
+        dataSource.setDriver(actualDriver);
 
         return dataSource;
     }
 
-    /**
-     * 解密密码
-     */
-    private String decryptPassword(String encryptedOrPlaceholder) {
-        if (encryptedOrPlaceholder == null || encryptedOrPlaceholder.isEmpty()) {
-            return null;
-        }
-
-        try {
-            // 检查是否为占位符（数据库ID）
-            if (passwordService.getConfig(encryptedOrPlaceholder) != null) {
-                return passwordService.getDecryptedPassword(encryptedOrPlaceholder);
-            }
-
-            // 检查是否为ENC格式
-            if (encryptedOrPlaceholder.startsWith("ENC(SM4:")) {
-                return PasswordDecryptor.decrypt(encryptedOrPlaceholder, passwordService.getSm4Key());
-            }
-
-            // 返回明文（无需解密）
-            logger.debug("密码不是占位符或加密格式，使用明文");
-            return encryptedOrPlaceholder;
-
-        } catch (Exception e) {
-            logger.error("解密密码失败", e);
-            throw new RuntimeException("密码解密失败", e);
-        }
-    }
-
-    /**
-     * 展开路径中的~符号
-     */
-    private String expandPath(String path) {
-        if (path.startsWith("~/")) {
-            return System.getProperty("user.home") + path.substring(1);
-        }
-        return path;
-    }
-
-    /**
-     * Setter方法（用于MyBatis配置）
-     */
-    public void setPasswordFile(String passwordFile) {
-        this.passwordFile = passwordFile;
-        initializePasswordService();
-    }
-
-    public void setKeyFile(String keyFile) {
-        this.keyFile = keyFile;
-        initializePasswordService();
-    }
+    // ... 私有方法省略
 }
 ```
 
-##### DruidDataSourceFactory（可选，支持连接池）
+##### DbPwdDruidDataSourceFactory（使用Druid连接池）
 
 ```java
-package com.dbpwd.mybatis.factory;
+package com.dbpwd.mybatis;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.core.service.PasswordService;
-import com.dbpwd.core.service.impl.PasswordServiceImpl;
+import com.dbpwd.core.PasswordFileManager;
+import com.dbpwd.core.Sm4KeyLoader;
+import com.dbpwd.model.DatabaseEntry;
+import com.dbpwd.crypto.ENCFormat;
+import com.dbpwd.crypto.Sm4GCMCipher;
 import org.apache.ibatis.datasource.DataSourceFactory;
 
 import javax.sql.DataSource;
 import java.util.Properties;
 
 /**
- * DBPWD Druid DataSourceFactory
- * 支持Druid连接池的密码自动解密
+ * MyBatis Druid密码管理DataSource工厂
+ * 实现MyBatis的DataSourceFactory接口，支持Druid连接池
  */
 public class DbPwdDruidDataSourceFactory implements DataSourceFactory {
 
-    private static final Logger logger = LoggerFactory.getLogger(DbPwdDruidDataSourceFactory.class);
-
-    // 配置参数
-    private String passwordFile = "~/.dbpwd/db.pwd";
-    private String keyFile = "~/.dbpwd/sm4.key";
-
-    // 密码服务
-    private PasswordService passwordService;
+    private static final String DEFAULT_KEY_PATH = System.getProperty("user.home") + "/.dbpwd/sm4.key";
+    private static final String DEFAULT_PWD_PATH = System.getProperty("user.home") + "/.dbpwd/db.pwd";
 
     private DruidDataSource dataSource;
+    private String dbId;
+    private String keyFile;
+    private String pwdFile;
+    private String sm4Key;
+    private PasswordFileManager passwordManager;
 
     public DbPwdDruidDataSourceFactory() {
-        initializePasswordService();
-    }
-
-    private void initializePasswordService() {
-        try {
-            String expandedPasswordFile = expandPath(passwordFile);
-            String expandedKeyFile = expandPath(keyFile);
-            this.passwordService = new PasswordServiceImpl(expandedPasswordFile, expandedKeyFile);
-        } catch (Exception e) {
-            logger.error("初始化PasswordService失败", e);
-            throw new RuntimeException("初始化密码服务失败", e);
-        }
+        this.dataSource = new DruidDataSource();
     }
 
     @Override
     public void setProperties(Properties properties) {
-        if (dataSource == null) {
-            dataSource = new DruidDataSource();
-        }
+        this.dbId = properties.getProperty("dbId");
+        this.keyFile = properties.getProperty("keyFile", DEFAULT_KEY_PATH);
+        this.pwdFile = properties.getProperty("pwdFile", DEFAULT_PWD_PATH);
 
-        // 设置基本属性
-        if (properties.containsKey("driver")) {
-            dataSource.setDriverClassName(properties.getProperty("driver"));
-        }
+        // 可选：直接设置连接参数（不使用db.pwd）
         if (properties.containsKey("url")) {
             dataSource.setUrl(properties.getProperty("url"));
         }
         if (properties.containsKey("username")) {
             dataSource.setUsername(properties.getProperty("username"));
         }
-
-        // 解密密码
-        if (properties.containsKey("password")) {
-            String encryptedOrPlaceholder = properties.getProperty("password");
-            String decryptedPassword = decryptPassword(encryptedOrPlaceholder);
-            dataSource.setPassword(decryptedPassword);
+        if (properties.containsKey("driverClassName")) {
+            dataSource.setDriverClassName(properties.getProperty("driverClassName"));
         }
 
-        // 设置连接池参数（可选）
+        // Druid连接池参数
         if (properties.containsKey("initialSize")) {
             dataSource.setInitialSize(Integer.parseInt(properties.getProperty("initialSize")));
         }
@@ -1490,147 +1412,84 @@ public class DbPwdDruidDataSourceFactory implements DataSourceFactory {
 
     @Override
     public DataSource getDataSource() {
-        return dataSource;
-    }
-
-    private String decryptPassword(String encryptedOrPlaceholder) {
-        if (encryptedOrPlaceholder == null || encryptedOrPlaceholder.isEmpty()) {
-            return null;
-        }
-
         try {
-            if (passwordService.getConfig(encryptedOrPlaceholder) != null) {
-                return passwordService.getDecryptedPassword(encryptedOrPlaceholder);
+            // 如果设置了dbId，从db.pwd加载配置
+            if (dbId != null && !dbId.isEmpty()) {
+                loadPasswordManager();
+                DatabaseEntry entry = passwordManager.getById(dbId);
+                if (entry == null) {
+                    throw new IllegalArgumentException("未找到数据库配置: " + dbId);
+                }
+
+                // 设置配置（如果未手动设置）
+                if (dataSource.getUrl() == null || dataSource.getUrl().isEmpty()) {
+                    dataSource.setUrl(entry.getUrl());
+                }
+                if (dataSource.getUsername() == null || dataSource.getUsername().isEmpty()) {
+                    dataSource.setUsername(entry.getUsername());
+                }
+
+                // 解密并设置密码
+                String plainPassword = decryptPassword(entry.getPassword());
+                dataSource.setPassword(plainPassword);
             }
 
-            if (encryptedOrPlaceholder.startsWith("ENC(SM4:")) {
-                return PasswordDecryptor.decrypt(encryptedOrPlaceholder, passwordService.getSm4Key());
-            }
-
-            return encryptedOrPlaceholder;
+            return dataSource;
 
         } catch (Exception e) {
-            logger.error("解密密码失败", e);
-            throw new RuntimeException("密码解密失败", e);
+            throw new RuntimeException("创建Druid数据源失败: " + e.getMessage(), e);
         }
     }
 
-    private String expandPath(String path) {
-        if (path.startsWith("~/")) {
-            return System.getProperty("user.home") + path.substring(1);
-        }
-        return path;
-    }
-
-    public void setPasswordFile(String passwordFile) {
-        this.passwordFile = passwordFile;
-        initializePasswordService();
-    }
-
-    public void setKeyFile(String keyFile) {
-        this.keyFile = keyFile;
-        initializePasswordService();
-    }
+    // ... 私有方法省略
 }
 ```
 
 ### 使用方式
 
-#### MyBatis XML配置
-
-```xml
-<!-- mybatis-config.xml -->
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-    "http://mybatis.org/dtd/mybatis-3-config.dtd">
-
-<configuration>
-
-    <!-- 配置数据源（使用DbPwdDataSourceFactory） -->
-    <environments default="development">
-        <environment id="development">
-            <transactionManager type="JDBC"/>
-            <dataSource type="com.dbpwd.mybatis.factory.DbPwdDataSourceFactory">
-                <property name="driver" value="org.h2.Driver"/>
-                <property name="url" value="jdbc:h2:mem:acdb_main"/>
-                <property name="username" value="sa"/>
-                <property name="password" value="prod_db_main"/>
-
-                <!-- 可选：配置密钥文件路径 -->
-                <property name="passwordFile" value="~/.dbpwd/db.pwd"/>
-                <property name="keyFile" value="~/.dbpwd/sm4.key"/>
-            </dataSource>
-        </environment>
-    </environments>
-
-    <!-- Mapper配置 -->
-    <mappers>
-        <mapper resource="mapper/UserMapper.xml"/>
-    </mappers>
-
-</configuration>
-```
-
-#### Druid连接池配置
-
-```xml
-<!-- mybatis-config.xml -->
-<configuration>
-
-    <environments default="development">
-        <environment id="development">
-            <transactionManager type="JDBC"/>
-            <dataSource type="com.dbpwd.mybatis.factory.DbPwdDruidDataSourceFactory">
-                <property name="driver" value="org.h2.Driver"/>
-                <property name="url" value="jdbc:h2:mem:acdb_main"/>
-                <property name="username" value="sa"/>
-                <property name="password" value="prod_db_main"/>
-
-                <!-- 连接池参数 -->
-                <property name="initialSize" value="5"/>
-                <property name="minIdle" value="5"/>
-                <property name="maxActive" value="20"/>
-
-                <!-- 密钥文件配置 -->
-                <property name="passwordFile" value="~/.dbpwd/db.pwd"/>
-                <property name="keyFile" value="~/.dbpwd/sm4.key"/>
-            </dataSource>
-        </environment>
-    </environments>
-
-</configuration>
-```
-
-#### Java代码使用
+#### Java代码直接使用
 
 ```java
-import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.session.SqlSession;
-import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import com.dbpwd.mybatis.DbPwdDataSourceFactory;
+import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
+import javax.sql.DataSource;
 
 public class MyBatisExample {
     public static void main(String[] args) throws Exception {
-        // 读取MyBatis配置
-        String resource = "mybatis-config.xml";
-        InputStream inputStream = Resources.getResourceAsStream(resource);
+        // 方式1：使用dbId自动从db.pwd获取配置
+        DbPwdDataSourceFactory factory = new DbPwdDataSourceFactory();
+        factory.setDbId("my_database");
+        DataSource dataSource = factory.getDataSource();
 
-        // 创建SqlSessionFactory
-        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder()
-            .build(inputStream);
+        // 方式2：通过构造函数设置dbId
+        DbPwdDataSourceFactory factory2 = new DbPwdDataSourceFactory("my_database");
+        DataSource dataSource2 = factory2.getDataSource();
 
-        // 打开Session
-        try (SqlSession session = sqlSessionFactory.openSession()) {
+        // 使用DataSource创建MyBatis SqlSessionFactory...
+    }
+}
+```
 
-            // 获取Mapper
-            UserMapper mapper = session.getMapper(UserMapper.class);
+#### 使用Druid连接池
 
-            // 执行查询
-            List<User> users = mapper.findAll();
-            for (User user : users) {
-                System.out.println(user);
-            }
-        }
+```java
+import com.dbpwd.mybatis.DbPwdDruidDataSourceFactory;
+import javax.sql.DataSource;
+
+public class DruidMyBatisExample {
+    public static void main(String[] args) throws Exception {
+        DbPwdDruidDataSourceFactory factory = new DbPwdDruidDataSourceFactory();
+
+        Properties props = new Properties();
+        props.setProperty("dbId", "my_database");
+        props.setProperty("initialSize", "5");
+        props.setProperty("minIdle", "5");
+        props.setProperty("maxActive", "20");
+
+        factory.setProperties(props);
+        DataSource dataSource = factory.getDataSource();
+
+        // 使用DataSource...
     }
 }
 ```
@@ -2111,162 +1970,213 @@ db-pwd-web/
 ##### 1. 初始化监听器
 
 ```java
-package com.dbpwd.web.listener;
+package com.dbpwd.web;
 
-import com.dbpwd.core.model.DatabaseEntry;
-import com.dbpwd.core.service.PasswordService;
-import com.dbpwd.core.service.impl.PasswordServiceImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import javax.servlet.annotation.WebListener;
 
 /**
  * 数据库密码初始化监听器
- * 在Web应用启动时初始化密码服务并保存到ServletContext
+ *
+ * 在Web应用启动时初始化密码管理服务，密码预加载到ServletContext中
+ *
+ * 使用方式：在web.xml中配置
+ * <pre>
+ * &lt;listener&gt;
+ *   &lt;listener-class&gt;com.dbpwd.web.DatabasePasswordInitListener&lt;/listener-class&gt;
+ * &lt;/listener&gt;
+ *
+ * &lt;!-- 可选：自定义配置路径 --&gt;
+ * &lt;context-param&gt;
+ *   &lt;param-name&gt;dbpwd.keyFile&lt;/param-name&gt;
+ *   &lt;param-value&gt;/path/to/sm4.key&lt;/param-value&gt;
+ * &lt;/context-param&gt;
+ * &lt;context-param&gt;
+ *   &lt;param-name&gt;dbpwd.pwdFile&lt;/param-name&gt;
+ *   &lt;param-value&gt;/path/to/db.pwd&lt;/param-value&gt;
+ * &lt;/context-param&gt;
+ * &lt;context-param&gt;
+ *   &lt;param-name&gt;dbpwd.preload&lt;/param-name&gt;
+ *   &lt;param-value&gt;true&lt;/param-value&gt;
+ * &lt;/context-param&gt;
+ * </pre>
  */
+@WebListener
 public class DatabasePasswordInitListener implements ServletContextListener {
 
-    private static final Logger logger = LoggerFactory.getLogger(DatabasePasswordInitListener.class);
-
-    // ServletContext属性名称常量
-    public static final String ATTR_PASSWORD_SERVICE = "dbpwd.passwordService";
-    public static final String ATTR_PASSWORDS = "dbpwd.passwords";
-    public static final String ATTR_SM4_KEY = "dbpwd.sm4Key";
-
-    // 默认配置
-    private static final String DEFAULT_PASSWORD_FILE = "~/.dbpwd/db.pwd";
-    private static final String DEFAULT_KEY_FILE = "~/.dbpwd/sm4.key";
-
-    // 配置参数（可通过web.xml覆盖）
-    private String passwordFile;
-    private String keyFile;
-    private boolean preloadAll = true;
-
-    /**
-     * 默认构造函数
-     */
-    public DatabasePasswordInitListener() {
-        this(DEFAULT_PASSWORD_FILE, DEFAULT_KEY_FILE, true);
-    }
-
-    /**
-     * 自定义构造函数
-     */
-    public DatabasePasswordInitListener(String passwordFile, String keyFile, boolean preloadAll) {
-        this.passwordFile = passwordFile;
-        this.keyFile = keyFile;
-        this.preloadAll = preloadAll;
-    }
+    // Context参数名称
+    private static final String KEY_FILE_PARAM = "dbpwd.keyFile";
+    private static final String PWD_FILE_PARAM = "dbpwd.pwdFile";
+    private static final String PRELOAD_PARAM = "dbpwd.preload";
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        ServletContext servletContext = sce.getServletContext();
-        logger.info("初始化数据库密码服务...");
-
         try {
-            // 1. 从ServletContext获取配置参数（web.xml可配置）
-            String configPasswordFile = servletContext.getInitParameter("dbpwd.passwordFile");
-            String configKeyFile = servletContext.getInitParameter("dbpwd.keyFile");
-            String configPreload = servletContext.getInitParameter("dbpwd.preloadAll");
+            // 读取自定义配置
+            String customKeyFile = sce.getServletContext().getInitParameter(KEY_FILE_PARAM);
+            String customPwdFile = sce.getServletContext().getInitParameter(PWD_FILE_PARAM);
+            String preloadConfig = sce.getServletContext().getInitParameter(PRELOAD_PARAM);
+            boolean preload = preloadConfig == null || Boolean.parseBoolean(preloadConfig);
 
-            if (configPasswordFile != null) passwordFile = configPasswordFile;
-            if (configKeyFile != null) keyFile = configKeyFile;
-            if (configPreload != null) preloadAll = Boolean.parseBoolean(configPreload);
+            // 获取或创建密码服务
+            WebPasswordService service = getOrCreateService(sce.getServletContext(), customKeyFile, customPwdFile);
 
-            // 2. 展开路径
-            String expandedPasswordFile = expandPath(passwordFile);
-            String expandedKeyFile = expandPath(keyFile);
-
-            logger.info("密码文件: {}", expandedPasswordFile);
-            logger.info("密钥文件: {}", expandedKeyFile);
-
-            // 3. 创建密码服务
-            PasswordService passwordService = new PasswordServiceImpl(expandedPasswordFile, expandedKeyFile);
-
-            // 4. 存储到ServletContext
-            servletContext.setAttribute(ATTR_PASSWORD_SERVICE, passwordService);
-            servletContext.setAttribute(ATTR_SM4_KEY, passwordService.getSm4Key());
-
-            // 5. 预加载所有密码（可选）
-            if (preloadAll) {
-                Map<String, String> passwords = preloadAllPasswords(passwordService);
-                servletContext.setAttribute(ATTR_PASSWORDS, passwords);
-                logger.info("预加载了 {} 个数据库密码", passwords.size());
+            // 预加载密码（可选）
+            if (preload) {
+                service.preloadPasswords();
+                System.out.println("[DbPwd] Database passwords preloaded successfully");
             }
 
-            logger.info("数据库密码服务初始化完成");
+            System.out.println("[DbPwd] Database Password Manager initialized");
 
         } catch (Exception e) {
-            logger.error("初始化数据库密码服务失败", e);
-            // 继续启动，但运行时可能无法使用密码功能
-            servletContext.setAttribute("dbpwd.initError", e.getMessage());
+            System.err.println("[DbPwd] Failed to initialize Database Password Manager: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        ServletContext servletContext = sce.getServletContext();
-        logger.info("销毁数据库密码服务...");
-
-        // 清理ServletContext属性
-        servletContext.removeAttribute(ATTR_PASSWORD_SERVICE);
-        servletContext.removeAttribute(ATTR_PASSWORDS);
-        servletContext.removeAttribute(ATTR_SM4_KEY);
-
-        logger.info("数据库密码服务已销毁");
+        // 清除缓存
+        WebPasswordUtil.clearCache(sce.getServletContext());
+        System.out.println("[DbPwd] Database Password Manager shut down");
     }
 
     /**
-     * 预加载所有密码
+     * 获取或创建密码服务
      */
-    private Map<String, String> preloadAllPasswords(PasswordService passwordService) throws Exception {
-        Map<String, String> passwords = new HashMap<>();
+    private WebPasswordService getOrCreateService(javax.servlet.ServletContext context,
+                                                  String customKeyFile,
+                                                  String customPwdFile) {
+        String keyFile = (customKeyFile != null && !customKeyFile.isEmpty())
+            ? customKeyFile : WebPasswordUtil.DEFAULT_KEY_PATH;
+        String pwdFile = (customPwdFile != null && !customPwdFile.isEmpty())
+            ? customPwdFile : System.getProperty("user.home") + "/.dbpwd/db.pwd";
 
-        // 获取所有数据库配置
-        List<DatabaseEntry> entries = passwordService.getAllDatabases();
-        for (DatabaseEntry entry : entries) {
-            try {
-                String plainPassword = passwordService.getDecryptedPassword(entry.getId());
-                passwords.put(entry.getId(), plainPassword);
-                logger.debug("预加载密码: {}", entry.getId());
-            } catch (Exception e) {
-                logger.warn("预加载密码失败: {}", entry.getId(), e);
+        WebPasswordService service = (WebPasswordService) context.getAttribute(
+            WebPasswordUtil.PASSWORD_SERVICE_KEY);
+
+        if (service == null) {
+            synchronized (DatabasePasswordInitListener.class) {
+                service = (WebPasswordService) context.getAttribute(
+                    WebPasswordUtil.PASSWORD_SERVICE_KEY);
+                if (service == null) {
+                    service = new WebPasswordService(keyFile, pwdFile);
+                    context.setAttribute(WebPasswordUtil.PASSWORD_SERVICE_KEY, service);
+                    System.out.println("[DbPwd] WebPasswordService created");
+                }
             }
         }
 
-        return passwords;
-    }
-
-    /**
-     * 展开路径中的~符号
-     */
-    private String expandPath(String path) {
-        if (path.startsWith("~/")) {
-            return System.getProperty("user.home") + path.substring(1);
-        }
-        return path;
+        return service;
     }
 }
 ```
 
-##### 2. Web工具类
+##### 2. Web密码服务类
 
 ```java
-package com.dbpwd.web.util;
+package com.dbpwd.web;
 
-import com.dbpwd.core.service.PasswordService;
-import com.dbpwd.web.listener.DatabasePasswordInitListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.dbpwd.core.PasswordFileManager;
+import com.dbpwd.core.Sm4KeyLoader;
+import com.dbpwd.model.DatabaseEntry;
+import com.dbpwd.crypto.ENCFormat;
+import com.dbpwd.crypto.Sm4GCMCipher;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Web环境密码服务类
+ * 负责提供密码缓存和快速访问功能
+ */
+public class WebPasswordService {
+
+    public static final String PASSWORD_SERVICE_KEY = "dbpwd.passwordService";
+    public static final String DEFAULT_KEY_PATH = System.getProperty("user.home") + "/.dbpwd/sm4.key";
+
+    private String keyFilePath;
+    private String pwdFilePath;
+    private String sm4Key;
+    private PasswordFileManager passwordManager;
+
+    // 密码缓存
+    private final Map<String, String> passwordCache = new ConcurrentHashMap<>();
+    private final Map<String, String> encryptedCache = new ConcurrentHashMap<>();
+
+    public WebPasswordService(String keyFilePath, String pwdFilePath) {
+        this.keyFilePath = keyFilePath;
+        this.pwdFilePath = pwdFilePath;
+    }
+
+    /**
+     * 预加载所有密码到缓存
+     */
+    public void preloadPasswords() throws Exception {
+        loadSm4Key();
+        loadPasswordFile();
+
+        for (DatabaseEntry entry : passwordManager.getAllDatabases()) {
+            String dbId = entry.getId();
+            if (entry.getPassword() != null && !entry.getPassword().isEmpty()) {
+                encryptedCache.put(dbId, entry.getPassword());
+                try {
+                    String plainPassword = decrypt(entry.getPassword());
+                    passwordCache.put(dbId, plainPassword);
+                } catch (Exception e) {
+                    // 记录但不中断加载
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取数据库明文密码
+     */
+    public String getPlainPassword(String dbId) throws Exception {
+        if (passwordCache.containsKey(dbId)) {
+            return passwordCache.get(dbId);
+        }
+
+        String encrypted = getEncryptedPassword(dbId);
+        String plain = decrypt(encrypted);
+        passwordCache.put(dbId, plain);
+
+        return plain;
+    }
+
+    /**
+     * 获取数据库配置
+     */
+    public DatabaseEntry getDatabaseEntry(String dbId) throws Exception {
+        loadPasswordFileIfNecessary();
+        DatabaseEntry entry = passwordManager.getById(dbId);
+        if (entry == null) {
+            throw new IllegalArgumentException("未找到数据库配置: " + dbId);
+        }
+        return entry;
+    }
+
+    /**
+     * 清除缓存
+     */
+    public void clearCache() {
+        passwordCache.clear();
+        encryptedCache.clear();
+    }
+
+    // ... 私有方法省略
+}
+```
+
+##### 3. Web工具类
+
+```java
+package com.dbpwd.web;
 
 import javax.servlet.ServletContext;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
@@ -2276,90 +2186,52 @@ import java.sql.DriverManager;
  */
 public class WebPasswordUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebPasswordUtil.class);
+    public static final String PASSWORD_SERVICE_KEY = "dbpwd.passwordService";
+    public static final String DEFAULT_KEY_PATH = System.getProperty("user.home") + "/.dbpwd/sm4.key";
 
     /**
      * 从ServletContext获取密码服务
      */
-    public static PasswordService getPasswordService(ServletContext servletContext) {
-        PasswordService passwordService = (PasswordService) servletContext.getAttribute(
-            DatabasePasswordInitListener.ATTR_PASSWORD_SERVICE
-        );
+    public static WebPasswordService getPasswordService(ServletContext servletContext) {
+        WebPasswordService service = (WebPasswordService) servletContext.getAttribute(PASSWORD_SERVICE_KEY);
 
-        if (passwordService == null) {
+        if (service == null) {
             throw new IllegalStateException("密码服务未初始化，请检查是否配置了DatabasePasswordInitListener");
         }
 
-        return passwordService;
+        return service;
     }
 
     /**
      * 获取解密后的密码
      */
     public static String getDecryptedPassword(ServletContext servletContext, String dbId) throws Exception {
-        return getPasswordService(servletContext).getDecryptedPassword(dbId);
+        return getPasswordService(servletContext).getPlainPassword(dbId);
     }
 
     /**
      * 获取数据库连接
      */
     public static Connection getConnection(ServletContext servletContext, String dbId) throws Exception {
-        PasswordService passwordService = getPasswordService(servletContext);
+        WebPasswordService service = getPasswordService(servletContext);
+        DatabaseEntry entry = service.getDatabaseEntry(dbId);
+        String plainPassword = service.getPlainPassword(dbId);
 
-        // 获取数据库配置
-        DatabaseEntry entry = passwordService.getConfig(dbId);
-        if (entry == null) {
-            throw new IllegalArgumentException("未找到数据库配置: " + dbId);
-        }
-
-        // 获取解密密码
-        String plainPassword = passwordService.getDecryptedPassword(dbId);
-
-        // 创建连接
         return DriverManager.getConnection(
-            entry.getJdbcUrl(),
+            entry.getUrl(),
             entry.getUsername(),
             plainPassword
         );
     }
 
     /**
-     * 从预加载的密码集合获取（性能更高）
+     * 清除缓存
      */
-    public static String getPreloadedPassword(ServletContext servletContext, String dbId) {
-        @SuppressWarnings("unchecked")
-        Map<String, String> passwords = (Map<String, String>) servletContext.getAttribute(
-            DatabasePasswordInitListener.ATTR_PASSWORDS
-        );
-
-        if (passwords == null) {
-            throw new IllegalStateException("密码未预加载，请启用preloadAll配置");
+    public static void clearCache(ServletContext servletContext) {
+        WebPasswordService service = getPasswordService(servletContext);
+        if (service != null) {
+            service.clearCache();
         }
-
-        String password = passwords.get(dbId);
-        if (password == null) {
-            throw new IllegalArgumentException("未找到预加载的密码: " + dbId);
-        }
-
-        return password;
-    }
-
-    /**
-     * 创建DataSource
-     */
-    public static DataSource createDataSource(ServletContext servletContext, String dbId) throws Exception {
-        PasswordService passwordService = getPasswordService(servletContext);
-        DatabaseEntry entry = passwordService.getConfig(dbId);
-        String plainPassword = passwordService.getDecryptedPassword(dbId);
-
-        DruidDataSource dataSource = new DruidDataSource();
-        dataSource.setUrl(entry.getJdbcUrl());
-        dataSource.setUsername(entry.getUsername());
-        dataSource.setPassword(plainPassword);
-        dataSource.setDriverClassName(entry.getDriverClassName());
-        dataSource.setInitialSize(5);
-
-        return dataSource;
     }
 }
 ```
