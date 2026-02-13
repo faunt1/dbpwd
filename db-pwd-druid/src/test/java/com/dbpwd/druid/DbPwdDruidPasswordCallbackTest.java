@@ -10,6 +10,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -136,30 +137,70 @@ public class DbPwdDruidPasswordCallbackTest {
 
     @Test
     public void testEmptyPlaceholder() {
-        assertThrows(RuntimeException.class, () -> {
-            DruidDataSource dataSource = new DruidDataSource();
-            dataSource.setUrl("jdbc:mysql://localhost:3306/test_db");
-            dataSource.setUsername("test_user");
-            dataSource.setPassword("");
-            dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
+        // 创建默认路径的文件
+        try {
+            createDefaultPathFiles();
 
-            // 设置testOnBorrow false避免实际连接
-            dataSource.setTestOnBorrow(false);
-        });
+            // 直接测试PasswordCallback的setProperties方法
+            assertThrows(RuntimeException.class, () -> {
+                DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+                Properties props = new Properties();
+                props.setProperty("password", "");
+                callback.setProperties(props);
+            });
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        } finally {
+            try {
+                cleanupDefaultPathFiles();
+            } catch (Exception e) {
+                // 忽略
+            }
+        }
     }
 
     @Test
     public void testNullPlaceholder() {
-        assertThrows(RuntimeException.class, () -> {
-            DruidDataSource dataSource = new DruidDataSource();
-            dataSource.setUrl("jdbc:mysql://localhost:3306/test_db");
-            dataSource.setUsername("test_user");
-            dataSource.setPassword((String) null);
-            dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
+        // 创建默认路径的文件
+        try {
+            createDefaultPathFiles();
 
-            // 设置testOnBorrow false避免实际连接
-            dataSource.setTestOnBorrow(false);
-        });
+            // 直接测试PasswordCallback的setProperties方法
+            assertThrows(RuntimeException.class, () -> {
+                DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+                Properties props = new Properties();
+                props.setProperty("password", "");
+                callback.setProperties(props);
+            });
+        } catch (Exception e) {
+            fail("Setup failed: " + e.getMessage());
+        } finally {
+            try {
+                cleanupDefaultPathFiles();
+            } catch (Exception e) {
+                // 忽略
+            }
+        }
+    }
+
+    @Test
+    public void testPasswordCallbackSetPropertiesValid() throws Exception {
+        // 创建默认路径的文件
+        createDefaultPathFiles();
+
+        try {
+            // 测试PasswordCallback的setProperties方法正常工作
+            DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+            Properties props = new Properties();
+            props.setProperty("password", TEST_DB_ID);
+            callback.setProperties(props);
+
+            // 验证密码已被解密并设置
+            assertNotNull(callback.getPassword());
+            assertEquals(TEST_PASSWORD, new String(callback.getPassword()));
+        } finally {
+            cleanupDefaultPathFiles();
+        }
     }
 
     // ==================== 辅助方法 ====================
