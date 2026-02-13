@@ -1,7 +1,7 @@
 package com.dbpwd.demo.druid;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.crypto.Sm4GCMCipher;
+import com.dbpwd.druid.DbPwdDruidPasswordCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,11 +10,11 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 public class DruidDemoApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(DruidDemoApplication.class);
-    private static final String DEFAULT_SM4_KEY = "000102030405060708090a0b0c0d0e0f";
 
     public static void main(String[] args) {
         logger.info("========================================");
@@ -23,7 +23,7 @@ public class DruidDemoApplication {
         logger.info("");
 
         try {
-            // 创建Druid数据源（使用ENC格式密码）
+            // 创建Druid数据源（使用Druid PasswordCallback机制）
             DruidDataSource dataSource = createDataSource();
 
             // 测试数据库连接
@@ -109,10 +109,10 @@ public class DruidDemoApplication {
                 logger.info("========================================");
                 logger.info("");
                 logger.info("Key points demonstrated:");
-                logger.info("- ENC(SM4-GCM:xxx) format for encrypted password");
-                logger.info("- SM4-GCM encryption for secure password storage");
+                logger.info("- Druid PasswordCallback extends DruidDataSource.PasswordCallback");
+                logger.info("- Using placeholder 'druid_demo_db' as password");
+                logger.info("- Password automatically decrypted from db.pwd");
                 logger.info("- Druid connection pool manages connections");
-                logger.info("- No need for additional DruidPasswordCallback");
             }
 
             // 关闭数据源
@@ -128,13 +128,13 @@ public class DruidDemoApplication {
     private static DruidDataSource createDataSource() throws Exception {
         DruidDataSource dataSource = new DruidDataSource();
 
-        // 数据库连接配置
-        dataSource.setUrl("jdbc:h2:mem:dbpwd_druid_demo;DB_CLOSE_DELAY=-1");
+        // 数据库连接配置（FILE模式以支持密码验证）
+        dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo;MODE=MySQL");
         dataSource.setUsername("sa");
 
-        // 生成ENC格式密码
-        String encPassword = generateEncryptedPassword("sa");
-        dataSource.setPassword(encPassword);
+        // 使用占位符作为密码，然后设置密码回调
+        dataSource.setPassword("druid_demo_db");
+        dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
         dataSource.setDriverClassName("org.h2.Driver");
 
         // 连接池配置
@@ -146,16 +146,10 @@ public class DruidDemoApplication {
         logger.info("Druid DataSource configured:");
         logger.info("  URL: {}", dataSource.getUrl());
         logger.info("  Username: {}", dataSource.getUsername());
-        logger.info("  Password: ENC(SM4-GCM:...) [encrypted]");
+        logger.info("  Password: druid_demo_db [placeholder]");
+        logger.info("  PasswordCallback: DbPwdDruidPasswordCallback [will decrypt automatically from db.pwd]");
 
         return dataSource;
-    }
-
-    private static String generateEncryptedPassword(String plainPassword) throws Exception {
-        String encryptedPassword = Sm4GCMCipher.encrypt(plainPassword, DEFAULT_SM4_KEY);
-        String encPassword = "ENC(SM4-GCM:" + encryptedPassword + ")";
-        logger.info("Generated ENC password: {}", encPassword);
-        return encPassword;
     }
 
     private static long insertProduct(Connection conn, String name, String description,

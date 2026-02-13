@@ -76,21 +76,21 @@ public class SimpleJdbcDemo {
 
             // Step 4: Insert products
             System.out.println("\n2. Creating products...");
-            insertProduct(connection, "Laptop", 1299.99, 50);
+            insertProduct(mainConnection, "Laptop", 1299.99, 50);
             System.out.println("   Created product: Laptop (1299.99, 50)");
-            insertProduct(connection, "Smartphone", 899.99, 100);
+            insertProduct(mainConnection, "Smartphone", 899.99, 100);
             System.out.println("   Created product: Smartphone (899.99, 100)");
 
             // Step 3: Query products
             System.out.println("\n3. Querying all products...");
-            queryProducts(connection);
+            queryProducts(mainConnection);
 
             // Step 4: Query user
             System.out.println("\n4. Querying user by ID...");
-            queryUser(connection, 1);
+            queryUser(mainConnection, 1);
 
             // Step 5: Close connection
-            connection.close();
+            mainConnection.close();
 
             System.out.println("\n=========================================");
             System.out.println("   Demo completed successfully!");

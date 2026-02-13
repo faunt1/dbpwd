@@ -27,7 +27,8 @@ import java.util.List;
  */
 public class MybatisDemoApplication {
 
-    private static final String H2_URL = "jdbc:h2:mem:dbpwd_mybatis_demo;DB_CLOSE_DELAY=-1";
+    // FILE模式以支持密码验证
+    private static final String H2_URL = "jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_mybatis_demo;MODE=MySQL";
     private static final String H2_USERNAME = "sa";
     private static final String H2_PASSWORD = "sa";
     private static final String H2_DRIVER = "org.h2.Driver";

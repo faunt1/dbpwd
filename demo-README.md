@@ -17,6 +17,68 @@
 
 > **详细规划**：请查看 [Demo集成方案规划](./technical/demo-integration-plan.md)
 
+---
+
+## Demo初始化工具 (db-pwd-demo-init)
+
+所有 Demo 运行前必须先执行 demo-init 工具初始化 H2 FILE 数据库。
+
+### 为什么需要初始化工具？
+
+H2 内存数据库不验证密码，任何密码都可以连接。无法真正验证密码解密的有效性。
+
+初始化工具创建 H2 FILE 数据库，首次连接时绑定密码，后续连接必须使用相同的密码。
+
+### 使用步骤
+
+```bash
+# Step 1: 生成 db.pwd 和 sm4.key
+mvn exec:java -pl db-pwd-core \
+  -Dexec.mainClass="com.dbpwd.cli.DBPasswordCLI" \
+  --demo --generate-key
+
+# Step 2: 运行demo-init初始化H2 FILE数据库
+mvn exec:java -pl db-pwd-demo-init \
+  -Dexec.mainClass="com.dbpwd.init.DatabaseInitializer"
+
+# Step 3: 运行具体Demo程序
+```
+
+### 执行示例
+
+```
+=========================================
+   Database Password Manager - Demo Database Initialization
+=========================================
+
+Initializing: simple_jdbc_db → dbpwd_simple_demo
+  Password retrieved from db.pwd: ✓
+  H2 FILE database created at: jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_simple_demo
+  Database will validate password on subsequent connections
+  Table(s) created successfully: dbpwd_simple_demo
+
+...
+Successfully initialized: 7
+H2 data directory: C:\Users\faunt\.dbpwd\h2_data
+```
+
+### 创建的数据库
+
+```
+~/.dbpwd/h2_data/
+├── dbpwd_simple_demo.mv.db
+├── dbpwd_druid_demo.mv.db
+├── dbpwd_spring_boot_demo.mv.db
+├── dbpwd_spring_demo.mv.db
+├── dbpwd_mybatis_demo.mv.db
+├── dbpwd_servlet_demo.mv.db
+└── dbpwd_struts_demo.mv.db
+```
+
+**详细说明**: 请查看 [Demo应用设计文档](./demo-design.md) - Demo初始化工具章节
+
+---
+
 ## 相关文档
 
 - [Demo集成方案规划](./technical/demo-integration-plan.md) - 6个Demo的详细设计和技术方案

@@ -27,6 +27,7 @@
         <module>db-pwd-mybatis-demo</module>
         <module>db-pwd-servlet-demo</module>
         <module>db-pwd-struts-demo</module>
+        <module>db-pwd-demo-init</module>
     </modules>
 
     <properties>

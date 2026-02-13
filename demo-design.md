@@ -1,7 +1,7 @@
 # Database Password Manager - Demo应用设计文档
 
-> 文档版本: 2.0
-> 最后更新: 2026-02-11
+> 文档版本: 2.1
+> 最后更新: 2026-02-13
 
 ## 概述
 
@@ -9,16 +9,159 @@
 
 ---
 
+## Demo 初始化工具 (db-pwd-demo-init)
+
+### 描述
+
+`db-pwd-demo-init` 是一个独立的命令行工具，用于在运行其他 Demo 程序之前初始化 H2 文件型数据库。
+
+### 为什么需要初始化工具？
+
+**H2 数据库的两种模式对比**：
+
+| 模式 | URL 格式 | 密码验证 | 适用场景 |
+|------|----------|---------|---------|
+| **内存模式** | `jdbc:h2:mem:dbname;DB_CLOSE_DELAY=-1` | ❌ 不验证 | 快速测试，开发 |
+| **文件模式** | `jdbc:h2:file:path/dbname;MODE=MySQL` | ✅ 验证密码 | 真实环境测试，持久化 |
+
+**问题**：内存模式下，H2 数据库不验证密码，导致任何密码都可以连接成功，无法真正验证密码解密的有效性。
+
+**解决方案**：使用 H2 FILE 模式创建数据库，首次连接时绑定密码，后续连接必须使用相同密码，提供真正的密码验证。
+
+### 初始化工具功能
+
+1. **读取 db.pwd**：从 `~/.dbpwd/db.pwd` 中获取各个 Demo 数据库的密文密码
+2. **解密密码**：使用 `~/.dbpwd/sm4.key` 解密密文获取明文密码
+3. **创建数据库**：使用解密后的明文密码创建 H2 FILE 数据库
+4. **初始化表结构**：创建统一的数据库表结构
+
+### 使用步骤
+
+```bash
+# 1. 编译项目
+mvn clean install -DskipTests
+
+# 2. 运行初始化工具
+cd <project-root>
+mvn exec:java -pl db-pwd-demo-init \
+  -Dexec.mainClass="com.dbpwd.init.DatabaseInitializer"
+
+# 或使用编译后的 jar 包
+java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
+```
+
+### 执行示例
+
+```
+=========================================
+   Database Password Manager - Demo Database Initialization
+=========================================
+
+Initializing: simple_jdbc_db  → dbpwd_simple_demo
+  Password retrieved from db.pwd: ✓
+  H2 FILE database created at: jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_simple_demo
+  Database will validate password on subsequent connections
+  Table(s) created successfully: dbpwd_simple_demo
+
+Initializing: druid_demo_db  → dbpwd_druid_demo
+  Password retrieved from db.pwd: ✓
+  H2 FILE database created at: jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo
+  Table(s) created successfully: dbpwd_druid_demo
+  Password verification: ENABLED
+
+...
+
+=========================================
+   Initialization Summary
+=========================================
+  Total databases: 7
+  Successfully initialized: 7
+  H2 data directory: C:\Users\faunt\.dbpwd\h2_data
+```
+
+### 创建的数据库文件
+
+```
+~/.dbpwd/h2_data/
+├── dbpwd_simple_demo.mv.db      (Simple JDBC Demo)
+├── dbpwd_druid_demo.mv.db       (Druid Demo)
+├── dbpwd_spring_boot_demo.mv.db (Spring Boot Demo)
+├── dbpwd_spring_demo.mv.db      (Spring Demo)
+├── dbpwd_mybatis_demo.mv.db     (MyBatis Demo)
+├── dbpwd_servlet_demo.mv.db     (Servlet Demo)
+└── dbpwd_struts_demo.mv.db      (Struts Demo)
+```
+
+### 支持的 Demo 数据库
+
+| Demo 应用 | 占位符 | H2 FILE 数据库名 | JDBC URL |
+|---------|--------|------------------|----------|
+| Simple JDBC Demo | `simple_jdbc_db` | `dbpwd_simple_demo` | `jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_simple_demo;MODE=MySQL` |
+| Druid Demo | `druid_demo_db` | `dbpwd_druid_demo` | `jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo;MODE=MySQL` |
+| Spring Boot Demo | `spring_boot_db` | `dbpwd_spring_boot_demo` | `jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_spring_boot_demo;MODE=MySQL` |
+| Spring Demo | `spring_demo_db` | `dbpwd_spring_demo` | `jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_spring_demo;MODE=MySQL` |
+| MyBatis Demo | `mybatis_demo_db` | `dbpwd_mybatis_demo` | `jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_mybatis_demo;MODE=MySQL` |
+| Servlet Demo | `servlet_demo_db` | `dbpwd_servlet_demo` | `jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_servlet_demo;MODE=MySQL` |
+| Struts Demo | `struts_demo_db` | `dbpwd_struts_demo` | `jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_struts_demo;MODE=MySQL` |
+
+### 前置条件
+
+1. **db.pwd 文件存在**：包含所有 Demo 数据库的配置（使用 `--demo` 参数生成）
+2. **sm4.key 文件存在**：SM4 密钥文件（可使用 `--generate-key` 参数生成）
+
+生成 db.pwd 和 sm4.key：
+
+```bash
+mvn exec:java -pl db-pwd-core \
+  -Dexec.mainClass="com.dbpwd.cli.DBPasswordCLI" \
+  --demo --generate-key
+```
+
+### 技术实现
+
+**DatabaseInitializer.java 核心逻辑**：
+
+```java
+public class DatabaseInitializer {
+
+    // 1. 从 db.pwd 获取密码
+    String plainPassword = PasswordProvider.getDatabasePassword(placeholder);
+
+    // 2. 连接 H2 FILE 数据库（首次连接创建并绑定密码）
+    String url = "jdbc:h2:file:" + dataDir + "/" + dbName + ";MODE=MySQL;DB_CLOSE_DELAY=-1";
+    Connection conn = DriverManager.getConnection(url, "sa", plainPassword);
+
+    // 3. 创建表结构
+    stmt.execute(tableSql);
+
+    // 4. 后续连接必须使用相同密码
+}
+```
+
+### 密码验证机制
+
+| 阶段 | 说明 |
+|------|------|
+| **首次连接** | H2 FILE 数据库创建并绑定密码 `sa` + 解密后的密码 |
+| **后续连接** | 必须使用相同的密码才能成功连接，否则连接失败 |
+| **验证效果** | 只有正确解密的密码才能连接数据库 |
+| **应用场景** | 真正验证密码解密和数据库连接的完整性 |
+
+---
+
+---
+
 ## Demo应用概览
 
 | Demo应用 | 集成方案 | 集成模块 | 占位符 | 状态 |
 |---------|---------|---------|--------|------|
-| db-pwd-simple-jdbc-demo | 方案5: StandalonePasswordDecryptor | db-pwd-core | `simple_jdbc_db` | ✅ 已更新 |
-| db-pwd-druid-demo | 方案1: Druid PasswordCallback | db-pwd-druid | `druid_demo_db` | ⚪ 待开发 |
-| db-pwd-spring-boot-demo | 方案2: Spring Boot Starter | db-pwd-spring-boot-starter | `spring_boot_db` | ✅ 已有 |
-| db-pwd-spring-demo | 方案3: Spring BeanPostProcessor | db-pwd-spring | `spring_demo_db` | ⚪ 待开发 |
-| db-pwd-mybatis-demo | 方案4: MyBatis DataSourceFactory | db-pwd-mybatis | `mybatis_demo_db` | ⚪ 待开发 |
-| db-pwd-servlet-demo | 方案6: Servlet InitListener | db-pwd-web | `servlet_demo_db` | ⚪ 待开发 |
+| db-pwd-demo-init | - | db-pwd-core | - | ✅ 已完成 |
+| db-pwd-simple-jdbc-demo | 方案5: StandalonePasswordDecryptor | db-pwd-core | `simple_jdbc_db` | ✅ 已完成 |
+| db-pwd-druid-demo | 方案1: Druid PasswordCallback | db-pwd-druid | `druid_demo_db` | ✅ 已完成 |
+| db-pwd-spring-boot-demo | 方案2: Spring Boot Starter | db-pwd-spring-boot-starter | `spring_boot_db` | ✅ 已完成 |
+| db-pwd-spring-demo | 方案3: Spring BeanPostProcessor | db-pwd-spring | `spring_demo_db` | ✅ 已完成 |
+| db-pwd-mybatis-demo | 方案4: MyBatis DataSourceFactory | db-pwd-mybatis | `mybatis_demo_db` | ✅ 已完成 |
+| db-pwd-servlet-demo | 方案6: Servlet InitListener | db-pwd-web | `servlet_demo_db` | ✅ 已完成 |
 
 ---
 
@@ -30,8 +173,29 @@
 |-----|------|
 | JDK | 8+ |
 | Maven | 3.6+ |
-| 数据库 | H2 内存数据库 |
+| 数据库 | H2 FILE 数据库（密码验证模式） |
+| 数据目录 | `~/.dbpwd/h2_data/` |
 | 加密算法 | SM4-GCM (国密认证加密) |
+
+### Demo 运行前置步骤
+
+**所有 Demo 运行前必须先执行初始化工具**：
+
+```bash
+# Step 1: 生成 db.pwd 和 sm4.key
+mvn exec:java -pl db-pwd-core \
+  -Dexec.mainClass="com.dbpwd.cli.DBPasswordCLI" \
+  --demo --generate-key
+
+# Step 2: 运行 demo-init 初始化 H2 FILE 数据库
+mvn exec:java -pl db-pwd-demo-init \
+  -Dexec.mainClass="com.dbpwd.init.DatabaseInitializer"
+
+# Step 3: 运行具体 Demo 程序
+# 例如：
+mvn exec:java -pl db-pwd-simple-jdbc-demo \
+  -Dexec.mainClass="com.dbpwd.demo.SimpleJdbcDemo"
+```
 
 ---
 

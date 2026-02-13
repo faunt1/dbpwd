@@ -83,7 +83,8 @@ public class DemoConfig {
         logger.info("Configuring Druid dataSource with encrypted password...");
 
         DruidDataSource dataSource = new DruidDataSource();
-        dataSource.setUrl("jdbc:h2:mem:dbpwd_spring_demo;DB_CLOSE_DELAY=-1");
+        // FILE模式以支持密码验证
+        dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_spring_demo;MODE=MySQL");
         dataSource.setUsername("sa");
         // 使用ENC(SM4-GCM:xxx)格式的加密密码
         // 这个密码是使用密钥 "000102030405060708090a0b0c0d0e0f" 加密 "sa" 得到的

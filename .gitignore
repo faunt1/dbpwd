@@ -3,4 +3,5 @@ target/
 .vscode/settings.json
 ~/.dbpwd/db.pwd
 ~/.dbpwd/sm4.key
-*/logs
+**/logs
+

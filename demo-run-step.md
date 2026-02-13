@@ -1,11 +1,22 @@
 # Database Password Manager - Demo应用演示步骤
 
-> 文档版本: 2.0
-> 最后更新: 2026-02-12
+> 文档版本: 2.1
+> 最后更新: 2026-02-13
 
 ## 概述
 
-本文档描述了Database Password Manager 6个Demo应用的完整演示执行步骤。每个Demo展示一种特定的集成方式，涵盖主流Java技术栈的集成场景。
+本文档描述了Database Password Manager 7个Demo应用的完整演示执行步骤。每个Demo展示一种特定的集成方式，涵盖主流Java技术栈的集成场景。
+
+**Demo列表**：
+1. db-pwd-demo-init - Demo数据库初始化工具（必须首先运行）
+2. Simple JDBC Demo - 纯JDBC应用
+3. Druid Demo - Druid连接池应用
+4. Spring Boot Demo - Spring Boot集成
+5. Spring Demo - 传统Spring框架集成
+6. MyBatis Demo - MyBatis集成
+7. Servlet Demo - Servlet/Web应用集成
+
+---
 
 ## 前置要求
 
@@ -16,16 +27,37 @@
 
 ## H2数据库设置
 
-所有Demo使用H2内存数据库，无需外部数据库服务。启动Demo时会自动创建内存数据库和表结构。
+### Demo初始化步骤（必须首先执行）
 
-**H2数据库通用配置**:
+所有Demo使用H2文件型数据库（FILE模式），支持密码验证。在运行任何Demo之前，必须先运行demo-init工具创建数据库。
+
+**为什么使用H2 FILE模式？**
+- **内存模式问题**: H2内存数据库不验证密码，无法真正测试密码解密的有效性
+- **文件模式优势**: H2 FILE数据库首次连接时创建并绑定密码，后续连接必须使用相同密码，提供真正的密码验证
+
+### H2数据库通用配置
 
 | 参数 | 值 |
 |------|-----|
 | 用户名 | sa |
-| 密码（明文） | `dbpwd_h2_demo_password_2024` |
+| 密码（明文） | sa |
 | 存储方式 | 在db.pwd中经过SM4加密 |
-| 连接超时 | 5秒 |
+| 数据目录 | `~/.dbpwd/h2_data/` |
+| 连接模式 | FILE模式，支持密码验证 |
+
+### Demo占位符映射
+
+| Demo应用 | 占位符(在db.pwd中) | H2 FILE数据库名 | 集成方案 | 说明 |
+|---------|------------------|-----------------|---------|------|
+| Simple JDBC Demo | `simple_jdbc_db` | `dbpwd_simple_demo` | 模式1: 纯JDBC | 程序直接调用API，需要正确密码 |
+| Druid Demo | `druid_demo_db` | `dbpwd_druid_demo` | 方案1: Druid Callback | 利用Druid原生机制，需要正确密码 |
+| Spring Boot Demo | `spring_boot_db` | `dbpwd_spring_boot_demo` | 方案2: Spring Boot Starter | 自动装饰DataSource，需要正确密码 |
+| Spring Demo | `spring_framework_db` | `dbpwd_spring_demo` | 方案3: BeanPostProcessor | 拦截DataSource Bean，需要正确密码 |
+| MyBatis Demo | `mybatis_demo_db` | `dbpwd_mybatis_demo` | 方案4: MyBatis Factory | MyBatis工厂类，需要正确密码 |
+| Servlet Demo | `servlet_demo_db` | `dbpwd_servlet_demo` | 方案6: InitListener | Servlet初始化监听器，需要正确密码 |
+| Struts Demo | `struts_demo_db` | `dbpwd_struts_demo` | 模式1: 独立应用 | 程序直接操作模式，需要正确密码 |
+
+**说明**: 每个Demo使用独立的H2 FILE数据库，演示不同的技术栈集成方案。所有数据库都已通过demo-init工具初始化，绑定了正确的密码，只有使用db.pwd中解密的正确密码才能连接成功。
 
 ---
 
@@ -45,6 +77,77 @@
 ---
 
 ## Demo验证步骤
+
+### 步骤0: 初始化H2文件型数据库（重要）
+
+> **为什么使用H2 FILE模式？**
+> **内存模式问题**: H2内存数据库不验证密码，无法真正测试密码解密的有效性。
+> **文件模式优势**: H2 FILE数据库首次连接时创建并绑定密码，后续连接必须使用相同密码，提供真正的密码验证。
+
+#### 方法1: 使用demo-init工具初始化
+
+```bash
+cd <project-root>
+mvn clean install -DskipTests
+java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
+
+# 或使用mvn exec:java
+mvn exec:java -pl db-pwd-demo-init \
+  -Dexec.mainClass="com.dbpwd.init.DatabaseInitializer"
+```
+
+**执行示例**:
+```
+=========================================
+   Database Password Manager - Demo Database Initialization
+=========================================
+
+Initializing: simple_jdbc_db  → dbpwd_simple_demo
+  Password retrieved from db.pwd: ✓
+  H2 FILE database created at: jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_simple_demo
+  Database will validate password on subsequent connections
+  Table(s) created successfully: dbpwd_simple_demo
+
+Initializing: druid_demo_db  → dbpwd_druid_demo
+  Password retrieved from db.pwd: ✓
+  H2 FILE database created at: jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo
+  Table(s) created successfully: dbpwd_druid_demo
+  Password verification: ENABLED
+...
+
+=========================================
+   Initialization Summary
+=========================================
+  Total databases: 7
+  Successfully initialized: 4
+  H2 data directory: C:\Users\faunt\.dbpwd\h2_data
+```
+
+**创建的数据库文件**:
+```
+~/.dbpwd/h2_data/dbpwd_simple_demo.mv.db
+~/.dbpwd/h2_data/dbpwd_druid_demo.mv.db
+~/.dbpwd/h2_data/dbpwd_spring_boot_demo.mv.db
+~/.dbpwd/h2_data/dbpwd_spring_demo.mv.db
+~/.dbpwd/h2_data/dbpwd_mybatis_demo.mv.db
+~/.dbpwd/h2_data/dbpwd_servlet_demo.mv.db
+```
+
+#### 方法2: 手动创建数据库文件
+
+```bash
+# 使用CLI工具验证db.pwd配置中的密码
+mvn exec:java -pl db-pwd-core \
+  -Dexec.mainClass="com.dbpwd.cli.DBPasswordCLI" \
+  --demo --generate-key
+```
+
+**密码验证说明**:
+- 首次连接时，H2 FILE数据库会绑定指定的密码
+- 后续连接必须使用相同的密码才能成功（提供真正的密码验证）
+- 这模拟了生产环境中数据库密码的安全管理
+
+---
 
 ### 步骤1: 生成db.pwd和sm4.key文件
 
