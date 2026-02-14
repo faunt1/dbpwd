@@ -11,7 +11,7 @@ public class WebPasswordUtilTest {
 
     @Test
     public void testPasswordServiceKeyConstant() {
-        assertEquals("dbpwd.password.service", WebPasswordUtil.PASSWORD_SERVICE_KEY);
+        assertEquals("dbpwd.passwordService", WebPasswordService.PASSWORD_SERVICE_KEY);
     }
 
     @Test
@@ -28,11 +28,11 @@ public class WebPasswordUtilTest {
 
     @Test
     public void testConstantsNotEmpty() {
-        assertNotNull(WebPasswordUtil.PASSWORD_SERVICE_KEY);
+        assertNotNull(WebPasswordService.PASSWORD_SERVICE_KEY);
         assertNotNull(WebPasswordUtil.DEFAULT_KEY_PATH);
         assertNotNull(WebPasswordUtil.DEFAULT_PWD_PATH);
 
-        assertFalse(WebPasswordUtil.PASSWORD_SERVICE_KEY.isEmpty());
+        assertFalse(WebPasswordService.PASSWORD_SERVICE_KEY.isEmpty());
         assertFalse(WebPasswordUtil.DEFAULT_KEY_PATH.isEmpty());
         assertFalse(WebPasswordUtil.DEFAULT_PWD_PATH.isEmpty());
     }
