@@ -1,7 +1,7 @@
 package com.dbpwd.demo.druid;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.druid.DbPwdDruidPasswordCallback;
+import com.dbpwd.core.PasswordProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,9 +132,9 @@ public class DruidDemoApplication {
         dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo;MODE=MySQL");
         dataSource.setUsername("sa");
 
-        // 使用占位符作为密码，然后设置密码回调
-        dataSource.setPassword("druid_demo_db");
-        dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
+        // 使用占位符从db.pwd获取密码
+        String password = PasswordProvider.getDatabasePassword("@druid_demo_db@");
+        dataSource.setPassword(password);
         dataSource.setDriverClassName("org.h2.Driver");
 
         // 连接池配置
@@ -146,8 +146,7 @@ public class DruidDemoApplication {
         logger.info("Druid DataSource configured:");
         logger.info("  URL: {}", dataSource.getUrl());
         logger.info("  Username: {}", dataSource.getUsername());
-        logger.info("  Password: druid_demo_db [placeholder]");
-        logger.info("  PasswordCallback: DbPwdDruidPasswordCallback [will decrypt automatically from db.pwd]");
+        logger.info("  Password: @druid_demo_db@ [decrypted from db.pwd]");
 
         return dataSource;
     }
