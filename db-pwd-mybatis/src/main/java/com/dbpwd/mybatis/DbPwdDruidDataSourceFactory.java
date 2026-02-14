@@ -123,29 +123,32 @@ public class DbPwdDruidDataSourceFactory implements DataSourceFactory {
      */
     @Override
     public DataSource getDataSource() {
+        // 验证dbId是否有效
+        if (dbId == null || dbId.isEmpty()) {
+            throw new IllegalStateException("dbId未设置或为空，请通过构造函数、setDbId()或setProperties()设置dbId");
+        }
+
         try {
-            // 如果设置了dbId，从db.pwd加载配置
-            if (dbId != null && !dbId.isEmpty()) {
-                loadPasswordManager();
-                DatabaseEntry entry = passwordManager.getById(dbId);
-                if (entry == null) {
-                    throw new IllegalArgumentException("未找到数据库配置: " + dbId);
-                }
-
-                // 设置配置（如果未手动设置）
-                if (dataSource.getUrl() == null || dataSource.getUrl().isEmpty()) {
-                    dataSource.setUrl(entry.getUrl());
-                }
-                if (dataSource.getUsername() == null || dataSource.getUsername().isEmpty()) {
-                    dataSource.setUsername(entry.getUsername());
-                }
-
-                // 解密并设置密码
-                String plainPassword = decryptPassword(entry.getPassword());
-                dataSource.setPassword(plainPassword);
-
-                logger.info("成功创建Druid数据源，dbId: " + dbId);
+            // 从db.pwd加载配置
+            loadPasswordManager();
+            DatabaseEntry entry = passwordManager.getById(dbId);
+            if (entry == null) {
+                throw new IllegalArgumentException("未找到数据库配置: " + dbId);
             }
+
+            // 设置配置（如果未手动设置）
+            if (dataSource.getUrl() == null || dataSource.getUrl().isEmpty()) {
+                dataSource.setUrl(entry.getUrl());
+            }
+            if (dataSource.getUsername() == null || dataSource.getUsername().isEmpty()) {
+                dataSource.setUsername(entry.getUsername());
+            }
+
+            // 解密并设置密码
+            String plainPassword = decryptPassword(entry.getPassword());
+            dataSource.setPassword(plainPassword);
+
+            logger.info("成功创建Druid数据源，dbId: " + dbId);
 
             return dataSource;
 
