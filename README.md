@@ -1,197 +1,101 @@
 # Database Password Manager
 
-一个基于 SM4 加密的数据库密码管理系统，提供本地安全管理和数据库连接测试。
+基于 SM4 国密算法的数据库密码管理系统，提供 6 种集成模式，覆盖主流 Java 技术栈。
 
-## 简介
+## 核心特性
 
-本项目提供统一的数据库密码管理方案，解决以下问题：
-- 数据库密码集中化管理
-- 密码加密存储和传输
-- 密码安全分发和更新
-- 连接池集成无缝使用
+- **SM4-GCM 认证加密**: 采用国密算法，支持认证加密防篡改
+- **6 种集成模式**: Druid/Spring Boot/Spring/MyBatis/Servlet/纯JDBC
+- **应用无感知**: 文件路径由 PasswordService 内部固定为 `~/.dbpwd/`
+- **占位符格式**: 使用 `@db_name@` 格式，应用配置无需知道文件位置
+- **H2 FILE 验证**: 使用 H2 文件数据库支持真正的密码验证
 
 ## 快速开始
 
 ### 1. 安装
 
-编译项目：
 ```bash
-mvn clean package
+mvn clean install -DskipTests
 ```
 
-### 2. 配置
-
-创建配置目录和文件：
-```bash
-mkdir -p ~/.dbpwd
-echo "AABBCCDD1234567890ABCDEF12345678" > ~/.dbpwd/sm4.key
-chmod 600 ~/.dbpwd/sm4.key
-```
-
-创建密码文件示例（db.pwd）：
-```json
-{
-  "version": "1.0",
-  "lastModified": "2026-02-08T10:30:45Z",
-  "databases": [
-    {
-      "id": "db001",
-      "name": "H2内存数据库",
-      "type": "h2",
-      "url": "jdbc:h2:mem:demo;DB_CLOSE_DELAY=-1",
-      "username": "sa",
-      "password": "ENC(SM4:r7X9k3mP8nQ2vL5wY1zA4cD6eF8gH0iJ=)",
-      "encrypted": true
-    }
-  ]
-}
-```
-
-### 3. 使用
-
-运行命令行工具：
-```bash
-java -jar dbpwd-cli.jar
-```
-
-## 打包和发布
-
-### Maven 打包命令
-
-项目提供了三种打包模式，可通过 Maven Profile 轻松切换：
-
-| 命令 | 说明 | 输出文件 |
-|-----|------|---------|
-| `mvn clean package` | 打包所有（默认） | 所有 JAR 和 ZIP 包 |
-| `mvn clean package -Pdocs` | 仅打包文档 | `db-pwd-1.0.0-docs.zip` |
-| `mvn clean package -Psource` | 仅打包源码 | `db-pwd-1.0.0-source.{zip,tar.gz}` |
-| `mvn clean package -Pdist` | 仅打包发布包 | `db-pwd-1.0.0-dist.{zip,tar.gz}` |
-
-### 包类型说明
-
-#### 1. 文档包 (docs)
-仅包含项目文档，不包含源码和编译文件：
-- README.md、CLAUDE.md、overview.md 等根目录文档
-- `technical/` 目录下的所有技术文档
-- `docs/` 目录下的额外文档
-- `config/` 目录配置文件
-
-**文件名格式**：`db-pwd-{version}-docs.zip`
-
-#### 2. 源码包 (source)
-包含完整源代码，不含 target 目录：
-- `src/` 源代码目录
-- `pom.xml` 构建配置
-- 所有文档文件
-- config 和 scripts 目录
-
-**文件名格式**：`db-pwd-{version}-source.{zip|tar.gz}`
-
-#### 3. 发布包 (dist)
-包含可执行文件和所有依赖：
-- JAR 文件（含依赖）
-- lib/ 目录（所有依赖 JAR）
-- bin/ 目录（启动脚本）
-- 完整文档
-- config/ 目录配置文件
-
-**文件名格式**：`db-pwd-{version}-dist.{zip|tar.gz}`
-
-### 快速打包示例
+### 2. 初始化数据库
 
 ```bash
-# 完整打包（所有包）
-mvn clean package
-
-# 仅打包文档
-mvn clean package -Pdocs
-
-# 仅打包源码用于归档
-mvn clean package -Psource
-
-# 仅打包用于发布的版本
-mvn clean package -Pdist
-
-# 同时生成文档和源码包
-mvn clean package -Pdocs,source
+java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
 ```
 
-### 输出目录
+### 3. 运行 Demo
 
-所有生成的包位于 `target/` 目录下：
+```bash
+# Simple JDBC Demo
+java -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
 
-```
-target/
-├── db-pwd-1.0.0.jar                    # 普通 JAR
-├── db-pwd-1.0.0-jar-with-dependencies.jar  # 可执行 JAR
-├── db-pwd-1.0.0-docs.zip               # 文档包
-├── db-pwd-1.0.0-source.zip             # 源码包
-├── db-pwd-1.0.0-source.tar.gz          # 源码包 (tar.gz)
-├── db-pwd-1.0.0-dist.zip               # 发布包
-└── db-pwd-1.0.0-dist.tar.gz            # 发布包 (tar.gz)
+# Spring Boot Demo
+java -jar db-pwd-spring-boot-demo/target/db-pwd-spring-boot-demo-1.0.0.jar
 ```
 
-## 核心特性
+## 集成模��
 
-- **SM4国密加密**: 默认使用SM4国密算法进行密码加密
-- **JSON格式存储**: 清晰易读，支持多条数据库配置
-- **Druid兼容格式**: 支持ENC(SM4:密文)格式
-- **本地安全管理**: 应用与配置中心完全解耦，只读本地文件
-- **文件权限控制**: 密钥文件和密码文件强制600权限
-- **多环境支持**: 支持prod/test/dev等环境分层管理
+| 模式 | 适用场景 | 配置方式 | 自动解密 |
+|------|---------|---------|----------|
+| 方案1: Druid PasswordCallback | Druid连接池 | Java配置 | ✅ |
+| 方案2: Spring Boot Starter | Spring Boot | YAML配置 | ✅ |
+| 方案3: Spring BeanPostProcessor | 传统Spring | Java/XML | ✅ |
+| 方案4: MyBatis DataSourceFactory | MyBatis | XML配置 | ✅ |
+| 方案5: StandalonePasswordDecryptor | 纯JDBC | API调用 | ❌ 手动 |
+| 方案6: Servlet InitListener | Servlet/Web | web.xml | ✅ |
+
+## 占位符格式
+
+应用配置中使用 `@db_name@` 格式的占位符：
+
+```yaml
+# Spring Boot 示例
+spring:
+  datasource:
+    password: "@spring_boot_db@"  # 占位符
+```
+
+**说明**: 文件路径 `~/.dbpwd/` 由 `PasswordService` 内部固定，应用无需也无需知道文件位置。
 
 ## 项目结构
 
 ```
-src/main/java/com/dbpwd/
-├── model/       # 数据模型
-├── core/        # 核心模块
-├── crypto/      # 加密解密
-└── cli/         # 命令行工具
+db-pwd/
+├── db-pwd-core/                    # 核心模块
+├── db-pwd-druid/                   # Druid集成
+├── db-pwd-spring/                  # Spring集成
+├── db-pwd-spring-boot-starter/     # Spring Boot Starter
+├── db-pwd-mybatis/                 # MyBatis集成
+├── db-pwd-web/                     # Servlet集成
+├── db-pwd-demo-init/               # Demo初始化工具
+├── db-pwd-simple-jdbc-demo/        # Demo 1
+├── db-pwd-druid-demo/              # Demo 2
+├── db-pwd-spring-boot-demo/        # Demo 3
+├── db-pwd-spring-demo/             # Demo 4
+├── db-pwd-mybatis-demo/            # Demo 5
+└── db-pwd-servlet-demo/            # Demo 6
 ```
 
 ## 文档索引
 
+### 核心文档
+- [集成模式设计](docs/integration-patterns.md) - 6 种集成模式详细设计
+- [Demo 应用设计](docs/demo-applications.md) - 6 个 Demo 应用的设计和验证
+- [API 参考文档](docs/api-reference.md) - 核心 API 使用指南
+
 ### 用户文档
-- [用户使用手册](docs/user-guide.md) - 完整的用户操作指南
-- [系统部署文档](docs/deployment-guide.md) - 部署和运维指南
-- [常见问题FAQ](docs/FAQ.md) - 常见问题解答
-- [API参考文档](docs/api-reference.md) - API函数和类参考
-- [Demo使用说明](demo-README.md) - 示例应用使用说明
-
-### 技术设计
-- [技术设计详情](overview.md) - 技术设计文档
-- [密码文件格式](technical/password-format.md) - 密码文件规范
-- [SM4加密详解](technical/sm4-encryption.md) - 加密流程和实现
-- [密钥派生算法](technical/sm4-encryption.md#密钥派生算法说明) - PBKDF2详细说明
-- [JDK版本兼容](technical/jdk-compatibility.md) - JDK版本支持对比
-
-### 集成实现
-- [配置中心集成](technical/config-center.md) - 配置中心目录结构
-- [命令行工具](technical/command-line.md) - CLI命令和参数说明
-- [连接池包装](technical/connection-pool.md) - Druid/HikariCP包装实现
-- [框架集成](technical/framework-integration.md) - Spring/MyBatis集成
-- [Spring Boot集成](technical/spring-boot-integration.md) - Spring Boot集成详情
-- [MyBatis集成](technical/mybatis-integration.md) - MyBatis集成详情
-
-### 安全机制
-- [安全机制设计](technical/security.md) - SSH对比、安全增强建议
-- [密钥管理](technical/key-management.md) - 密钥生命周期管理
-
-### 开发相关
-- [代码结构](technical/code-structure.md) - 项目目录结构说明
-- [开发计划](technical/development-plan.md) - Sprint划分、里程碑、测试要求
-- [密码更新流程](technical/password-update-flow.md) - 密码更新详细流程
+- [用户使用手册](docs/user-guide.md) - 完整操作指南
+- [系统部署文档](docs/deployment-guide.md) - 部署运维指南
+- [常见问题 FAQ](docs/FAQ.md) - 常见问题解答
 
 ## 技术要求
 
-- **JDK版本**: JDK 8+ (推荐JDK 11)
+- **JDK 版本**: JDK 8+ (推荐 JDK 11)
 - **加密库**: Bouncy Castle 1.69+ (JDK 8)
-- **JSON库**: Jackson 2.12+
 - **构建工具**: Maven 3.6+
 
-## 许可证
+---
 
-> 文档版本: v3.0
-> 最后更新: 2026-02-08
-> 系统要求: JDK 8+
+> 文档版本: v4.0
+> 最后更新: 2026-02-14
