@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!--
+        Spring XML配置 - 使用BeanPostProcessor自动解密密码
+
+        集成要点:
+        1. 引入db-pwd-spring模块后，DataSourcePasswordPostProcessor会自动注册
+        2. 所有DataSource Bean在初始化时会被自动处理
+        3. password属性中的占位符会被自动解密
+        4. 无需额外配置，开箱即用
+    -->
+
+    <!--
+        DataSource配置
+        password设置为占位符，BeanPostProcessor会自动解密
+    -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="org.h2.Driver"/>
+        <property name="url" value="jdbc:h2:file:~/.dbpwd/h2_data/spring_demo_xml_db;MODE=MySQL"/>
+        <property name="username" value="sa"/>
+        <!--
+            密码占位符: DataSourcePasswordPostProcessor会自动解密
+            占位符格式: @db_name@
+        -->
+        <property name="password" value="@spring_demo_xml_db@"/>
+    </bean>
+
+    <!--
+        注意: DataSourcePasswordPostProcessor 由 db-pwd-spring 模块自动提供
+        它会在DataSource Bean初始化后自动检测并解密密码占位符
+        无需在此处额外配置
+    -->
+
+    <!-- JdbcTemplate for database operations -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+</beans>

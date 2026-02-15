@@ -1,7 +1,7 @@
 # Database Password Manager - 集成模式设计文档
 
-> 文档版本: v2.0
-> 最后更新: 2026-02-14
+> 文档版本: v2.1
+> 最后更新: 2026-02-15
 
 ## 概述
 
@@ -325,3 +325,72 @@ public class UserServlet extends HttpServlet {
 | **自动解密** | ✅ | ✅ | ✅ | ✅ | ❌ 手动 | ✅ |
 | **框架依赖** | Druid | Spring Boot | Spring | MyBatis | 无 | Servlet API |
 | **集成复杂度** | 低 | 最低 | 低 | 低 | 最低 | 低 |
+
+---
+
+## 版本兼容性
+
+### 依赖版本矩阵
+
+| 集成模式 | 模块 | 核心依赖 | 当前版本 | 兼容范围 |
+|----------|------|----------|----------|----------|
+| Druid PasswordCallback | `db-pwd-druid` | Druid | 1.2.20 | Druid 1.0.x ~ 1.2.x |
+| Spring BeanPostProcessor | `db-pwd-spring` | Spring Framework | 5.3.31 | Spring 4.x ~ 5.x |
+| Spring Boot Starter | `db-pwd-spring-boot-starter` | Spring Boot | 2.7.18 | Spring Boot 2.x |
+| MyBatis DataSourceFactory | `db-pwd-mybatis` | MyBatis | 3.5.13 | MyBatis 3.x |
+| Servlet ContextListener | `db-pwd-web` | Servlet API | 3.1.0 | Servlet 3.0+ / 4.x |
+
+### 详细兼容性说明
+
+#### Druid (当前: 1.2.20)
+- **兼容版本**: Druid 1.0.x ~ 1.2.x 全系列
+- **机制**: 使用 `PasswordCallback` 接口，该接口在 Druid 中长期稳定
+- **验证**: 已在 1.2.20 上测试通过
+
+#### Spring Framework (当前: 5.3.31)
+- **兼容版本**: Spring 4.x ~ 5.x
+- **机制**: 使用 `BeanPostProcessor` 接口，从 Spring 2.0 就支持
+- **验证**: Spring 5.3.x LTS 版本
+
+#### Spring Boot (当前: 2.7.18)
+- **兼容版本**: Spring Boot 2.x 全系列
+- **机制**: 使用 `@ConfigurationProperties` + `@ConditionalOnClass`
+- **注意**: 如需 Spring Boot 3.x 支持，需升级到 Java 17+ 和 Jakarta EE
+
+#### MyBatis (当前: 3.5.13)
+- **兼容版本**: MyBatis 3.x 全系列
+- **机制**: 自定义 `DataSourceFactory` 实现
+- **验证**: MyBatis 3.5.x 版本
+
+#### Servlet (当前: 3.1.0)
+- **兼容版本**: Servlet 3.0+ / 4.x / 5.x
+- **机制**: `ServletContextListener` 接口
+- **注意**: Servlet 5.x (Jakarta EE 9+) 需要 `jakarta.servlet` 包名
+
+### 其他依赖版本
+
+| 依赖 | 版本 | 用途 |
+|------|------|------|
+| Java | 1.8+ | 运行环境 |
+| H2 Database | 2.1.214 | Demo 测试数据库 |
+| SLF4J | 1.7.36 | 日志门面 |
+| JUnit | 5.9.3 | 单元测试 |
+
+### 升级指南
+
+#### 升级到 Spring Boot 3.x
+如需支持 Spring Boot 3.x，需要进行以下修改：
+1. 升级 Java 版本到 17+
+2. 将 `javax.*` 包替换为 `jakarta.*`
+3. 更新 Spring Boot 版本到 3.x
+4. 测试兼容性
+
+#### 升级 Druid 版本
+Druid 1.x 系列接口稳定，可直接升级：
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid</artifactId>
+    <version>1.2.21</version>  <!-- 或更高版本 -->
+</dependency>
+```

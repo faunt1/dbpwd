@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!--
+        Druid DataSource配置 - 使用PasswordCallback解密密码
+
+        集成要点:
+        1. password设置为占位符 @druid_demo_spring_db@
+        2. passwordCallbackClassName设置为DbPwdDruidPasswordCallback
+        3. Druid会在获取连接时自动调用PasswordCallback解密密码
+
+        注意: 无需修改Java代码，仅通过此配置文件即可完成密码管理集成
+    -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
+          init-method="init" destroy-method="close">
+
+        <!-- 基本连接配置 -->
+        <property name="url" value="jdbc:h2:file:~/.dbpwd/h2_data/druid_demo_spring_db;MODE=MySQL"/>
+        <property name="username" value="sa"/>
+        
+        <!-- 
+            密码占位符: DbPwdDruidPasswordCallback会自动解密
+            占位符格式: @db_name@
+        -->
+        <property name="password" value="@druid_demo_spring_db@"/>
+
+        <!-- 连接池配置 -->
+        <property name="initialSize" value="2"/>
+        <property name="minIdle" value="2"/>
+        <property name="maxActive" value="10"/>
+        <property name="maxWait" value="10000"/>
+
+        <!-- 
+            PasswordCallback配置
+            设置passwordCallbackClassName后，Druid会在获取连接时调用
+            DbPwdDruidPasswordCallback.getPassword()方法解密密码
+        -->
+        <property name="passwordCallbackClassName" value="com.dbpwd.druid.DbPwdDruidPasswordCallback"/>
+
+        <!-- 连接有效性检测 -->
+        <property name="validationQuery" value="SELECT 1"/>
+        <property name="testOnBorrow" value="true"/>
+        <property name="testWhileIdle" value="true"/>
+
+        <!-- 连接超时配置 -->
+        <property name="connectTimeout" value="5000"/>
+        <property name="socketTimeout" value="30000"/>
+    </bean>
+
+</beans>

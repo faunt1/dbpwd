@@ -1,0 +1,9 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: db-pwd-spring-boot-api-demo
+
+# 此demo不使用自动配置，密码通过编程API获取
+# 详见 SpringBootApiDemoApplication.dataSource() 方法

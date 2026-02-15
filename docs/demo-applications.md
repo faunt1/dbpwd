@@ -1,6 +1,6 @@
 # Database Password Manager - Demo应用设计文档
 
-> 文档版本: v2.1
+> 文档版本: v3.0
 > 最后更新: 2026-02-15
 
 ## 概述
@@ -32,15 +32,20 @@
 
 ## Demo应用总览
 
-| Demo | 集成模式 | 占位符 | H2数据库 | 验证重点 |
-|------|---------|--------|----------|----------|
-| db-pwd-demo-init | - | - | 所有Demo数据库 | 数据库初始化 |
-| db-pwd-simple-jdbc-demo | 方案5 | `@simple_jdbc_db@` | dbpwd_simple_demo | 工具类API调用 |
-| db-pwd-druid-demo | 方案1 | `@druid_demo_db@` | dbpwd_druid_demo | 密码回调机制 |
-| db-pwd-spring-boot-demo | 方案2 | `@spring_boot_db@` | dbpwd_spring_boot_demo | 自动配置 |
-| db-pwd-spring-demo | 方案3 | `@spring_framework_db@` | dbpwd_spring_demo | BeanPostProcessor |
-| db-pwd-mybatis-demo | 方案4 | `@mybatis_demo_db@` | dbpwd_mybatis_demo | DataSourceFactory |
-| db-pwd-servlet-demo | 方案6 | `@servlet_demo_db@` | dbpwd_servlet_demo | InitListener |
+| Demo | 集成模式 | 配置方式 | 占位符 | H2数据库 | 验证重点 |
+|------|---------|---------|--------|----------|----------|
+| db-pwd-demo-init | - | - | - | 所有Demo数据库 | 数据库初始化 |
+| db-pwd-simple-jdbc-demo | 方案5 | 编程API | `@simple_jdbc_db@` | dbpwd_simple_demo | 工具类API调用 |
+| db-pwd-druid-demo | 方案1 | Java代码 | `@druid_demo_db@` | dbpwd_druid_demo | 密码回调机制 |
+| db-pwd-druid-demo-spring | 方案1 | Spring XML | `@druid_demo_spring_db@` | dbpwd_druid_demo_spring | XML配置方式 |
+| db-pwd-spring-boot-demo | 方案2 | Starter自动配置 | `@spring_boot_db@` | dbpwd_spring_boot_demo | 自动配置 |
+| db-pwd-spring-boot-demo-api | 方案2 | 编程API | `@spring_boot_api_db@` | dbpwd_spring_boot_api_demo | 手动配置DataSource |
+| db-pwd-spring-demo | 方案3 | Java Config | `@spring_framework_db@` | dbpwd_spring_demo | BeanPostProcessor |
+| db-pwd-spring-demo-xml | 方案3 | Spring XML | `@spring_demo_xml_db@` | dbpwd_spring_xml_demo | XML配置方式 |
+| db-pwd-mybatis-demo | 方案4 | mybatis-config.xml | `@mybatis_demo_db@` | dbpwd_mybatis_demo | DataSourceFactory |
+| db-pwd-servlet-demo | 方案6 | web.xml | `@servlet_demo_db@` | dbpwd_servlet_demo | InitListener |
+| db-pwd-servlet-demo-annotation | 方案6 | 注解方式 | `@servlet_demo_annotation_db@` | dbpwd_servlet_annotation_demo | @WebListener |
+| db-pwd-struts-demo | 方案6 | web.xml | `@struts_demo_db@` | dbpwd_struts_demo | Struts集成 |
 
 ---
 
@@ -399,6 +404,257 @@ mvn tomcat7:run -pl db-pwd-servlet-demo
 
 ---
 
+## Demo 7: db-pwd-druid-demo-spring
+
+### 集成模式
+
+方案1 - Druid PasswordCallback (Spring XML 配置方式)
+
+### 设计说明
+
+演示通过 Spring XML 配置文件集成 Druid PasswordCallback，无需修改 Java 代码。
+
+### 核心配置
+
+```xml
+<!-- druid-datasource.xml -->
+<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
+      init-method="init" destroy-method="close">
+    <property name="url" value="jdbc:h2:file:~/.dbpwd/h2_data/druid_demo_spring_db;MODE=MySQL"/>
+    <property name="username" value="sa"/>
+    <property name="password" value="@druid_demo_spring_db@"/>
+    <!-- 关键配置: PasswordCallback类名 -->
+    <property name="passwordCallbackClassName" 
+              value="com.dbpwd.druid.DbPwdDruidPasswordCallback"/>
+</bean>
+```
+
+### 核心代码
+
+```java
+// DruidSpringDemoApplication.java
+public class DruidSpringDemoApplication {
+    public static void main(String[] args) {
+        ClassPathXmlApplicationContext context = 
+            new ClassPathXmlApplicationContext("druid-datasource.xml");
+        DataSource dataSource = context.getBean(DataSource.class);
+        // 密码已自动解密
+    }
+}
+```
+
+### 运行命令
+
+```bash
+java -jar db-pwd-druid-demo-spring/target/db-pwd-druid-demo-spring-1.0.0.jar
+```
+
+### 验证点
+
+- [x] Spring XML 配置正确加载
+- [x] PasswordCallback 通过配置生效
+- [x] 密码自动解密
+- [x] 无需修改 Java 代码
+
+---
+
+## Demo 8: db-pwd-spring-boot-demo-api
+
+### 集成模式
+
+方案2 - Spring Boot (编程 API 方式)
+
+### 设计说明
+
+演示不使用 Spring Boot Starter 自动配置，而是手动配置 DataSource，适用于需要完全控制的场景。
+
+### 核心配置
+
+```java
+// SpringBootApiDemoApplication.java
+@SpringBootApplication
+public class SpringBootApiDemoApplication {
+
+    @Bean
+    public DataSource dataSource() {
+        // 使用 PasswordService API 手动获取密码
+        String plainPassword = PasswordService.getDatabasePassword("@spring_boot_api_db@");
+        
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/spring_boot_api_db;MODE=MySQL");
+        dataSource.setUsername("sa");
+        dataSource.setPassword(plainPassword);
+        return dataSource;
+    }
+}
+```
+
+### 运行命令
+
+```bash
+java -jar db-pwd-spring-boot-demo-api/target/db-pwd-spring-boot-demo-api-1.0.0.jar
+# 访问 http://localhost:8082/api/test
+```
+
+### 验证点
+
+- [x] 手动配置 DataSource 生效
+- [x] PasswordService API 正确调用
+- [x] 密码成功解密
+- [x] REST API 正常工作
+
+---
+
+## Demo 9: db-pwd-spring-demo-xml
+
+### 集成模式
+
+方案3 - Spring BeanPostProcessor (XML 配置方式)
+
+### 设计说明
+
+演示通过 Spring XML 配置文件集成 BeanPostProcessor，自动解密 DataSource 密码。
+
+### 核心配置
+
+```xml
+<!-- applicationContext.xml -->
+<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+    <property name="url" value="jdbc:h2:file:~/.dbpwd/h2_data/spring_demo_xml_db;MODE=MySQL"/>
+    <property name="username" value="sa"/>
+    <!-- 密码占位符会被 BeanPostProcessor 自动解密 -->
+    <property name="password" value="@spring_demo_xml_db@"/>
+</bean>
+
+<!-- DataSourcePasswordPostProcessor 由 db-pwd-spring 模块自动提供 -->
+```
+
+### 核心代码
+
+```java
+// SpringXmlDemoApplication.java
+public class SpringXmlDemoApplication {
+    public static void main(String[] args) {
+        ClassPathXmlApplicationContext context = 
+            new ClassPathXmlApplicationContext("applicationContext.xml");
+        DataSource dataSource = context.getBean(DataSource.class);
+        // 密码已被 BeanPostProcessor 自动解密
+    }
+}
+```
+
+### 运行命令
+
+```bash
+java -jar db-pwd-spring-demo-xml/target/db-pwd-spring-demo-xml-1.0.0.jar
+```
+
+### 验证点
+
+- [x] Spring XML 配置正确加载
+- [x] BeanPostProcessor 自动拦截 DataSource
+- [x] 密码自动解密
+- [x] 数据库连接正常
+
+---
+
+## Demo 10: db-pwd-servlet-demo-annotation
+
+### 集成模式
+
+方案6 - Servlet (注解配置方式)
+
+### 设计说明
+
+演示使用 Servlet 3.0+ 注解方式配置，无需 web.xml 文件。
+
+### 核心代码
+
+```java
+// AnnotationDemoInitializer.java
+@WebListener
+public class AnnotationDemoInitializer implements ServletContextListener {
+    
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        // 使用 PasswordService API 解密密码
+        String plainPassword = PasswordService.getDatabasePassword("@servlet_demo_annotation_db@");
+        
+        // 创建 DataSource
+        DruidDataSource dataSource = new DruidDataSource();
+        dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/servlet_demo_annotation_db;MODE=MySQL");
+        dataSource.setPassword(plainPassword);
+        
+        // 存入 ServletContext
+        sce.getServletContext().setAttribute("dataSource", dataSource);
+    }
+}
+
+// ProductApiServlet.java
+@WebServlet("/api/products")
+public class ProductApiServlet extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
+        DataSource ds = (DataSource) getServletContext().getAttribute("dataSource");
+        // 执行数据库操作
+    }
+}
+```
+
+### 运行命令
+
+```bash
+mvn tomcat7:run -pl db-pwd-servlet-demo-annotation
+# 访问 http://localhost:8083/dbpwd-servlet-annotation-demo/api/products
+```
+
+### 验证点
+
+- [x] @WebListener 注解正确识别
+- [x] @WebServlet 注解正确识别
+- [x] 无需 web.xml 配置文件
+- [x] 数据库连接正常
+
+---
+
+## Demo 11: db-pwd-struts-demo
+
+### 集成模式
+
+方案6 - Servlet InitListener (Struts 框架)
+
+### 设计说明
+
+演示在 Struts 框架中集成密码管理，通过 ServletContextListener 初始化。
+
+### 核心配置
+
+```xml
+<!-- web.xml -->
+<listener>
+    <listener-class>com.dbpwd.web.DatabasePasswordInitListener</listener-class>
+</listener>
+
+<filter>
+    <filter-name>struts2</filter-name>
+    <filter-class>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter</filter-class>
+</filter>
+```
+
+### 运行命令
+
+```bash
+mvn tomcat7:run -pl db-pwd-struts-demo
+```
+
+### 验证点
+
+- [x] Struts 框架正常启动
+- [x] 密码服务正确初始化
+- [x] Action 中数据库操作正常
+
+---
+
 ## 统一数据库设计
 
 ### H2 FILE 模式
@@ -442,11 +698,29 @@ mvn clean install -DskipTests
 java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
 
 # 3. 运行各 Demo 应用
+
+# 方案5: 独立JDBC应用
 java -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
+
+# 方案1: Druid PasswordCallback
 java -jar db-pwd-druid-demo/target/db-pwd-druid-demo-1.0.0.jar
+java -jar db-pwd-druid-demo-spring/target/db-pwd-druid-demo-spring-1.0.0.jar
+
+# 方案2: Spring Boot
 java -jar db-pwd-spring-boot-demo/target/db-pwd-spring-boot-demo-1.0.0.jar
+java -jar db-pwd-spring-boot-demo-api/target/db-pwd-spring-boot-demo-api-1.0.0.jar
+
+# 方案3: Spring Framework
 java -jar db-pwd-spring-demo/target/db-pwd-spring-demo-1.0.0.jar
+java -jar db-pwd-spring-demo-xml/target/db-pwd-spring-demo-xml-1.0.0.jar
+
+# 方案4: MyBatis
 java -jar db-pwd-mybatis-demo/target/db-pwd-mybatis-demo-1.0.0.jar
+
+# 方案6: Servlet/Web (需要Servlet容器)
+mvn tomcat7:run -pl db-pwd-servlet-demo           # web.xml配置
+mvn tomcat7:run -pl db-pwd-servlet-demo-annotation # 注解方式
+mvn tomcat7:run -pl db-pwd-struts-demo            # Struts集成
 ```
 
 ### 验证检查清单
@@ -455,10 +729,15 @@ java -jar db-pwd-mybatis-demo/target/db-pwd-mybatis-demo-1.0.0.jar
 |------|---------|-----------|---------|----------|
 | simple-jdbc | ✅ | ✅ | ✅ | API调用方式 |
 | druid | ✅ | ✅ | ✅ | 回调机制 |
+| druid-spring | ✅ | ✅ | ✅ | XML配置方式 |
 | spring-boot | ✅ | ✅ | ✅ | REST API |
+| spring-boot-api | ✅ | ✅ | ✅ | 手动配置DataSource |
 | spring | ✅ | ✅ | ✅ | Bean拦截 |
+| spring-xml | ✅ | ✅ | ✅ | XML配置方式 |
 | mybatis | ✅ | ✅ | ✅ | Mapper接口 |
-| servlet | ✅ | ✅ | ✅ | Servlet API |
+| servlet | ✅ | ✅ | ✅ | web.xml配置 |
+| servlet-annotation | ✅ | ✅ | ✅ | 注解方式 |
+| struts | ✅ | ✅ | ✅ | Struts集成 |
 
 ---
 
