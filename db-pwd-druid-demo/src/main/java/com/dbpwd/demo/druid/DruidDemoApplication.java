@@ -1,7 +1,7 @@
 package com.dbpwd.demo.druid;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.core.PasswordProvider;
+import com.dbpwd.core.PasswordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,7 +133,7 @@ public class DruidDemoApplication {
         dataSource.setUsername("sa");
 
         // 使用占位符从db.pwd获取密码
-        String password = PasswordProvider.getDatabasePassword("@druid_demo_db@");
+        String password = PasswordService.getDatabasePassword("@druid_demo_db@");
         dataSource.setPassword(password);
         dataSource.setDriverClassName("org.h2.Driver");
 

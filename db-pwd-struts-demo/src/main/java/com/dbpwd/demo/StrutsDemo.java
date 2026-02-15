@@ -1,6 +1,6 @@
 package com.dbpwd.demo;
 
-import com.dbpwd.core.PasswordProvider;
+import com.dbpwd.core.PasswordService;
 import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.crypto.ENCFormat;
 
@@ -16,12 +16,12 @@ import java.sql.Statement;
  * Demo Database Password Manager SM4-GCM encryption functionality with MySQL database
  *
  * 集成模式: 模式1（程序直接操作模式）
- * 解密实现: 程序自己实现（调用PasswordProvider API）
+ * 解密实现: 程序自己实现（调用PasswordService API）
  * 占位符: struts_db
  *
  * 工作机制:
  * 1. 程序独立启动，不依赖Spring框架
- * 2. 调用PasswordProvider.getDatabasePassword()一步获取解密后的密码
+ * 2. 调用PasswordService.getDatabasePassword()一步获取解密后的密码
  * 3. 使用明文密码构建JDBC连接串
  * 4. 建立数据库连接并执行CRUD操作
  *
@@ -41,7 +41,7 @@ public class StrutsDemo {
         System.out.println("=== Struts Demo Application (Standalone) ===");
         System.out.println("Demo: Database Password Manager - SM4-GCM Encryption");
         System.out.println("集成模式: 模式1（程序直接操作模式）");
-        System.out.println("解密实现: 程序自己实现（调用PasswordProvider API）");
+        System.out.println("解密实现: 程序自己实现（调用PasswordService API）");
         System.out.println("占位符(Placeholder): " + DB_PLACEHOLDER);
         System.out.println("实际数据库: dbpwd_demo");
         System.out.println();
@@ -86,11 +86,11 @@ public class StrutsDemo {
             }
             System.out.println();
 
-            // Test 3: MySQL Database Connection using PasswordProvider
-            System.out.println("Test 3: MySQL Database Connection (using PasswordProvider)");
+            // Test 3: MySQL Database Connection using PasswordService
+            System.out.println("Test 3: MySQL Database Connection (using PasswordService)");
 
-            // 使用PasswordProvider获取解密后的数据库密码
-            String plainPassword = PasswordProvider.getDatabasePassword(DB_PLACEHOLDER);
+            // 使用PasswordService获取解密后的数据库密码
+            String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
             System.out.println("  解密后的密码: " + plainPassword);
 
             // Connect to MySQL

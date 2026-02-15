@@ -1,6 +1,6 @@
 package com.dbpwd.demo;
 
-import com.dbpwd.core.PasswordProvider;
+import com.dbpwd.core.PasswordService;
 import com.dbpwd.crypto.Sm4GCMCipher;
 
 import java.io.File;
@@ -45,7 +45,7 @@ public class SimpleJdbcDemoWithVerification {
             // Phase 1: Get and decrypt password from db.pwd
             System.out.println("Phase 1: Password Decryption Test");
             System.out.println("----------------------------------------");
-            String correctPassword = PasswordProvider.getDatabasePassword(DB_PLACEHOLDER);
+            String correctPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
             System.out.println("Password decrypted from db.pwd for '" + DB_PLACEHOLDER + "'");
             System.out.println("  Decrypted password length: " + correctPassword.length() + " characters");
             System.out.println("  Encrypted format: ENC(SM4-GCM:xxx)");
@@ -108,7 +108,7 @@ public class SimpleJdbcDemoWithVerification {
             System.out.println("  ✓ CRUD operations successful");
             System.out.println();
             System.out.println("Key points demonstrated:");
-            System.out.println("- PasswordProvider.getDatabasePassword() for SM4-GCM decryption");
+            System.out.println("- PasswordService.getDatabasePassword() for SM4-GCM decryption");
             System.out.println("- H2 FILE database for real password verification");
             System.out.println(" ENC(SM4-GCM:xxx) format with random IV");
             System.out.println("- Proper database security with password validation");

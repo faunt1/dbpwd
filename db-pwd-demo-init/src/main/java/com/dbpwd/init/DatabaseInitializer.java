@@ -1,6 +1,6 @@
 package com.dbpwd.init;
 
-import com.dbpwd.core.PasswordProvider;
+import com.dbpwd.core.PasswordService;
 
 import java.io.File;
 import java.sql.Connection;
@@ -115,7 +115,7 @@ public class DatabaseInitializer {
         }
 
         // 从db.pwd中获取明文密码
-        String plainPassword = PasswordProvider.getDatabasePassword(demoDb.placeholder);
+        String plainPassword = PasswordService.getDatabasePassword(demoDb.placeholder);
         System.out.println();
         System.out.println("  Password retrieved from db.pwd: OK");
 

@@ -6,10 +6,10 @@ import com.dbpwd.crypto.Sm4GCMCipher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,16 +20,23 @@ import static org.junit.jupiter.api.Assertions.*;
  * 测试Druid PasswordCallback集成，验证通过Druid的PasswordCallback机制
  * 自动解密数据库密码的功能
  *
+ * 设计原则：
+ * - 单元测试使用临时目录（@TempDir），自包含、自解释
+ * - 通过 keyFilePath 和 pwdFilePath 属性指定自定义路径
+ * - 不依赖用户主目录下的 ~/.dbpwd/ 配置
+ *
  * 使用H2 FILE模式数据库进行真实密码验证测试
  *
  * @author Database Password Manager
- * @version 6.0
+ * @version 6.1
  */
 public class DbPwdDruidPasswordCallbackTest {
 
+    @TempDir
+    Path tempDir;
+
     private Path keyFilePath;
     private Path pwdFilePath;
-    private Path tempDir;
     private Path h2DataDir;
 
     private static final String SM4_KEY = "0123456789abcdef0123456789abcdef";
@@ -40,8 +47,7 @@ public class DbPwdDruidPasswordCallbackTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        // 创建临时目录
-        tempDir = Files.createTempDirectory("druid-test");
+        // 使用临时目录下的路径
         keyFilePath = tempDir.resolve("sm4.key");
         pwdFilePath = tempDir.resolve("db.pwd");
         h2DataDir = tempDir.resolve("h2_data");
@@ -59,35 +65,15 @@ public class DbPwdDruidPasswordCallbackTest {
 
     @AfterEach
     public void tearDown() throws Exception {
-        // 删除临时文件和H2数据库文件
-        if (pwdFilePath != null && Files.exists(pwdFilePath)) {
-            Files.delete(pwdFilePath);
-        }
-        if (keyFilePath != null && Files.exists(keyFilePath)) {
-            Files.delete(keyFilePath);
-        }
-        if (h2DataDir != null && Files.exists(h2DataDir)) {
-            // 删除H2数据库文件
-            Files.walk(h2DataDir)
-                .sorted((a, b) -> -a.compareTo(b))
-                .forEach(path -> {
-                    try {
-                        Files.deleteIfExists(path);
-                    } catch (Exception e) {
-                        // 忽略删除失败
-                    }
-                });
-        }
-        if (tempDir != null && Files.exists(tempDir)) {
-            Files.deleteIfExists(tempDir);
-        }
+        // @TempDir 会自动清理临时目录，无需手动删除
     }
 
     /**
      * 创建H2 FILE模式测试数据库
      */
     private void createH2Database() throws Exception {
-        String h2Url = "jdbc:h2:file:" + h2DataDir + "/" + H2_DB_NAME;
+        // 添加 AUTO_SERVER=TRUE 避免锁问题
+        String h2Url = "jdbc:h2:file:" + h2DataDir + "/" + H2_DB_NAME + ";AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE";
 
         try (java.sql.Connection conn = java.sql.DriverManager.getConnection(h2Url, "sa", TEST_PASSWORD);
              java.sql.Statement stmt = conn.createStatement()) {
@@ -107,7 +93,8 @@ public class DbPwdDruidPasswordCallbackTest {
         String encryptedPassword = Sm4GCMCipher.encrypt(TEST_PASSWORD, SM4_KEY);
         String formattedPassword = com.dbpwd.crypto.ENCFormat.formatSM4GCM(encryptedPassword);
 
-        String h2Url = "jdbc:h2:file:" + h2DataDir.toString().replace("\\", "/") + "/" + H2_DB_NAME;
+        // 添加 AUTO_SERVER=TRUE 避免锁问题
+        String h2Url = "jdbc:h2:file:" + h2DataDir.toString().replace("\\", "/") + "/" + H2_DB_NAME + ";AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE";
 
         String json = "{\n" +
                 "  \"version\": \"1.0\",\n" +
@@ -138,31 +125,59 @@ public class DbPwdDruidPasswordCallbackTest {
         assertNotNull(callback);
     }
 
+    @Test
+    public void testConstructorWithProperties() {
+        Properties props = new Properties();
+        props.setProperty("keyFilePath", "/tmp/test/sm4.key");
+        props.setProperty("pwdFilePath", "/tmp/test/db.pwd");
+
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback(props);
+        assertNotNull(callback);
+    }
+
     // ==================== DruidPasswordCallback机制测试 ====================
 
     /**
-     * 测试直接使用临时路径的PasswordCallback
+     * 测试使用自定义路径的PasswordCallback（单元测试场景）
      */
     @Test
-    public void testPasswordCallbackWithTempPath() throws Exception {
+    public void testPasswordCallbackWithCustomPath() throws Exception {
+        // 使用构造函数指定自定义路径
+        Properties callbackProps = new Properties();
+        callbackProps.setProperty("keyFilePath", keyFilePath.toString());
+        callbackProps.setProperty("pwdFilePath", pwdFilePath.toString());
+
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback(callbackProps);
+
+        Properties props = new Properties();
+        props.setProperty("password", TEST_PLACEHOLDER);
+
+        callback.setProperties(props);
+
+        // 验证密码已被解密
+        assertNotNull(callback.getPassword());
+        assertEquals(TEST_PASSWORD, new String(callback.getPassword()));
+    }
+
+    /**
+     * 测试使用setter设置自定义路径
+     */
+    @Test
+    public void testPasswordCallbackWithSetterPath() throws Exception {
         DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
 
-        // 使用临时文件路径
+        // 使用setter设置路径
+        callback.setKeyFilePath(keyFilePath.toString());
+        callback.setPwdFilePath(pwdFilePath.toString());
+
         Properties props = new Properties();
-        props.setProperty("password", TEST_PLACEHOLDER);  // 使用占位符格式 @test_db@
+        props.setProperty("password", TEST_PLACEHOLDER);
 
-        // 由于PasswordProvider使用默认路径，需要复制文件到默认路径
-        copyToDefaultPath();
+        callback.setProperties(props);
 
-        try {
-            callback.setProperties(props);
-
-            // 验证密码已被解密
-            assertNotNull(callback.getPassword());
-            assertEquals(TEST_PASSWORD, new String(callback.getPassword()));
-        } finally {
-            cleanupDefaultPath();
-        }
+        // 验证密码已被解密
+        assertNotNull(callback.getPassword());
+        assertEquals(TEST_PASSWORD, new String(callback.getPassword()));
     }
 
     /**
@@ -170,35 +185,45 @@ public class DbPwdDruidPasswordCallbackTest {
      */
     @Test
     public void testDruidDataSourceWithPasswordCallbackAndH2Database() throws Exception {
-        copyToDefaultPath();
+        // 创建PasswordCallback并设置自定义路径
+        Properties callbackProps = new Properties();
+        callbackProps.setProperty("keyFilePath", keyFilePath.toString());
+        callbackProps.setProperty("pwdFilePath", pwdFilePath.toString());
 
-        try {
-            DruidDataSource dataSource = new DruidDataSource();
-            String h2Url = "jdbc:h2:file:" + h2DataDir.toString().replace("\\", "/") + "/" + H2_DB_NAME;
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback(callbackProps);
 
-            dataSource.setUrl(h2Url);
-            dataSource.setUsername("sa");
-            dataSource.setPassword(TEST_PLACEHOLDER);  // 设置占位符 @test_db@
-            dataSource.setDriverClassName("org.h2.Driver");
-            dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
+        DruidDataSource dataSource = new DruidDataSource();
+        // 添加 AUTO_SERVER=TRUE 避免锁问题
+        String h2Url = "jdbc:h2:file:" + h2DataDir.toString().replace("\\", "/") + "/" + H2_DB_NAME + ";AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE";
 
-            // 关键：Druid需要显式初始化才会触发PasswordCallback
-            dataSource.init();
+        dataSource.setUrl(h2Url);
+        dataSource.setUsername("sa");
+        dataSource.setPassword(TEST_PLACEHOLDER);  // 设置占位符 @test_db@
+        dataSource.setDriverClassName("org.h2.Driver");
+        
+        // 关键：设置 DataSource 引用到 callback
+        callback.setDataSource(dataSource);
+        dataSource.setPasswordCallback(callback);
 
-            // 测试数据库连接（H2 FILE模式会验证密码）
-            try (java.sql.Connection conn = dataSource.getConnection();
-                 java.sql.Statement stmt = conn.createStatement();
-                 java.sql.ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM test_table")) {
+        // 关键：设置验证查询，避免 testWhileIdle 错误
+        dataSource.setValidationQuery("SELECT 1");
+        dataSource.setTestWhileIdle(false);
+        dataSource.setTestOnBorrow(false);
+        dataSource.setTestOnReturn(false);
 
-                assertTrue(rs.next());
-                assertTrue(rs.getInt(1) > 0, "数据库连接成功，密码解密正确");
-            }
+        // 关键：Druid需要显式初始化才会触发PasswordCallback
+        dataSource.init();
 
-            assertNotNull(dataSource);
+        // 测试数据库连接（H2 FILE模式会验证密码）
+        try (java.sql.Connection conn = dataSource.getConnection();
+             java.sql.Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM test_table")) {
 
-        } finally {
-            cleanupDefaultPath();
+            assertTrue(rs.next());
+            assertTrue(rs.getInt(1) > 0, "数据库连接成功，密码解密正确");
         }
+
+        assertNotNull(dataSource);
     }
 
     /**
@@ -222,37 +247,30 @@ public class DbPwdDruidPasswordCallbackTest {
         }
     }
 
-    // ==================== 辅助方法 ====================
-
     /**
-     * 复制临时文件到默认路径
+     * 测试密码缓存功能
      */
-    private void copyToDefaultPath() throws Exception {
-        String userHome = System.getProperty("user.home");
-        Path dbpwdDir = Paths.get(userHome, ".dbpwd");
-        Files.createDirectories(dbpwdDir);
+    @Test
+    public void testPasswordCaching() throws Exception {
+        Properties callbackProps = new Properties();
+        callbackProps.setProperty("keyFilePath", keyFilePath.toString());
+        callbackProps.setProperty("pwdFilePath", pwdFilePath.toString());
 
-        Path defaultKeyPath = dbpwdDir.resolve("sm4.key");
-        Path defaultPwdPath = dbpwdDir.resolve("db.pwd");
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback(callbackProps);
 
-        Files.copy(keyFilePath, defaultKeyPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(pwdFilePath, defaultPwdPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-    }
+        Properties props = new Properties();
+        props.setProperty("password", TEST_PLACEHOLDER);
 
-    /**
-     * 清理默认路径的测试文件
-     */
-    private void cleanupDefaultPath() throws Exception {
-        String userHome = System.getProperty("user.home");
-        Path dbpwdDir = Paths.get(userHome, ".dbpwd");
-        Path defaultKeyPath = dbpwdDir.resolve("sm4.key");
-        Path defaultPwdPath = dbpwdDir.resolve("db.pwd");
+        // 第一次调用
+        callback.setProperties(props);
+        char[] password1 = callback.getPassword();
 
-        if (Files.exists(defaultKeyPath)) {
-            Files.delete(defaultKeyPath);
-        }
-        if (Files.exists(defaultPwdPath)) {
-            Files.delete(defaultPwdPath);
-        }
+        // 第二次调用（应该使用缓存）
+        callback.setProperties(props);
+        char[] password2 = callback.getPassword();
+
+        // 验证两次结果一致
+        assertEquals(new String(password1), new String(password2));
+        assertEquals(TEST_PASSWORD, new String(password2));
     }
 }

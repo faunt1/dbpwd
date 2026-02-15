@@ -1,11 +1,32 @@
 # Database Password Manager - Demo应用设计文档
 
-> 文档版本: v2.0
-> 最后更新: 2026-02-14
+> 文档版本: v2.1
+> 最后更新: 2026-02-15
 
 ## 概述
 
 本文档描述 6 个 Demo 应用的设计、实现和验证点，每个 Demo 对应一种集成模式。
+
+---
+
+## 单元测试 vs Demo应用
+
+| 场景 | 文件路径 | 配置文件位置 | 说明 |
+|------|---------|------------|------|
+| **单元测试** | 临时目录（@TempDir） | 测试代码中创建 | 自包含、自解释，不污染用户环境 |
+| **Demo应用** | `~/.dbpwd/` | 用户主目录 | 模拟真实生产环境配置 |
+
+### 单元测试设计原则
+
+1. **自包含**: 所有测试数据在 `@TempDir` 临时目录中创建
+2. **自解释**: 通过 API 参数传递路径，不依赖外部配置
+3. **可隔离**: 测试之间互不影响，测试后自动清理
+
+### Demo应用设计原则
+
+1. **模拟生产**: 使用 `~/.dbpwd/` 作为配置目录
+2. **无感知**: 应用只需使用占位符 `@db_name@`
+3. **易迁移**: Demo可直接作为生产参考
 
 ---
 
@@ -39,7 +60,7 @@ public class DatabaseInitializer {
 
     public static void main(String[] args) {
         // 从 db.pwd 获取密码
-        String plainPassword = PasswordProvider.getDatabasePassword(placeholder);
+        String plainPassword = PasswordService.getDatabasePassword(placeholder);
 
         // 连接 H2 FILE 数据库（首次连接创建并绑定密码）
         String url = "jdbc:h2:file:" + dataDir + "/" + dbName + ";MODE=MySQL";

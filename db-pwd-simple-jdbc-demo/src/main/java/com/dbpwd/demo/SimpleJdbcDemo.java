@@ -1,6 +1,6 @@
 package com.dbpwd.demo;
 
-import com.dbpwd.core.PasswordProvider;
+import com.dbpwd.core.PasswordService;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -15,11 +15,11 @@ import java.sql.Statement;
  * Using SM4-GCM authenticated encryption
  *
  * 集成模式: 模式1（程序直接操作模式）
- * 解密实现: 程序自己实现（直接调用PasswordProvider API）
+ * 解密实现: 程序自己实现（直接调用PasswordService API）
  * 占位符: simple_jdbc_db
  *
  * 工作机制:
- * 1. 程序调用 PasswordProvider.getDatabasePassword() 一次性获取明文密码
+ * 1. 程序调用 PasswordService.getDatabasePassword() 一次性获取明文密码
  *   - 内部自动从 sm4.key 文件读取密钥
  *   - 内部自动从 db.pwd 文件根据占位符查找加密密码
  *   - 内部自动解密密码
@@ -53,7 +53,7 @@ public class SimpleJdbcDemo {
 
         try {
             // Step 1: 解密密码并测试连接
-            String plainPassword = PasswordProvider.getDatabasePassword(DB_PLACEHOLDER);
+            String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
             System.out.println("Testing connection with decrypted password from db.pwd...");
 
             Connection mainConnection = testDatabaseConnection(DB_URL, DB_USERNAME, plainPassword);
@@ -97,7 +97,7 @@ public class SimpleJdbcDemo {
             System.out.println("=========================================\n");
 
             System.out.println("Key points demonstrated:");
-            System.out.println("- PasswordProvider.getPlainPassword() for direct decryption");
+            System.out.println("- PasswordService.getPlainPassword() for direct decryption");
             System.out.println("- StandalonePasswordDecryptor.getConnection() for database connections");
             System.out.println("- DbUtil.query() for simple database queries");
             System.out.println("- ENC(SM4-GCM:xxx) format with random IV");

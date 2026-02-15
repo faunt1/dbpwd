@@ -31,8 +31,8 @@ public class DbPwdDruidPasswordCallback extends DruidPasswordCallback {
 
         String password = properties.getProperty("password");
 
-        // 使用PasswordProvider解密占位符
-        String plainPassword = PasswordProvider.getDatabasePassword(password);
+        // 使用PasswordService解密占位符
+        String plainPassword = PasswordService.getDatabasePassword(password);
         setPassword(plainPassword.toCharArray());
     }
 }
@@ -41,7 +41,7 @@ public class DbPwdDruidPasswordCallback extends DruidPasswordCallback {
 **工作流程**:
 1. Druid在创建数据库连接时调用 `setProperties()`
 2. 从properties中获取password属性（可能是占位符 `@druid_demo_db@`）
-3. 调用 `PasswordProvider.getDatabasePassword()` 解密密码
+3. 调用 `PasswordService.getDatabasePassword()` 解密密码
 4. 设置解密后的明文密码到回调对象
 
 ---
@@ -109,8 +109,8 @@ private static DruidDataSource createDataSource() throws Exception {
     dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo;MODE=MySQL");
     dataSource.setUsername("sa");
 
-    // 手动调用PasswordProvider解密
-    String password = PasswordProvider.getDatabasePassword("@druid_demo_db@");
+    // 手动调用PasswordService解密
+    String password = PasswordService.getDatabasePassword("@druid_demo_db@");
     dataSource.setPassword(password);  // 已解密的密码
 
     return dataSource;
@@ -136,7 +136,7 @@ private static DruidDataSource createDataSource() throws Exception {
 
 | 对比项 | 手动解密方式 | PasswordCallback方式 |
 |--------|-------------|---------------------|
-| 应用代码 | 需要调用 `PasswordProvider.getDatabasePassword()` | 无需修改，仅配置 |
+| 应用代码 | 需要调用 `PasswordService.getDatabasePassword()` | 无需修改，仅配置 |
 | 密码设置 | 已解密的明文密码 | 占位符 `@db_name@` |
 | 代码侵入性 | 高（需要修改应用代码） | 低（仅配置变更） |
 | 迁移成本 | 高 | 低 |
@@ -145,15 +145,37 @@ private static DruidDataSource createDataSource() throws Exception {
 
 ## 单元测试
 
+### 设计原则
+
+| 场景 | 文件路径 | 配置方式 | 说明 |
+|------|---------|---------|------|
+| **单元测试** | 临时目录（@TempDir） | 通过API参数传递 | 自包含、自解释、可隔离 |
+| **Demo应用** | `~/.dbpwd/` | 使用默认路径 | 模拟生产环境 |
+
+**单元测试设计原则**:
+1. **自包含**: 所有测试数据在 `@TempDir` 临时目录中创建
+2. **自解释**: 通过 API 参数传递路径（如 `keyFilePath`, `pwdFilePath`）
+3. **可隔离**: 测试之间互不影响，测试后自动清理
+
+**Demo应用设计原则**:
+1. **模拟生产**: 使用 `~/.dbpwd/` 作为配置目录
+2. **无感知**: 应用只需使用占位符 `@db_name@`
+3. **易迁移**: Demo可直接作为生产参考
+
 ### 测试类: DbPwdDruidPasswordCallbackTest
 
 **测试场景**:
 
-#### 1. PasswordCallback机制测试
+#### 1. PasswordCallback机制测试（使用自定义路径）
 ```java
 @Test
-public void testPasswordCallbackWithTempPath() throws Exception {
-    DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+public void testPasswordCallbackWithCustomPath() throws Exception {
+    // 使用构造函数指定自定义路径（临时目录）
+    Properties callbackProps = new Properties();
+    callbackProps.setProperty("keyFilePath", keyFilePath.toString());
+    callbackProps.setProperty("pwdFilePath", pwdFilePath.toString());
+
+    DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback(callbackProps);
 
     Properties props = new Properties();
     props.setProperty("password", "@test_db@");  // 占位符
@@ -169,11 +191,16 @@ public void testPasswordCallbackWithTempPath() throws Exception {
 ```java
 @Test
 public void testDruidDataSourceWithPasswordCallbackAndH2Database() throws Exception {
+    // 创建PasswordCallback并设置自定义路径
+    Properties callbackProps = new Properties();
+    callbackProps.setProperty("keyFilePath", keyFilePath.toString());
+    callbackProps.setProperty("pwdFilePath", pwdFilePath.toString());
+
     DruidDataSource dataSource = new DruidDataSource();
-    dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/test_druid_db");
+    dataSource.setUrl("jdbc:h2:file:" + h2DataDir + "/test_druid_db");
     dataSource.setUsername("sa");
     dataSource.setPassword("@test_db@");  // 占位符
-    dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
+    dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback(callbackProps));
 
     // 获取连接，PasswordCallback自动解密密码
     try (Connection conn = dataSource.getConnection()) {
@@ -190,7 +217,7 @@ public void testWrongPasswordRejected() throws Exception {
     // H2 FILE数据库首次连接绑定了正确密码
     // 错误密码应该被拒绝
     try (Connection conn = DriverManager.getConnection(
-            "jdbc:h2:file:~/.dbpwd/h2_data/test_db", "sa", "wrong_password")) {
+            "jdbc:h2:file:" + h2DataDir + "/test_db", "sa", "wrong_password")) {
         fail("错误的密码应该被拒绝");
     } catch (SQLException e) {
         assertTrue(e.getMessage().contains("Wrong password"));
@@ -346,13 +373,13 @@ public void init() throws SQLException {
 - PasswordCallback.getPassword()返回的密码用于数据库认证
 - 应用层设置的password可以是占位符，由Callback解密
 
-### 2. PasswordProvider设计
+### 2. PasswordService设计
 
-**位置**: `db-pwd-core/src/main/java/com/dbpwd/core/PasswordProvider.java`
+**位置**: `db-pwd-core/src/main/java/com/dbpwd/core/PasswordService.java`
 
 **核心方法**:
 ```java
-public class PasswordProvider {
+public class PasswordService {
 
     /**
      * 获取数据库密码（支持占位符和ENC格式）

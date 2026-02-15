@@ -1,6 +1,6 @@
 package com.dbpwd.demo;
 
-import com.dbpwd.core.PasswordProvider;
+import com.dbpwd.core.PasswordService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * 工作机制:
  * 1. Spring Boot应用启动时加载配置文件
- * 2. 程序启动时从 db.pwd 和 sm4.key 获取解密后的明文密码（通过PasswordProvider一步调用）
+ * 2. 程序启动时从 db.pwd 和 sm4.key 获取解密后的明文密码（通过PasswordService一步调用）
  * 3. 将明文密码注入到DataSource配置中
  * 4. 建立连接池和数据库连接
  * 5. 应用正常使用数据库连接
@@ -51,12 +51,12 @@ public class SpringBootDemo {
     /**
      * 创建DataSource Bean
      *
-     * 使用PasswordProvider从 db.pwd 和 sm4.key 获取解密后的密码
+     * 使用PasswordService从 db.pwd 和 sm4.key 获取解密后的密码
      */
     @Bean
     public DataSource dataSource() throws Exception {
         // 从 db.pwd 和 sm4.key 获取解密后的数据库密码
-        String plainPassword = PasswordProvider.getDatabasePassword(DB_PLACEHOLDER);
+        String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
         System.out.println("解密后的密码: " + plainPassword);
 
         // 创建数据源，使用解密后的明文密码

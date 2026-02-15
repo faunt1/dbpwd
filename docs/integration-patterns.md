@@ -32,36 +32,33 @@ Database Password Manager 提供 6 种基层集成模式，覆盖主流 Java 技
 
 ```java
 // DruidPasswordCallback.java
-public class DruidPasswordCallback implements PasswordCallback {
+public class DbPwdDruidPasswordCallback extends DruidPasswordCallback {
 
-    private String passwordFile;
-    private String keyFile;
-    private String placeholder;
-
-    @Override
-    public void init(Properties properties) {
-        this.passwordFile = properties.getProperty("passwordFile");
-        this.keyFile = properties.getProperty("keyFile");
-        this.placeholder = properties.getProperty("placeholder");
-    }
+    private String keyFilePath;  // 可选：自定义密钥文件路径
+    private String pwdFilePath;  // 可选：自定义密码文件路径
 
     @Override
-    public String getPassword() {
-        // 从db.pwd获取加密密码
-        String encryptedPassword = PasswordFileManager
-            .load(passwordFile)
-            .getDatabaseById(placeholder)
-            .getPassword();
+    public void setProperties(Properties properties) {
+        super.setProperties(properties);
+        String password = properties.getProperty("password");
 
-        // 使用SM4密钥解密
-        byte[] key = Sm4KeyLoader.loadKeyFromFile(keyFile);
-        return new PasswordDecryptor().decrypt(encryptedPassword, key);
+        // 使用PasswordService解密
+        String plainPassword;
+        if (keyFilePath != null || pwdFilePath != null) {
+            // 单元测试场景：使用自定义路径
+            plainPassword = PasswordService.getDatabasePassword(password, keyFilePath, pwdFilePath);
+        } else {
+            // 生产/Demo场景：使用默认路径 ~/.dbpwd/
+            plainPassword = PasswordService.getDatabasePassword(password);
+        }
+        setPassword(plainPassword.toCharArray());
     }
 }
 ```
 
 ### 配置方式
 
+**生产环境/Demo应用（使用默认路径 ~/.dbpwd/）**:
 ```java
 // 创建Druid数据源
 DruidDataSource dataSource = new DruidDataSource();
@@ -70,12 +67,17 @@ datasource.setUsername("sa");
 datasource.setPassword("@druid_demo_db@");  // 占位符格式: @db_name@
 
 // 设置密码回调（无需指定文件路径，由PasswordService内部处理）
-Properties callbackProps = new Properties();
-callbackProps.setProperty("placeholder", "druid_demo_db");
+dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
+```
 
-dataSource.setPasswordCallback(
-    new DruidPasswordCallback(callbackProps)
-);
+**单元测试（使用自定义路径）**:
+```java
+// 单元测试应使用临时目录，自包含、自解释
+Properties callbackProps = new Properties();
+callbackProps.setProperty("keyFilePath", "/tmp/test/sm4.key");
+callbackProps.setProperty("pwdFilePath", "/tmp/test/db.pwd");
+
+dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback(callbackProps));
 ```
 
 **说明**: 文件路径 `~/.dbpwd/` 由 `PasswordService` 内部固定，应用无需也无需知道文件位置，增强安全性。
