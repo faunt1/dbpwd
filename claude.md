@@ -1,7 +1,7 @@
 # Database Password Manager - 设计文档
 
-> 文档版本: v4.0
-> 最后更新: 2026-02-14
+> 文档版本: v5.0
+> 最后更新: 2026-02-15
 
 ## 目录
 
@@ -10,7 +10,9 @@
 3. [技术需求](#技术需求)
 4. [整体方案](#整体方案)
 5. [核心设计决策](#核心设计决策)
-6. [相关文档](#相关文档)
+6. [项目结构](#项目结构)
+7. [构建和运行](#构建和运行)
+8. [相关文档](#相关文档)
 
 ---
 
@@ -18,17 +20,28 @@
 
 ### 项目简介
 
-基于 SM4 国密算法的数据库密码管理系统，提供 6 种集成模式，覆盖主流 Java 技术栈。
+基于 SM4 国密算法的数据库密码管理系统，提供 6 种集成模式，覆盖主流 Java 技术栈。核心目标是确保生产环境数据库密码不在代码库和配置文件中明文出现。
+
+### 核心特性
+
+- **SM4-GCM 认证加密**: 采用国密算法，支持认证加密防篡改
+- **6 种集成模式**: Druid/Spring Boot/Spring/MyBatis/Servlet/纯JDBC
+- **应用无感知**: 文件路径由 PasswordService 内部固定为 `~/.dbpwd/`
+- **占位符格式**: 使用 `@db_name@` 格式，应用配置无需知道文件位置
 
 ### 技术栈
 
-| 组件 | 技术选择 |
-|------|----------|
-| **JDK版本** | JDK 8+ (推荐JDK 11) |
+| 组件 | 版本 |
+|------|------|
+| JDK | 8 (必须兼容) / 推荐 11+ |
+| Maven | 3.6+ |
 | **加密算法** | SM4-GCM 认证加密 |
-| **加密库** | Bouncy Castle (1.69+) |
-| **JSON库** | Jackson (2.12+) |
-| **构建工具** | Maven 3.6+ |
+| **加密库** | Bouncy Castle 1.78+ |
+| **JSON库** | Jackson 2.12+ |
+| Spring Boot | 2.7.18 |
+| Spring Framework | 5.3.31 |
+| Druid | 1.2.20 |
+| JUnit | 5.9.3 |
 
 ---
 
@@ -45,7 +58,7 @@
 **应用无感知设计**：
 - `db.pwd` 和 `sm4.key` 文件路径对应用屏蔽
 - 文件路径由 `PasswordService` 内部固定为 `~/.dbpwd/`
-- 应用无需也无需知道文件位置，增强安全性
+- 应用无需知道文件位置，增强安全性
 
 **占位符格式**：
 - 使用 `@db_name@` 格式作为密码占位符
@@ -96,14 +109,14 @@ spring:
 
 ### 3. 集成模式
 
-| 模式 | 适用场景 | 核心机制 |
-|------|---------|---------|
-| 方案1: Druid PasswordCallback | Druid连接池 | 原生密码回调 |
-| 方案2: Spring Boot Starter | Spring Boot | 自动配置装饰 |
-| 方案3: Spring BeanPostProcessor | 传统Spring | Bean后置处理 |
-| 方案4: MyBatis DataSourceFactory | MyBatis | 工厂类扩展 |
-| 方案5: StandalonePasswordDecryptor | 纯JDBC | 工具类API |
-| 方案6: Servlet InitListener | Servlet/Web | 容器监听器 |
+| 模式 | 适用场景 | 核心机制 | 自动解密 |
+|------|---------|---------|----------|
+| 方案1: Druid PasswordCallback | Druid连接池 | 原生密码回调 | ✅ |
+| 方案2: Spring Boot Starter | Spring Boot | 自动配置装饰 | ✅ |
+| 方案3: Spring BeanPostProcessor | 传统Spring | Bean后置处理 | ✅ |
+| 方案4: MyBatis DataSourceFactory | MyBatis | 工厂类扩展 | ✅ |
+| 方案5: StandalonePasswordDecryptor | 纯JDBC | API调用 | ❌ 手动 |
+| 方案6: Servlet InitListener | Servlet/Web | 容器监听器 | ✅ |
 
 ---
 
@@ -115,6 +128,143 @@ spring:
 | 占位符格式 | `@db_name@` | 明确标识，与配置格式区分 |
 | 加密算法 | SM4-GCM | 国密标准，认证加密防篡改 |
 | 应用集成 | 装饰器模式 | 最小改动，自动解密 |
+
+---
+
+## 项目结构
+
+```
+db-pwd/
+├── db-pwd-core/                    # 核心模块 - 加解密、密码服务、文件管理
+├── db-pwd-druid/                   # Druid PasswordCallback 集成
+├── db-pwd-spring/                  # Spring BeanPostProcessor 集成
+├── db-pwd-spring-boot-starter/     # Spring Boot Starter 自动配置
+├── db-pwd-mybatis/                 # MyBatis DataSourceFactory 集成
+├── db-pwd-web/                     # Servlet ContextListener 集成
+│
+├── db-pwd-demo-init/               # Demo 初始化工具
+│
+├── db-pwd-simple-jdbc-demo-original/   # 【原始版本】方案5: 纯 JDBC
+├── db-pwd-simple-jdbc-demo/            # 【集成版本】方案5: 纯 JDBC
+├── db-pwd-druid-demo-original/         # 【原始版本】方案1: Druid
+├── db-pwd-druid-demo/                  # 【集成版本】方案1: Druid
+├── db-pwd-druid-demo-spring/           # 【集成版本】方案1+3: Druid + Spring
+├── db-pwd-spring-boot-demo-original/   # 【原始版本】方案2: Spring Boot
+├── db-pwd-spring-boot-demo/            # 【集成版本】方案2: Spring Boot (Starter)
+├── db-pwd-spring-boot-demo-api/        # 【集成版本】方案2: Spring Boot (API方式)
+├── db-pwd-spring-demo-original/        # 【原始版本】方案3: Spring
+├── db-pwd-spring-demo/                 # 【集成版本】方案3: Spring (Java Config)
+├── db-pwd-spring-demo-xml/             # 【集成版本】方案3: Spring (XML Config)
+├── db-pwd-mybatis-demo/                # 【集成版本】方案4: MyBatis
+├── db-pwd-servlet-demo-original/       # 【原始版本】方案6: Servlet
+├── db-pwd-servlet-demo/                # 【集成版本】方案6: Servlet (web.xml)
+├── db-pwd-servlet-demo-annotation/     # 【集成版本】方案6: Servlet (注解)
+├── db-pwd-struts-demo/                 # 【集成版本】Struts 1.x
+│
+├── docs/                           # 文档目录
+├── claudedocs/                     # Sprint 进度文档
+├── config/                         # 配置模板
+├── scripts/                        # 脚本目录
+├── .mvn/                           # Maven Wrapper
+└── .github/                        # GitHub 工作流
+```
+
+### 原始版本 vs 集成版本
+
+项目为每种集成模式提供了 **原始版本** 和 **集成版本** 的对比，便于学习集成改动：
+
+| 集成模式 | 原始版本 | 集成版本 |
+|---------|---------|---------|
+| 方案5: 纯JDBC | `db-pwd-simple-jdbc-demo-original` | `db-pwd-simple-jdbc-demo` |
+| 方案1: Druid | `db-pwd-druid-demo-original` | `db-pwd-druid-demo` |
+| 方案2: Spring Boot | `db-pwd-spring-boot-demo-original` | `db-pwd-spring-boot-demo` |
+| 方案3: Spring | `db-pwd-spring-demo-original` | `db-pwd-spring-demo` |
+| 方案6: Servlet | `db-pwd-servlet-demo-original` | `db-pwd-servlet-demo` |
+
+详细的代码差异对比请参考：[集成代码细节说明](docs/integration-code-details.md)
+
+### 核心模块详解
+
+#### db-pwd-core
+
+核心模块，包含所有基础功能：
+
+**包结构**:
+- `com.dbpwd.crypto` - SM4 加解密实现 (Sm4GCMCipher, PasswordEncryptor, PasswordDecryptor, ENCFormat)
+- `com.dbpwd.core` - 核心服务 (PasswordService, PasswordFileManager, Sm4KeyLoader, PlaceholderParser)
+- `com.dbpwd.model` - 数据模型 (DatabaseEntry, PasswordFile)
+- `com.dbpwd.framework` - 框架集成支持 (DataSourceDecorator)
+- `com.dbpwd.spring` - Spring 自动配置 (DbPwdAutoConfiguration, DbPwdProperties)
+- `com.dbpwd.cli` - 命令行工具 (DBPasswordCLI)
+
+**核心类**:
+- `PasswordService`: 一站式密码获取服务，内部固定使用 `~/.dbpwd/` 路径
+- `Sm4GCMCipher`: SM4-GCM 认证加密实现
+- `StandalonePasswordDecryptor`: 独立工具类，用于无框架场景
+
+---
+
+## 构建和运行
+
+### 构建项目
+
+```bash
+# 完整构建（跳过测试）
+mvn clean install -DskipTests
+
+# 完整构建（含测试）
+mvn clean install
+
+# 仅构建核心模块
+mvn clean install -pl db-pwd-core
+
+# 使用 Maven Wrapper
+./mvnw clean install -DskipTests    # Linux/Mac
+mvnw.cmd clean install -DskipTests  # Windows
+```
+
+### 运行测试
+
+```bash
+# 运行所有测试
+mvn test
+
+# 运行指定模块测试
+mvn test -pl db-pwd-core
+
+# 运行单个测试类
+mvn test -Dtest=Sm4GCMCipherTest -pl db-pwd-core
+```
+
+### 运行 Demo
+
+```bash
+# 1. 初始化 H2 数据库和密码文件
+java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
+
+# 2. 运行各 Demo
+java -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
+java -jar db-pwd-spring-boot-demo/target/db-pwd-spring-boot-demo-1.0.0.jar
+java -jar db-pwd-spring-boot-demo-api/target/db-pwd-spring-boot-demo-api-1.0.0.jar
+```
+
+---
+
+## Demo 应用对照表
+
+| Demo 模块 | 集成方案 | 配置方式 | 占位符 |
+|-----------|---------|---------|--------|
+| db-pwd-simple-jdbc-demo | 方案5 | API 调用 | `@simple_jdbc_db@` |
+| db-pwd-druid-demo | 方案1 | Java 配置 | `@druid_demo_db@` |
+| db-pwd-druid-demo-spring | 方案1+3 | Spring + Druid | `@druid_spring_db@` |
+| db-pwd-spring-boot-demo | 方案2 | Starter 自动配置 | `@spring_boot_db@` |
+| db-pwd-spring-boot-demo-api | 方案2变体 | 手动 API 配置 | `@spring_boot_api_db@` |
+| db-pwd-spring-demo | 方案3 | Java Config | `@spring_framework_db@` |
+| db-pwd-spring-demo-xml | 方案3 | XML Config | `@spring_xml_db@` |
+| db-pwd-mybatis-demo | 方案4 | MyBatis XML | `@mybatis_demo_db@` |
+| db-pwd-servlet-demo | 方案6 | web.xml | `@servlet_demo_db@` |
+| db-pwd-servlet-demo-annotation | 方案6 | 注解配置 | `@servlet_annotation_db@` |
+| db-pwd-struts-demo | 方案6扩展 | Struts + Servlet | `@struts_demo_db@` |
 
 ---
 
@@ -139,11 +289,65 @@ spring:
 
 ---
 
+## 开发约定
+
+### 代码规范
+
+- **Java 版本**: 源码和目标均为 JDK 8
+- **编码**: UTF-8
+- **包命名**: `com.dbpwd.*`
+- **日志**: 使用 SLF4J + Logback
+
+### 文件权限要求
+
+| 文件 | 路径 | 权限 |
+|------|------|------|
+| 密钥文件 | `~/.dbpwd/sm4.key` | 600 |
+| 密码文件 | `~/.dbpwd/db.pwd` | 600 |
+| 配置目录 | `~/.dbpwd/` | 700 |
+
+---
+
+## 关键 API 使用示例
+
+### PasswordService（推荐）
+
+```java
+// 一行代码获取明文密码
+String password = PasswordService.getDatabasePassword("@my_db@");
+
+// 解密任意格式密码（占位符或ENC格式）
+String plain = PasswordService.decrypt("ENC(SM4-GCM:...)");
+```
+
+### StandalonePasswordDecryptor
+
+```java
+// 获取密码
+String password = StandalonePasswordDecryptor.getDatabasePassword("@my_db@");
+
+// 获取连接
+Connection conn = StandalonePasswordDecryptor.getConnection("@my_db@");
+```
+
+### 占位符格式
+
+应用配置中使用 `@db_name@` 格式：
+
+```yaml
+spring:
+  datasource:
+    password: "@spring_boot_db@"  # 占位符
+```
+
+---
+
 ## 相关文档
 
 ### 核心文档
 - [集成模式设计](docs/integration-patterns.md) - 6种集成模式详细设计
-- [Demo应用设计](docs/demo-applications.md) - 6个Demo应用的设计和验证
+- [集成代码细节说明](docs/integration-code-details.md) - **原始版本 vs 集成版本代码对比**
+- [Demo应用设计](docs/demo-applications.md) - Demo应用的设计和验证
 - [API参考文档](docs/api-reference.md) - 核心API使用指南
 
 ### 用户文档
@@ -153,29 +357,24 @@ spring:
 
 ---
 
-## Demo应用验证
+## 版本兼容性
 
-### Demo列表
+| 集成模式 | 模块 | 核心依赖 | 兼容范围 |
+|----------|------|----------|----------|
+| Druid PasswordCallback | `db-pwd-druid` | Druid 1.2.20 | Druid 1.0.x ~ 1.2.x |
+| Spring BeanPostProcessor | `db-pwd-spring` | Spring 5.3.31 | Spring 4.x ~ 5.x |
+| Spring Boot Starter | `db-pwd-spring-boot-starter` | Spring Boot 2.7.18 | Spring Boot 2.x |
+| MyBatis DataSourceFactory | `db-pwd-mybatis` | MyBatis 3.5.13 | MyBatis 3.x |
+| Servlet ContextListener | `db-pwd-web` | Servlet 3.1.0 | Servlet 3.0+ / 4.x |
 
-| Demo | 集成模式 | 占位符 |
-|------|---------|--------|
-| db-pwd-demo-init | - | - |
-| db-pwd-simple-jdbc-demo | 方案5 | `@simple_jdbc_db@` |
-| db-pwd-druid-demo | 方案1 | `@druid_demo_db@` |
-| db-pwd-spring-boot-demo | 方案2 | `@spring_boot_db@` |
-| db-pwd-spring-demo | 方案3 | `@spring_framework_db@` |
-| db-pwd-mybatis-demo | 方案4 | `@mybatis_demo_db@` |
-| db-pwd-servlet-demo | 方案6 | `@servlet_demo_db@` |
+> **注意**: 如需支持 Spring Boot 3.x，需升级到 Java 17+ 并将 `javax.*` 替换为 `jakarta.*`。
 
-### 验证流程
+---
 
-```bash
-# 1. 构建
-mvn clean install -DskipTests
+## 注意事项
 
-# 2. 初始化H2 FILE数据库
-java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
-
-# 3. 运行Demo
-java -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
-```
+- **安全第一**: 密钥文件和密码文件不应提交到版本控制
+- **权限检查**: Linux/Mac 环境需确保文件权限正确设置
+- **Windows 兼容**: 项目支持 Windows 环境，使用 `System.getProperty("user.home")` 获取用户目录
+- **H2 数据库**: Demo 使用 H2 FILE 模式进行真实密码验证
+- **Struts 1.x**: `db-pwd-struts-demo` 使用 Struts 1.3.10，适合维护旧系统参考

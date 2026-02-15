@@ -53,12 +53,14 @@
 
 | 组件 | 版本 |
 |------|------|
-| JDK | 8+ (推荐 11) |
+| JDK | 8 (必须兼容) / 推荐 11+ |
 | Maven | 3.6+ |
+| **加密算法** | SM4-GCM 认证加密 |
+| **加密库** | Bouncy Castle 1.78+ |
+| **JSON库** | Jackson 2.12+ |
 | Spring Boot | 2.7.18 |
 | Spring Framework | 5.3.31 |
 | Druid | 1.2.20 |
-| Bouncy Castle | 1.78 |
 | JUnit | 5.9.3 |
 
 ---
@@ -76,17 +78,22 @@ db-pwd/
 │
 ├── db-pwd-demo-init/               # Demo 初始化工具
 │
-├── db-pwd-simple-jdbc-demo/        # 方案5 Demo: 纯 JDBC
-├── db-pwd-druid-demo/              # 方案1 Demo: Druid
-├── db-pwd-druid-demo-spring/       # 方案1 Demo: Druid + Spring
-├── db-pwd-spring-boot-demo/        # 方案2 Demo: Spring Boot (Starter)
-├── db-pwd-spring-boot-demo-api/    # 方案2 Demo: Spring Boot (API方式)
-├── db-pwd-spring-demo/             # 方案3 Demo: Spring (Java Config)
-├── db-pwd-spring-demo-xml/         # 方案3 Demo: Spring (XML Config)
-├── db-pwd-mybatis-demo/            # 方案4 Demo: MyBatis
-├── db-pwd-servlet-demo/            # 方案6 Demo: Servlet (web.xml)
-├── db-pwd-servlet-demo-annotation/ # 方案6 Demo: Servlet (注解)
-├── db-pwd-struts-demo/             # Struts 1.x 集成 Demo
+├── db-pwd-simple-jdbc-demo-original/   # 【原始版本】方案5: 纯 JDBC
+├── db-pwd-simple-jdbc-demo/            # 【集成版本】方案5: 纯 JDBC
+├── db-pwd-druid-demo-original/         # 【原始版本】方案1: Druid
+├── db-pwd-druid-demo/                  # 【集成版本】方案1: Druid
+├── db-pwd-druid-demo-spring/           # 【集成版本】方案1+3: Druid + Spring
+├── db-pwd-spring-boot-demo-original/   # 【原始版本】方案2: Spring Boot
+├── db-pwd-spring-boot-demo/            # 【集成版本】方案2: Spring Boot (Starter)
+├── db-pwd-spring-boot-demo-api/        # 【集成版本】方案2: Spring Boot (API方式)
+├── db-pwd-spring-demo-original/        # 【原始版本】方案3: Spring
+├── db-pwd-spring-demo/                 # 【集成版本】方案3: Spring (Java Config)
+├── db-pwd-spring-demo-xml/             # 【集成版本】方案3: Spring (XML Config)
+├── db-pwd-mybatis-demo/                # 【集成版本】方案4: MyBatis
+├── db-pwd-servlet-demo-original/       # 【原始版本】方案6: Servlet
+├── db-pwd-servlet-demo/                # 【集成版本】方案6: Servlet (web.xml)
+├── db-pwd-servlet-demo-annotation/     # 【集成版本】方案6: Servlet (注解)
+├── db-pwd-struts-demo/                 # 【集成版本】Struts 1.x
 │
 ├── docs/                           # 文档目录
 ├── claudedocs/                     # Sprint 进度文档
@@ -95,6 +102,20 @@ db-pwd/
 ├── .mvn/                           # Maven Wrapper
 └── .github/                        # GitHub 工作流
 ```
+
+### 原始版本 vs 集成版本
+
+项目为每种集成模式提供了 **原始版本** 和 **集成版本** 的对比：
+
+| 集成模式 | 原始版本 | 集成版本 |
+|---------|---------|---------|
+| 方案5: 纯JDBC | `db-pwd-simple-jdbc-demo-original` | `db-pwd-simple-jdbc-demo` |
+| 方案1: Druid | `db-pwd-druid-demo-original` | `db-pwd-druid-demo` |
+| 方案2: Spring Boot | `db-pwd-spring-boot-demo-original` | `db-pwd-spring-boot-demo` |
+| 方案3: Spring | `db-pwd-spring-demo-original` | `db-pwd-spring-demo` |
+| 方案6: Servlet | `db-pwd-servlet-demo-original` | `db-pwd-servlet-demo` |
+
+详细的代码差异对比请参考：[集成代码细节说明](docs/integration-code-details.md)
 
 ---
 
@@ -266,6 +287,7 @@ spring:
 | `docs/architecture.md` | 架构设计文档 |
 | `docs/api-reference.md` | API 参考文档 |
 | `docs/integration-patterns.md` | 集成模式设计 |
+| `docs/integration-code-details.md` | **集成代码细节说明（原始版本 vs 集成版本）** |
 | `docs/user-guide.md` | 用户使用手册 |
 | `docs/deployment-guide.md` | 部署指南 |
 | `docs/FAQ.md` | 常见问题 |

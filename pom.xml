@@ -14,12 +14,25 @@
     <description>Database password encryption and management tool, supporting SM4 algorithm and configuration center integration</description>
 
     <modules>
+        <!-- Core modules -->
         <module>db-pwd-core</module>
         <module>db-pwd-druid</module>
         <module>db-pwd-spring</module>
         <module>db-pwd-spring-boot-starter</module>
         <module>db-pwd-mybatis</module>
         <module>db-pwd-web</module>
+
+        <!-- Demo initialization tool -->
+        <module>db-pwd-demo-init</module>
+
+        <!-- Original demo applications (before integration) -->
+        <module>db-pwd-simple-jdbc-demo-original</module>
+        <module>db-pwd-spring-boot-demo-original</module>
+        <module>db-pwd-druid-demo-original</module>
+        <module>db-pwd-spring-demo-original</module>
+        <module>db-pwd-servlet-demo-original</module>
+
+        <!-- Integrated demo applications (after integration) -->
         <module>db-pwd-simple-jdbc-demo</module>
         <module>db-pwd-spring-boot-demo</module>
         <module>db-pwd-spring-boot-demo-api</module>
@@ -31,7 +44,6 @@
         <module>db-pwd-servlet-demo</module>
         <module>db-pwd-servlet-demo-annotation</module>
         <module>db-pwd-struts-demo</module>
-        <module>db-pwd-demo-init</module>
     </modules>
 
     <properties>
