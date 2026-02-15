@@ -102,7 +102,8 @@ public class PasswordProvider {
         }
 
         // 2. 根据占位符查找加密密码
-        DatabaseEntry entry = passwordManager.getById(placeholder);
+        String dbId = PlaceholderParser.parse(placeholder);
+        DatabaseEntry entry = passwordManager.getById(dbId);
         if (entry == null) {
             throw new IllegalArgumentException("未找到数据库配置，占位符: " + placeholder);
         }

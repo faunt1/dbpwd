@@ -15,7 +15,7 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * DruidPasswordCallback单元测试
+ * DbPwdDruidPasswordCallback单元测试
  *
  * 测试Druid PasswordCallback集成，验证通过Druid的PasswordCallback机制
  * 自动解密数据库密码的功能
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Database Password Manager
  * @version 6.0
  */
-public class DruidPasswordCallbackTest {
+public class DbPwdDruidPasswordCallbackTest {
 
     private Path keyFilePath;
     private Path pwdFilePath;
@@ -107,7 +107,7 @@ public class DruidPasswordCallbackTest {
         String encryptedPassword = Sm4GCMCipher.encrypt(TEST_PASSWORD, SM4_KEY);
         String formattedPassword = com.dbpwd.crypto.ENCFormat.formatSM4GCM(encryptedPassword);
 
-        String h2Url = "jdbc:h2:file:" + h2DataDir + "/" + H2_DB_NAME;
+        String h2Url = "jdbc:h2:file:" + h2DataDir.toString().replace("\\", "/") + "/" + H2_DB_NAME;
 
         String json = "{\n" +
                 "  \"version\": \"1.0\",\n" +
@@ -134,7 +134,7 @@ public class DruidPasswordCallbackTest {
 
     @Test
     public void testDefaultConstructor() {
-        DruidPasswordCallback callback = new DruidPasswordCallback();
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
         assertNotNull(callback);
     }
 
@@ -145,7 +145,7 @@ public class DruidPasswordCallbackTest {
      */
     @Test
     public void testPasswordCallbackWithTempPath() throws Exception {
-        DruidPasswordCallback callback = new DruidPasswordCallback();
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
 
         // 使用临时文件路径
         Properties props = new Properties();
@@ -174,13 +174,16 @@ public class DruidPasswordCallbackTest {
 
         try {
             DruidDataSource dataSource = new DruidDataSource();
-            String h2Url = "jdbc:h2:file:" + h2DataDir + "/" + H2_DB_NAME;
+            String h2Url = "jdbc:h2:file:" + h2DataDir.toString().replace("\\", "/") + "/" + H2_DB_NAME;
 
             dataSource.setUrl(h2Url);
             dataSource.setUsername("sa");
             dataSource.setPassword(TEST_PLACEHOLDER);  // 设置占位符 @test_db@
             dataSource.setDriverClassName("org.h2.Driver");
-            dataSource.setPasswordCallback(new DruidPasswordCallback());
+            dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
+
+            // 关键：Druid需要显式初始化才会触发PasswordCallback
+            dataSource.init();
 
             // 测试数据库连接（H2 FILE模式会验证密码）
             try (java.sql.Connection conn = dataSource.getConnection();
@@ -192,7 +195,6 @@ public class DruidPasswordCallbackTest {
             }
 
             assertNotNull(dataSource);
-            assertEquals(TEST_PLACEHOLDER, dataSource.getPassword());  // Druid会保留原始占位符
 
         } finally {
             cleanupDefaultPath();

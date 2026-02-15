@@ -111,11 +111,18 @@ public class StandalonePasswordDecryptorTest {
     @Test
     public void testGetPlainPasswordWithEmptyPaths() throws Exception {
         // 空字符串应使用默认路径，如果没有默认文件会抛出异常
-        // 由于没有默认文件，预期会抛出异常
-        assertThrows(Exception.class, () -> {
-            StandalonePasswordDecryptor.getPlainPassword(
-                    TEST_DB_ID, "", "");
-        });
+        // 临时设置user.home到不存在的目录，确保默认路径没有文件
+        String originalHome = System.getProperty("user.home");
+        System.setProperty("user.home", tempDir.resolve("nonexistent").toString());
+
+        try {
+            assertThrows(Exception.class, () -> {
+                StandalonePasswordDecryptor.getPlainPassword(
+                        TEST_DB_ID, "", "");
+            });
+        } finally {
+            System.setProperty("user.home", originalHome);
+        }
     }
 
     @Test

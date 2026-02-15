@@ -114,9 +114,9 @@ public class StandalonePasswordDecryptor {
      * @throws Exception 加载失败
      */
     private static String loadSm4Key(String keyFilePath, String dbId) throws Exception {
-        // 使用默认路径如果参数为空
-        String actualKeyPath = (keyFilePath != null && !keyFilePath.isEmpty()) ? keyFilePath :
-            getDefaultKeyPath();
+        // 使用默认路径如果参数为空或空字符串
+        String actualKeyPath = (keyFilePath != null && !keyFilePath.trim().isEmpty()) ?
+            keyFilePath : getDefaultKeyPath();
 
         // 使用缓存：keyFilePath:dbId
         String cacheKey = actualKeyPath + ":" + dbId;
@@ -164,7 +164,7 @@ public class StandalonePasswordDecryptor {
      * @throws Exception 加载失败
      */
     private static PasswordFileManager loadPasswordFile(String pwdFilePath) throws Exception {
-        String actualPwdPath = (pwdFilePath != null && !pwdFilePath.isEmpty()) ?
+        String actualPwdPath = (pwdFilePath != null && !pwdFilePath.trim().isEmpty()) ?
             pwdFilePath : getDefaultPwdPath();
         return PasswordFileManager.loadFromFile(actualPwdPath);
     }
