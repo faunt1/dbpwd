@@ -3,34 +3,46 @@ package com.dbpwd.mybatis;
 import com.dbpwd.core.Sm4KeyLoader;
 import com.dbpwd.crypto.Sm4GCMCipher;
 import com.dbpwd.model.DatabaseEntry;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import javax.sql.DataSource;
-import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * DbPwdDruidDataSourceFactory单元测试
+ *
+ * 设计原则：
+ * - 单元测试使用临时目录（@TempDir），自包含、自解释
+ * - 通过 keyFile 和 pwdFile 属性指定自定义路径
+ * - 不依赖用户主目录下的 ~/.dbpwd/ 配置
+ *
+ * @author Database Password Manager
+ * @version 6.1
  */
 public class DbPwdDruidDataSourceFactoryTest {
 
-    private static final String TEST_KEY_FILE = "test_mybatis_druid_sm4.key";
-    private static final String TEST_PWD_FILE = "test_mybatis_druid_dbpwd.pwd";
+    @TempDir
+    Path tempDir;
+
     private String testKeyPath;
     private String testPwdPath;
 
     @BeforeEach
     public void setUp() throws Exception {
-        testKeyPath = System.getProperty("java.io.tmpdir") + File.separator + TEST_KEY_FILE;
-        testPwdPath = System.getProperty("java.io.tmpdir") + File.separator + TEST_PWD_FILE;
+        testKeyPath = tempDir.resolve("test_mybatis_sm4.key").toString();
+        testPwdPath = tempDir.resolve("test_mybatis_dbpwd.pwd").toString();
+    }
 
-        Files.deleteIfExists(Paths.get(testKeyPath));
-        Files.deleteIfExists(Paths.get(testPwdPath));
+    @AfterEach
+    public void tearDown() throws Exception {
+        // @TempDir 会自动清理临时目录，无需手动删除
     }
 
     @Test
@@ -152,10 +164,6 @@ public class DbPwdDruidDataSourceFactoryTest {
         // 注意：这里我们只验证getDataSource方法不会抛出配置异常
         DataSource dataSource = factory.getDataSource();
         assertNotNull(dataSource);
-
-        // 清理
-        Files.deleteIfExists(Paths.get(testKeyPath));
-        Files.deleteIfExists(Paths.get(testPwdPath));
     }
 
     @Test
@@ -192,9 +200,5 @@ public class DbPwdDruidDataSourceFactoryTest {
 
         DataSource dataSource = factory.getDataSource();
         assertNotNull(dataSource);
-
-        // 清理
-        Files.deleteIfExists(Paths.get(testKeyPath));
-        Files.deleteIfExists(Paths.get(testPwdPath));
     }
 }

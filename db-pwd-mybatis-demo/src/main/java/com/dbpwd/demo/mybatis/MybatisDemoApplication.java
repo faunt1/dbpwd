@@ -1,10 +1,6 @@
 package com.dbpwd.demo.mybatis;
 
-import com.dbpwd.core.Sm4KeyLoader;
-import com.dbpwd.core.PasswordFileManager;
-import com.dbpwd.crypto.Sm4GCMCipher;
-import com.dbpwd.crypto.ENCFormat;
-import com.dbpwd.crypto.PasswordDecryptor;
+import com.dbpwd.core.PasswordService;
 import com.dbpwd.demo.mybatis.dao.ProductMapper;
 import com.dbpwd.demo.mybatis.model.Product;
 import org.apache.ibatis.io.Resources;
@@ -14,7 +10,6 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
 
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -24,13 +19,28 @@ import java.util.List;
  * MyBatis集成Demo主程序
  *
  * 演示如何使用db-pwd-mybatis模块集成MyBatis密码加密
+ *
+ * 集成模式: 模式4（MyBatis DataSourceFactory模式）
+ * 解密实现: 程序调用 PasswordService 获取解密后的密码
+ * 占位符: mybatis_demo_db
+ *
+ * 工作机制:
+ * 1. 程序调用 PasswordService.getDatabasePassword() 获取明文密码
+ * 2. 密码从 ~/.dbpwd/db.pwd 和 ~/.dbpwd/sm4.key 自动读取和解密
+ * 3. 使用明文密码创建数据源
+ * 4. MyBatis 正常使用数据源进行数据库操作
+ *
+ * @author Database Password Manager
+ * @version 6.1
  */
 public class MybatisDemoApplication {
 
-    // FILE模式以支持密码验证
+    // 占位符标识（用于标识不同的数据库配置）
+    private static final String DB_PLACEHOLDER = "mybatis_demo_db";
+
+    // H2 FILE模式以支持密码验证
     private static final String H2_URL = "jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_mybatis_demo;MODE=MySQL";
     private static final String H2_USERNAME = "sa";
-    private static final String H2_PASSWORD = "sa";
     private static final String H2_DRIVER = "org.h2.Driver";
 
     public static void main(String[] args) {
@@ -41,26 +51,21 @@ public class MybatisDemoApplication {
 
         SqlSession sqlSession = null;
         try {
-            // 1. 创建示例密钥文件（仅用于Demo）
-            System.out.println("Creating demo key file...");
-            String demoKeyPath = System.getProperty("user.home") + "/.dbpwd/demo_mybatis_sm4.key";
-            String sm4Key = Sm4KeyLoader.generateKey(demoKeyPath, true);
+            // 1. 从 db.pwd 和 sm4.key 获取解密后的数据库密码
+            System.out.println("Getting database password from ~/.dbpwd/...");
+            String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
+            System.out.println("  Password decrypted successfully from db.pwd");
+            System.out.println("  Using placeholder: " + DB_PLACEHOLDER);
 
-            // 2. 加密H2密码
-            System.out.println("Encrypting H2 password...");
-            String cipherText = Sm4GCMCipher.encrypt(H2_PASSWORD, sm4Key);
-            String encPassword = ENCFormat.formatSM4GCM(cipherText);
-            System.out.println("  Encrypted password: " + encPassword.substring(0, Math.min(50, encPassword.length())) + "...");
-
-            // 3. 构建MyBatis配置
+            // 2. 构建MyBatis配置
             System.out.println("\nBuilding MyBatis configuration...");
-            SqlSessionFactory sqlSessionFactory = buildSqlSessionFactory(sm4Key);
+            SqlSessionFactory sqlSessionFactory = buildSqlSessionFactory(plainPassword);
 
-            // 4. 初始化数据库表
+            // 3. 初始化数据库表
             System.out.println("\nInitializing database tables...");
             initDatabase(sqlSessionFactory);
 
-            // 5. 演示CRUD操作
+            // 4. 演示CRUD操作
             System.out.println("\n=========================================");
             System.out.println("   CRUD Operations Demo");
             System.out.println("=========================================");
@@ -130,10 +135,10 @@ public class MybatisDemoApplication {
             System.out.println("=========================================");
             System.out.println();
             System.out.println("Key points demonstrated:");
-            System.out.println("- ENC(SM4-GCM:xxx) format for encrypted password");
-            System.out.println("- Password automatically decrypted in DbPwdDataSourceFactory");
+            System.out.println("- PasswordService.getDatabasePassword() for password decryption");
+            System.out.println("- Password automatically read from ~/.dbpwd/db.pwd and ~/.dbpwd/sm4.key");
             System.out.println("- MyBatis mapper with CRUD operations");
-            System.out.println("- H2 in-memory database for demo");
+            System.out.println("- H2 FILE database for demo");
 
         } catch (Exception e) {
             System.err.println("Error running demo: " + e.getMessage());
@@ -152,12 +157,8 @@ public class MybatisDemoApplication {
     /**
      * 构建MyBatis SqlSessionFactory
      */
-    private static SqlSessionFactory buildSqlSessionFactory(String sm4Key) throws Exception {
-        // 解密密码
-        String encPassword = "ENC(SM4-GCM:" + Sm4GCMCipher.encrypt(H2_PASSWORD, sm4Key) + ")";
-        String plainPassword = decryptPassword(encPassword, sm4Key);
-
-        // 创建数据源
+    private static SqlSessionFactory buildSqlSessionFactory(String plainPassword) throws Exception {
+        // 创建数据源，使用解密后的明文密码
         DataSource dataSource = new UnpooledDataSource();
         ((UnpooledDataSource) dataSource).setUrl(H2_URL);
         ((UnpooledDataSource) dataSource).setUsername(H2_USERNAME);
@@ -176,20 +177,6 @@ public class MybatisDemoApplication {
         ));
 
         return sessionFactory;
-    }
-
-    /**
-     * 解密密码
-     */
-    private static String decryptPassword(String encryptedPassword, String sm4Key) throws Exception {
-        String algorithm = ENCFormat.extractAlgorithm(encryptedPassword);
-        if (!"SM4-GCM".equalsIgnoreCase(algorithm)) {
-            throw new IllegalArgumentException(
-                "不支持的加密算法: " + algorithm + "。仅支持SM4-GCM格式");
-        }
-
-        String cipherText = ENCFormat.extractCipherText(encryptedPassword);
-        return Sm4GCMCipher.decrypt(cipherText, sm4Key);
     }
 
     /**
