@@ -250,16 +250,16 @@ find . -name "*Mapper.xml"
 ```java
 import com.dbpwd.core.PasswordService;
 
-// 方式1: 获取密码
+// 方式1: 获取密码（推荐，支持占位符格式）
 String password = PasswordService.getDatabasePassword("@my_db@");
 Connection conn = DriverManager.getConnection(url, username, password);
 
-// 方式2: 使用 StandalonePasswordDecryptor
+// 方式2: 使用 StandalonePasswordDecryptor（需传入 dbId，不支持 @xx@ 格式）
 import com.dbpwd.core.StandalonePasswordDecryptor;
-String password = StandalonePasswordDecryptor.getDatabasePassword("@my_db@");
+String password = StandalonePasswordDecryptor.getPlainPassword("my_db", null, null);
 
 // 方式3: 直接获取连接
-Connection conn = StandalonePasswordDecryptor.getConnection("@my_db@");
+Connection conn = StandalonePasswordDecryptor.getConnection("my_db", null, null);
 ```
 
 ### 检测信号

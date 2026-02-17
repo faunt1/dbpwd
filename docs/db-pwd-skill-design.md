@@ -9,13 +9,14 @@
 1. [概述](#概述)
 2. [触发条件](#触发条件)
 3. [工作流程](#工作流程)
-4. [用户交互模板](#用户交互模板)
-5. [代码转换规则](#代码转换规则)
-6. [错误处理](#错误处理)
-7. [边界情况处理](#边界情况处理)
-8. [回滚机制](#回滚机制)
-9. [安全检查清单](#安全检查清单)
-10. [诊断功能](#诊断功能)
+4. [多模块项目处理](#多模块项目处理)
+5. [用户交互模板](#用户交互模板)
+6. [代码转换规则](#代码转换规则)
+7. [错误处理](#错误处理)
+8. [边界情况处理](#边界情况处理)
+9. [回滚机制](#回滚机制)
+10. [安全检查清单](#安全检查清单)
+11. [诊断功能](#诊断功能)
 
 ---
 
@@ -75,6 +76,57 @@ db-pwd-integrator 是一个自动扫描 Java 数据库应用并集成 db-pwd 密
 - 框架版本
 - 多模块结构
 ```
+
+#### 1.1 多模块项目检测
+
+当检测到多个 pom.xml 时，需要识别项目结构：
+
+```
+🔍 多模块项目检测
+
+发现多个 pom.xml：
+- /pom.xml (packaging=pom → 父模块)
+- /service-a/pom.xml (packaging=jar → 子模块)
+- /service-b/pom.xml (packaging=jar → 子模块)
+- /common/pom.xml (packaging=jar → 子模块)
+```
+
+**模块分类逻辑**：
+```
+FOR EACH pom.xml:
+    IF packaging == "pom":
+        → 父模块，跳过集成
+    ELSE IF 有 spring-boot-starter-jdbc / druid / mybatis 依赖:
+        → 有数据库操作，需要集成
+    ELSE:
+        → 公共模块，建议跳过
+```
+
+**多模块交互模板**：
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🔍 多模块项目检测
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────┬─────────────────┬──────────────┬─────────────┬─────────┐
+│ #  │ 模块             │ 数据库依赖    │ 项目类型    │ 建议    │
+├────┼─────────────────┼──────────────┼─────────────┼─────────┤
+│ 1  │ common          │ ❌ 无        │ -          │ 跳过    │
+│ 2  │ service-user    │ ✅ Druid     │ Spring Boot│ 集成    │
+│ 3  │ service-order   │ ✅ Druid     │ Spring Boot│ 集成    │
+│ 4  │ web-admin       │ ✅ MyBatis   │ Spring MVC │ 集成    │
+└────┴─────────────────┴──────────────┴─────────────┴─────────┘
+
+推荐集成模块：2, 3, 4
+
+请选择要集成的模块（输入编号，多个用逗号分隔，回车全选）：
+```
+
+**多模块集成策略**：
+1. 依赖添加到**具体子模块**的 pom.xml（不是父 pom）
+2. 不同模块可能使用**不同的集成方案**
+3. 所有模块共享**同一个密钥文件** (`~/.dbpwd/`)
+4. 配置文件修改在**对应模块**的 resources 目录
 
 2. **扫描配置文件**
 ```
@@ -216,6 +268,179 @@ ELSE:
 ### Phase 3: 用户确认
 
 参见 [用户交互模板](#用户交互模板)
+
+---
+
+参见 [用户交互模板](#用户交互模板)
+
+---
+
+## 多模块项目处理
+
+### 检测多模块项目
+
+当检测到多个 pom.xml 时，需要识别项目结构：
+
+```
+🔍 多模块项目检测
+
+发现多个 pom.xml：
+- /pom.xml (packaging=pom → 父模块)
+- /service-a/pom.xml (packaging=jar → 子模块)
+- /service-b/pom.xml (packaging=jar → 子模块)
+- /common/pom.xml (packaging=jar → 子模块)
+```
+
+### 模块分类逻辑
+
+```
+FOR EACH pom.xml:
+    IF packaging == "pom":
+        → 父模块，跳过集成
+    ELSE IF 有 spring-boot-starter-jdbc / druid / mybatis 依赖:
+        → 有数据库操作，需要集成
+    ELSE:
+        → 公共模块，建议跳过
+```
+
+### 模块选择交互模板
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🔍 多模块项目检测
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+项目结构：
+my-project/
+├── pom.xml                    # 父 pom (packaging=pom)
+├── common/                    # 公共模块
+│   └── pom.xml
+├── service-user/              # 用户服务 (有数据库)
+│   └── pom.xml
+├── service-order/             # 订单服务 (有数据库)
+│   └── pom.xml
+└── web-admin/                 # 管理后台 (有数据库)
+    └── pom.xml
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 模块分析结果
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────┬─────────────────┬──────────────┬─────────────┬─────────┐
+│ #  │ 模块             │ 数据库依赖    │ 项目类型    │ 建议    │
+├────┼─────────────────┼──────────────┼─────────────┼─────────┤
+│ 1  │ common          │ ❌ 无        │ -          │ 跳过    │
+│ 2  │ service-user    │ ✅ Druid     │ Spring Boot│ 集成    │
+│ 3  │ service-order   │ ✅ Druid     │ Spring Boot│ 集成    │
+│ 4  │ web-admin       │ ✅ MyBatis   │ Spring MVC │ 集成    │
+└────┴─────────────────┴──────────────┴─────────────┴─────────┘
+
+推荐集成模块：2, 3, 4
+
+请选择要集成的模块（输入编号，多个用逗号分隔，回车全选）：
+```
+
+### 多模块集成策略
+
+#### 1. 依赖添加位置
+
+**错误做法**：添加到父 pom
+```xml
+<!-- ❌ 错误：不要在父 pom 添加 -->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+**正确做法**：添加到具体子模块
+```xml
+<!-- ✅ 正确：在 service-user/pom.xml 添加 -->
+<dependencies>
+    <dependency>
+        <groupId>com.dbpwd</groupId>
+        <artifactId>db-pwd-core</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.dbpwd</groupId>
+        <artifactId>db-pwd-spring-boot-starter</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+</dependencies>
+```
+
+#### 2. 不同模块可能使用不同方案
+
+```
+多模块集成计划：
+
+┌─────────────────┬─────────────────┬───────────────────────────┐
+│ 模块             │ 集成方案        │ 添加依赖                   │
+├─────────────────┼─────────────────┼───────────────────────────┤
+│ service-user    │ 方案2: Starter  │ db-pwd-core, starter      │
+│ service-order   │ 方案2: Starter  │ db-pwd-core, starter      │
+│ web-admin       │ 方案4: MyBatis  │ db-pwd-core, mybatis      │
+└─────────────────┴─────────────────┴───────────────────────────┘
+
+注意：所有模块共享同一个密钥文件 ~/.dbpwd/
+```
+
+#### 3. 密钥文件共享
+
+多模块项目使用**统一的密钥文件**：
+
+```
+~/.dbpwd/
+├── sm4.key              # 所有模块共享
+└── db.pwd               # 包含所有数据库配置
+    ├── @service_user_db@
+    ├── @service_order_db@
+    └── @web_admin_db@
+```
+
+### 批量集成选项
+
+```
+是否批量集成所有推荐模块？[Y/n/逐个确认]
+
+选择 Y → 自动集成所有推荐模块
+选择 N → 取消
+选择 逐个确认 → 每个模块单独确认
+```
+
+### 多模块常见问题
+
+#### 问题：父 pom 中已经有 db-pwd 依赖管理
+
+**处理**：子模块只需添加依赖，无需指定版本
+```xml
+<!-- 子模块只需这样写 -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-core</artifactId>
+    <!-- 无需 version，继承父 pom -->
+</dependency>
+```
+
+#### 问题：模块间有依赖关系
+
+**处理**：
+- 在 common 模块**不需要**添加 db-pwd 依赖
+- 只在有数据库操作的模块添加依赖
+- common 模块如果使用 PasswordService，会通过传递依赖获得
+
+#### 问题：共享配置文件
+
+**处理**：
+1. 如果配置在父模块 resources：在父模块修改
+2. 如果各模块独立配置：分别修改
+3. 使用 Spring Cloud Config：在配置中心修改
 
 ---
 

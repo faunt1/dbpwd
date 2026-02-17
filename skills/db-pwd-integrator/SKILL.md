@@ -33,7 +33,7 @@ keywords:
 
 ## 工作流程
 
-### 1. 项目扫描
+### Phase 1: 项目扫描
 
 使用内置工具扫描项目：
 
@@ -42,6 +42,35 @@ glob("**/pom.xml")
 glob("**/application*.yml")
 grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
 ```
+
+#### 多模块项目处理
+
+当检测到多个 pom.xml 时：
+
+```
+🔍 检测到多模块项目
+
+┌────┬─────────────────────────┬──────────────┬─────────────┐
+│ #  │ 模块名称                 │ 有数据库依赖  │ 需要集成    │
+├────┼─────────────────────────┼──────────────┼─────────────┤
+│ 0  │ parent (根目录)          │ -            │ ❌ 跳过     │
+│ 1  │ service-a               │ ✅           │ ？请确认   │
+│ 2  │ service-b               │ ✅           │ ？请确认   │
+│ 3  │ common                  │ ❌           │ ❌ 跳过     │
+└────┴─────────────────────────┴──────────────┴─────────────┘
+
+请选择要集成的模块（输入编号，多个用逗号分隔）：1,2
+```
+
+**判断逻辑**：
+- 父 pom（packaging=pom）：跳过
+- 有 `spring-boot-starter-jdbc`/`druid`/`mybatis` 依赖的模块：标记为有数据库
+- 无数据库依赖的 common/util 模块：建议跳过
+
+**集成策略**：
+1. 依赖添加到**具体子模块**的 pom.xml（不是父 pom）
+2. 配置文件修改在**对应模块**的 resources 目录
+3. 代码修改在**对应模块**的 src 目录
 
 ### Phase 2: 项目类型识别
 
@@ -73,6 +102,14 @@ ELSE IF DriverManager.getConnection:
 ELSE:
     → 询问用户选择项目类型
 ```
+
+**其他连接池支持**：
+- HikariCP（Spring Boot 默认）→ 与 Starter 相同处理
+- DBCP2 / C3P0 / Tomcat JDBC → 方案5（手动调用 PasswordService）
+- JNDI DataSource → 在应用服务器配置或使用 DataSourceDecorator
+
+**特殊场景**（详见 `references/troubleshooting.md`）：
+- Gradle 项目、多环境配置、配置中心、Docker/K8s、密码轮换、CI/CD
 
 ### Phase 3: 用户确认
 
@@ -209,8 +246,8 @@ lsp_diagnostics
 - 添加依赖数: M
 
 📝 后续操作：
-1. java -jar db-pwd-demo-init-1.0.0.jar  # 初始化密钥
-2. java -jar db-pwd-core-1.0.0.jar add my_db  # 添加密码配置
+1. java -jar db-pwd-cli.jar --demo --generate-key  # 初始化密钥和Demo数据库
+2. java -jar db-pwd-cli.jar --add --id my_db --url <url> --username <user> --password <pwd>  # 添加密码配置
 3. mvn test  # 验证
 
 🔒 安全提醒：

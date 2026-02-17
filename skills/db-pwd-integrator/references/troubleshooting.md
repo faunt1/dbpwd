@@ -4,6 +4,578 @@
 
 ---
 
+## 多模块项目处理
+
+### 检测多模块项目
+
+```
+🔍 检测到多模块项目
+
+发现 4 个 pom.xml 文件：
+- /pom.xml (parent, packaging=pom)
+- /service-a/pom.xml
+- /service-b/pom.xml
+- /common/pom.xml
+```
+
+### 模块选择策略
+
+**自动判断规则**：
+
+| 模块特征 | 判断结果 | 建议 |
+|---------|---------|------|
+| packaging=pom | 父模块 | 跳过 |
+| 有 spring-boot-starter-jdbc | 有数据库 | 需要集成 |
+| 有 druid 依赖 | 有数据库 | 需要集成 |
+| 有 mybatis 依赖 | 有数据库 | 需要集成 |
+| 无数据库依赖 | 公共模块 | 跳过 |
+| 有 @SpringBootApplication | 可执行模块 | 需要集成 |
+
+### 交互示例
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🔍 多模块项目检测
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+项目结构：
+my-project/
+├── pom.xml                    # 父 pom (packaging=pom)
+├── common/                    # 公共模块
+│   └── pom.xml
+├── service-user/              # 用户服务 (有数据库)
+│   └── pom.xml
+├── service-order/             # 订单服务 (有数据库)
+│   └── pom.xml
+└── web-admin/                 # 管理后台 (有数据库)
+    └── pom.xml
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 模块分析结果
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌────┬─────────────────┬──────────────┬─────────────┬─────────┐
+│ #  │ 模块             │ 数据库依赖    │ 项目类型    │ 建议    │
+├────┼─────────────────┼──────────────┼─────────────┼─────────┤
+│ 1  │ common          │ ❌ 无        │ -          │ 跳过    │
+│ 2  │ service-user    │ ✅ Druid     │ Spring Boot│ 集成    │
+│ 3  │ service-order   │ ✅ Druid     │ Spring Boot│ 集成    │
+│ 4  │ web-admin       │ ✅ MyBatis   │ Spring MVC │ 集成    │
+└────┴─────────────────┴──────────────┴─────────────┴─────────┘
+
+推荐集成模块：2, 3, 4
+
+请选择要集成的模块（输入编号，多个用逗号分隔，回车全选）：
+```
+
+### 集成策略
+
+#### 1. 依赖添加位置
+
+**错误做法**：添加到父 pom
+```xml
+<!-- ❌ 错误：不要在父 pom 添加 -->
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+**正确做法**：添加到具体子模块
+```xml
+<!-- ✅ 正确：在 service-user/pom.xml 添加 -->
+<dependencies>
+    <dependency>
+        <groupId>com.dbpwd</groupId>
+        <artifactId>db-pwd-core</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.dbpwd</groupId>
+        <artifactId>db-pwd-spring-boot-starter</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+</dependencies>
+```
+
+#### 2. 不同模块可能使用不同方案
+
+```
+多模块集成计划：
+
+┌─────────────────┬─────────────────┬───────────────────────────┐
+│ 模块             │ 集成方案        │ 添加依赖                   │
+├─────────────────┼─────────────────┼───────────────────────────┤
+│ service-user    │ 方案2: Starter  │ db-pwd-core, starter      │
+│ service-order   │ 方案2: Starter  │ db-pwd-core, starter      │
+│ web-admin       │ 方案4: MyBatis  │ db-pwd-core, mybatis      │
+└─────────────────┴─────────────────┴───────────────────────────┘
+
+注意：所有模块共享同一个密钥文件 ~/.dbpwd/
+```
+
+#### 3. 密钥文件共享
+
+多模块项目使用**统一的密钥文件**：
+
+```
+~/.dbpwd/
+├── sm4.key              # 所有模块共享
+└── db.pwd               # 包含所有数据库配置
+    ├── @service_user_db@
+    ├── @service_order_db@
+    └── @web_admin_db@
+```
+
+### 批量集成命令
+
+```
+是否批量集成所有推荐模块？[Y/n/逐个确认]
+
+选择 Y → 自动集成所有推荐模块
+选择 N → 取消
+选择 逐个确认 → 每个模块单独确认
+```
+
+### 常见问题
+
+#### 问题：父 pom 中已经有 db-pwd 依赖管理
+
+**症状**：
+```
+ℹ️ 父 pom 中已有 db-pwd 依赖管理
+```
+
+**处理方式**：
+- 子模块只需添加依赖，无需指定版本
+- 版本由父 pom 统一管理
+
+```xml
+<!-- 子模块只需这样写 -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-core</artifactId>
+    <!-- 无需 version，继承父 pom -->
+</dependency>
+```
+
+#### 问题：模块间有依赖关系
+
+**场景**：service-user 依赖 common 模块
+
+**处理**：
+- 在 common 模块**不需要**添加 db-pwd 依赖
+- 只在有数据库操作的模块添加依赖
+- common 模块如果使用 PasswordService，会通过传递依赖获得
+
+#### 问题：共享配置文件
+
+**场景**：多个模块共享 application.yml
+
+**处理**：
+1. 如果配置在父模块 resources：在父模块修改
+2. 如果各模块独立配置：分别修改
+3. 使用 Spring Cloud Config：在配置中心修改
+
+---
+
+## 其他连接池支持
+
+### HikariCP（Spring Boot 默认）
+
+**检测信号**：
+```
+grep("HikariDataSource|HikariConfig|hikari", include="*.java")
+grep("hikari", include="*.yml")
+```
+
+**处理方式**：与 Spring Boot Starter 相同，HikariCP 会自动被装饰。
+
+```yaml
+# application.yml
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 10
+    password: "@my_db@"  # 占位符格式
+```
+
+### DBCP2 / C3P0 / Tomcat JDBC
+
+这些连接池的集成方式与 Druid 类似：
+
+```java
+// DBCP2
+import org.apache.commons.dbcp2.BasicDataSource;
+import com.dbpwd.core.PasswordService;
+
+BasicDataSource ds = new BasicDataSource();
+ds.setUrl("jdbc:mysql://localhost:3306/mydb");
+ds.setUsername("root");
+ds.setPassword(PasswordService.getDatabasePassword("@my_db@"));
+
+// C3P0
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+ComboPooledDataSource ds = new ComboPooledDataSource();
+ds.setJdbcUrl("jdbc:mysql://localhost:3306/mydb");
+ds.setUser("root");
+ds.setPassword(PasswordService.getDatabasePassword("@my_db@"));
+
+// Tomcat JDBC
+import org.apache.tomcat.jdbc.pool.DataSource;
+DataSource ds = new DataSource();
+ds.setUrl("jdbc:mysql://localhost:3306/mydb");
+ds.setUsername("root");
+ds.setPassword(PasswordService.getDatabasePassword("@my_db@"));
+```
+
+---
+
+## JNDI DataSource 处理
+
+### 场景说明
+
+当应用服务器（Tomcat, WebLogic, WebSphere 等）通过 JNDI 提供 DataSource 时：
+
+```java
+// BEFORE
+@Resource(lookup = "java:comp/env/jdbc/mydb")
+private DataSource dataSource;
+
+// 或
+Context ctx = new InitialContext();
+DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/mydb");
+```
+
+### 处理方式
+
+**方案 A**：在应用服务器配置中使用占位符
+```xml
+<!-- Tomcat context.xml -->
+<Resource name="jdbc/mydb" 
+          auth="Container"
+          type="javax.sql.DataSource"
+          password="@my_db@"/>
+```
+
+**方案 B**：使用 DataSourceDecorator 包装
+```java
+import com.dbpwd.framework.DataSourceDecorator;
+
+@Resource(lookup = "java:comp/env/jdbc/mydb")
+private DataSource rawDataSource;
+
+// 装饰后使用
+DataSource dataSource = DataSourceDecorator.decorate(rawDataSource);
+```
+
+---
+
+## 多环境配置处理
+
+### 场景说明
+
+项目通常有多套环境配置：
+- `application-dev.yml` - 开发环境
+- `application-test.yml` - 测试环境
+- `application-prod.yml` - 生产环境
+
+### 处理方式
+
+**策略**：所有环境使用相同的占位符，但配置不同的密码文件。
+
+```yaml
+# application-dev.yml
+spring:
+  datasource:
+    password: "@my_db@"  # 开发环境占位符
+
+# application-prod.yml
+spring:
+  datasource:
+    password: "@my_db@"  # 生产环境占位符（同名）
+```
+
+**密码文件配置**：
+```json
+// 开发环境 ~/.dbpwd/db.pwd
+{
+  "databases": [
+    {"name": "my_db", "encrypted_password": "ENC(SM4-GCM:dev_encrypted...)"},
+  ]
+}
+
+// 生产环境 ~/.dbpwd/db.pwd（部署时替换）
+{
+  "databases": [
+    {"name": "my_db", "encrypted_password": "ENC(SM4-GCM:prod_encrypted...)"},
+  ]
+}
+```
+
+### 交互模板
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 🌍 多环境配置检测
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+检测到多环境配置文件：
+- application.yml
+- application-dev.yml
+- application-test.yml
+- application-prod.yml
+
+建议：
+1. 所有环境配置使用相同占位符（如 @my_db@）
+2. 不同环境部署不同的 db.pwd 文件
+3. 密钥文件（sm4.key）建议环境隔离
+
+是否批量修改所有环境配置文件？[Y/n/仅修改默认]
+```
+
+---
+
+## Gradle 项目处理
+
+### 检测信号
+```
+glob("**/build.gradle")
+glob("**/build.gradle.kts")
+```
+
+### 依赖添加
+
+```groovy
+// build.gradle
+dependencies {
+    implementation 'com.dbpwd:db-pwd-core:1.0.0'
+    implementation 'com.dbpwd:db-pwd-spring-boot-starter:1.0.0'
+}
+```
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("com.dbpwd:db-pwd-core:1.0.0")
+    implementation("com.dbpwd:db-pwd-spring-boot-starter:1.0.0")
+}
+```
+
+### 版本管理
+
+```groovy
+// 使用 ext 管理版本
+ext {
+    dbpwdVersion = '1.0.0'
+}
+
+dependencies {
+    implementation "com.dbpwd:db-pwd-core:${dbpwdVersion}"
+}
+```
+
+---
+
+## 配置中心集成
+
+### Nacos
+
+```yaml
+# application.yml
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_SERVER:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:dev}
+  datasource:
+    password: "@my_db@"  # 占位符，在 Nacos 中配置实际密码
+```
+
+**处理方式**：在 Nacos 配置中使用占位符，db-pwd 在应用启动时解密。
+
+### Apollo
+
+```yaml
+# application.yml
+app:
+  id: my-app
+apollo:
+  meta: ${APOLLO_META:http://localhost:8080}
+spring:
+  datasource:
+    password: "@my_db@"
+```
+
+### Spring Cloud Config
+
+```yaml
+# bootstrap.yml
+spring:
+  cloud:
+    config:
+      uri: ${CONFIG_SERVER:http://localhost:8888}
+```
+
+---
+
+## Docker/Kubernetes 部署
+
+### Docker
+
+**Dockerfile 示例**：
+```dockerfile
+FROM openjdk:11-jre
+COPY target/app.jar /app.jar
+# 密钥文件通过 volume 挂载
+VOLUME ["/root/.dbpwd"]
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+**docker-compose.yml**：
+```yaml
+services:
+  app:
+    image: my-app
+    volumes:
+      - ~/.dbpwd:/root/.dbpwd:ro  # 只读挂载密钥文件
+```
+
+### Kubernetes
+
+**Secret 配置**：
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dbpwd-secrets
+type: Opaque
+data:
+  sm4.key: <base64-encoded-key>
+  db.pwd: <base64-encoded-password-file>
+```
+
+**Deployment 挂载**：
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      volumes:
+      - name: dbpwd
+        secret:
+          secretName: dbpwd-secrets
+      containers:
+      - name: app
+        volumeMounts:
+        - name: dbpwd
+          mountPath: /root/.dbpwd
+          readOnly: true
+```
+
+---
+
+## 密码轮换
+
+### 场景说明
+
+安全合规要求定期更换数据库密码和加密密钥。
+
+### 轮换步骤
+
+```
+📋 密码轮换流程
+
+1. 生成新密钥
+   java -jar db-pwd-core.jar generate-key --output ~/.dbpwd/sm4.key.new
+
+2. 使用新密钥重新加密所有密码
+   java -jar db-pwd-core.jar rotate-key \
+     --old-key ~/.dbpwd/sm4.key \
+     --new-key ~/.dbpwd/sm4.key.new \
+     --output ~/.dbpwd/db.pwd.new
+
+3. 备份旧文件
+   cp ~/.dbpwd/sm4.key ~/.dbpwd/sm4.key.backup
+   cp ~/.dbpwd/db.pwd ~/.dbpwd/db.pwd.backup
+
+4. 替换文件（建议分批发布）
+   mv ~/.dbpwd/sm4.key.new ~/.dbpwd/sm4.key
+   mv ~/.dbpwd/db.pwd.new ~/.dbpwd/db.pwd
+
+5. 重启应用验证
+```
+
+### 零停机轮换策略
+
+对于高可用系统，建议：
+1. 新旧密钥共存期（支持双密钥解密）
+2. 分批发布应用
+3. 确认全部成功后移除旧密钥
+
+---
+
+## CI/CD 集成提示
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/build.yml
+jobs:
+  build:
+    steps:
+      - uses: actions/checkout@v3
+      
+      # 从 Secrets 读取密钥
+      - name: Setup db-pwd
+        run: |
+          mkdir -p ~/.dbpwd
+          echo "${{ secrets.DBPWD_SM4_KEY }}" > ~/.dbpwd/sm4.key
+          echo "${{ secrets.DBPWD_DB_FILE }}" > ~/.dbpwd/db.pwd
+          chmod 600 ~/.dbpwd/*
+      
+      - name: Build
+        run: mvn clean verify
+```
+
+### Jenkins
+
+```groovy
+pipeline {
+    agent any
+    stages {
+        stage('Setup') {
+            steps {
+                sh '''
+                    mkdir -p ~/.dbpwd
+                    echo "${DBPWD_SM4_KEY}" > ~/.dbpwd/sm4.key
+                    echo "${DBPWD_DB_FILE}" > ~/.dbpwd/db.pwd
+                    chmod 600 ~/.dbpwd/*
+                '''
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+    }
+    environment {
+        DBPWD_SM4_KEY = credentials('dbpwd-sm4-key')
+        DBPWD_DB_FILE = credentials('dbpwd-db-file')
+    }
+}
+```
+
+---
+
 ## 扫描阶段问题
 
 ### 问题: 找不到 pom.xml
