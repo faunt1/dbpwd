@@ -9,47 +9,38 @@ keywords:
   - 改造数据库密码管理
   - 密码加密集成
   - 集成 dbpwd
-  - dbpwd integrate
-  - 密码加密改造
 ---
 
 # db-pwd-integrator
 
 自动扫描 Java 数据库应用，集成 db-pwd 数据库密码加密功能。
 
+## 平台兼容性
+
+- ✅ Windows (PowerShell/CMD)
+- ✅ macOS
+- ✅ Linux
+
+本 Skill 仅使用内置工具 (`glob`, `grep`, `Read`, `Write`, `Edit`, `Bash`)，无需外部脚本，天然跨平台。
+
 ## 触发条件
 
-当用户请求包含以下关键词时触发此 skill：
-- "集成数据库密码加密" / "添加 db-pwd 支持"
-- "改造数据库密码管理" / "密码加密集成"
-- "集成 dbpwd" / "dbpwd integrate"
+- "集成数据库密码加密"
+- "添加 db-pwd 支持"
+- "改造数据库密码管理"
+- "密码加密集成"
+- "集成 dbpwd"
 
 ## 工作流程
 
-### Phase 1: 项目扫描
+### 1. 项目扫描
 
-执行以下扫描操作：
+使用内置工具扫描项目：
 
-```bash
-# 1. 扫描构建文件
+```
 glob("**/pom.xml")
-glob("**/build.gradle")
-
-# 2. 扫描配置文件
 glob("**/application*.yml")
-glob("**/application*.properties")
-glob("**/applicationContext*.xml")
-glob("**/mybatis-config.xml")
-glob("**/web.xml")
-
-# 3. 扫描 Java 源码中的 DataSource 配置
-grep("DataSource|getConnection|setPassword", include="*.java")
-grep("@Configuration|@Bean|@SpringBootApplication", include="*.java")
-grep("extends HttpServlet|@WebServlet|@WebListener", include="*.java")
-
-# 4. 检测明文密码
-grep('password\\s*=\\s*"[^"@]', include="*.java")
-grep('password\\s*:\\s*[^"@]', include="*.yml")
+grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
 ```
 
 ### Phase 2: 项目类型识别
@@ -236,7 +227,13 @@ lsp_diagnostics
 | 已集成 db-pwd | 询问是升级还是跳过 |
 | 编译错误 | 回滚修改，显示错误详情 |
 
-## 参考文档
+## 详细参考
+
+- `references/integration-patterns.md` - 6 种集成模式详细说明
+- `references/code-examples.md` - 代码修改前后对比示例
+- `references/troubleshooting.md` - 常见问题处理
+
+## 项目文档
 
 - `AGENTS.md` - 项目上下文
 - `docs/integration-patterns.md` - 6 种集成模式
