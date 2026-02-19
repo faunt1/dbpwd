@@ -27,9 +27,9 @@ db-pwd/
 ├── db-pwd-mybatis/                 # MyBatis集成（Sprint 4）
 ├── db-pwd-web/                     # Servlet集成（Sprint 5）
 ├── db-pwd-demo-init/               # Demo初始化工具（Sprint 6）
-├── db-pwd-simple-jdbc-demo/        # Demo 1（Sprint 6）
-├── db-pwd-druid-demo/              # Demo 2（Sprint 6）
-├── db-pwd-spring-boot-demo/        # Demo 3（Sprint 6）
+├── demos/simple-jdbc/demo/        # Demo 1（Sprint 6）
+├── demos/druid/demo/              # Demo 2（Sprint 6）
+├── demos/spring-boot/demo/        # Demo 3（Sprint 6）
 ├── db-pwd-spring-demo/             # Demo 4（Sprint 6）
 ├── db-pwd-mybatis-demo/            # Demo 5（Sprint 6）
 └── db-pwd-servlet-demo/            # Demo 6（Sprint 6）
@@ -272,9 +272,9 @@ public class DatabasePasswordInitListener implements ServletContextListener {
 
 | Demo | 集成模式 | 占位符 | 状态 |
 |------|---------|--------|------|
-| db-pwd-simple-jdbc-demo | 方案5: StandalonePasswordDecryptor | `@simple_jdbc_db@` | ⚪ 待开发 |
-| db-pwd-druid-demo | 方案1: Druid PasswordCallback | `@druid_demo_db@` | ⚪ 待开发 |
-| db-pwd-spring-boot-demo | 方案2: Spring Boot Starter | `@spring_boot_db@` | ⚪ 待开发 |
+| demos/simple-jdbc/demo | 方案5: StandalonePasswordDecryptor | `@simple_jdbc_db@` | ⚪ 待开发 |
+| demos/druid/demo | 方案1: Druid PasswordCallback | `@druid_demo_db@` | ⚪ 待开发 |
+| demos/spring-boot/demo | 方案2: Spring Boot Starter | `@spring_boot_db@` | ⚪ 待开发 |
 | db-pwd-spring-demo | 方案3: Spring BeanPostProcessor | `@spring_framework_db@` | ⚪ 待开发 |
 | db-pwd-mybatis-demo | 方案4: MyBatis DataSourceFactory | `@mybatis_demo_db@` | ⚪ 待开发 |
 | db-pwd-servlet-demo | 方案6: Servlet InitListener | `@servlet_demo_db@` | ⚪ 待开发 |
@@ -289,7 +289,7 @@ mvn clean install -DskipTests
 java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
 
 # 3. 运行Demo验证
-java -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
+java -jar demos/simple-jdbc/demo/target/demos/simple-jdbc/demo-1.0.0.jar
 ```
 
 ### 验收标准

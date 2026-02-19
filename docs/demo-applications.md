@@ -61,11 +61,11 @@ java -Dfile.encoding=UTF-8 -jar demos/simple-jdbc/demo/target/simple-jdbc-demo-1
 | Demo | 集成模式 | 配置方式 | 占位符 | H2数据库 | 验证重点 |
 |------|---------|---------|--------|----------|----------|
 | db-pwd-demo-init | - | - | - | 所有Demo数据库 | 数据库初始化 |
-| db-pwd-simple-jdbc-demo | 方案5 | 编程API | `@simple_jdbc_db@` | dbpwd_simple_demo | 工具类API调用 |
-| db-pwd-druid-demo | 方案1 | Java代码 | `@druid_demo_db@` | dbpwd_druid_demo | 密码回调机制 |
-| db-pwd-druid-demo-spring | 方案1 | Spring XML | `@druid_demo_spring_db@` | dbpwd_druid_demo_spring | XML配置方式 |
-| db-pwd-spring-boot-demo | 方案2 | Starter自动配置 | `@spring_boot_db@` | dbpwd_spring_boot_demo | 自动配置 |
-| db-pwd-spring-boot-demo-api | 方案2 | 编程API | `@spring_boot_api_db@` | dbpwd_spring_boot_api_demo | 手动配置DataSource |
+| demos/simple-jdbc/demo | 方案5 | 编程API | `@simple_jdbc_db@` | dbpwd_simple_demo | 工具类API调用 |
+| demos/druid/demo | 方案1 | Java代码 | `@druid_demo_db@` | dbpwd_druid_demo | 密码回调机制 |
+| demos/druid/demo-spring | 方案1 | Spring XML | `@druid_demo_spring_db@` | dbpwd_druid_demo_spring | XML配置方式 |
+| demos/spring-boot/demo | 方案2 | Starter自动配置 | `@spring_boot_db@` | dbpwd_spring_boot_demo | 自动配置 |
+| demos/spring-boot/demo-api | 方案2 | 编程API | `@spring_boot_api_db@` | dbpwd_spring_boot_api_demo | 手动配置DataSource |
 | db-pwd-spring-demo | 方案3 | Java Config | `@spring_framework_db@` | dbpwd_spring_demo | BeanPostProcessor |
 | db-pwd-spring-demo-xml | 方案3 | Spring XML | `@spring_demo_xml_db@` | dbpwd_spring_xml_demo | XML配置方式 |
 | db-pwd-mybatis-demo | 方案4 | mybatis-config.xml | `@mybatis_demo_db@` | dbpwd_mybatis_demo | DataSourceFactory |
@@ -122,7 +122,7 @@ java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
 
 ---
 
-## Demo 1: db-pwd-simple-jdbc-demo
+## Demo 1: demos/simple-jdbc/demo
 
 ### 集成模式
 
@@ -174,7 +174,7 @@ java -jar demos/simple-jdbc/demo/target/simple-jdbc-demo-1.0.0-jar-with-dependen
 
 ---
 
-## Demo 2: db-pwd-druid-demo
+## Demo 2: demos/druid/demo
 
 ### 集成模式
 
@@ -225,7 +225,7 @@ java -jar demos/druid/demo/target/druid-demo-1.0.0.jar
 
 ---
 
-## Demo 3: db-pwd-spring-boot-demo
+## Demo 3: demos/spring-boot/demo
 
 ### 集成模式
 
@@ -430,7 +430,7 @@ mvn tomcat7:run -pl demos/servlet/demo
 
 ---
 
-## Demo 7: db-pwd-druid-demo-spring
+## Demo 7: demos/druid/demo-spring
 
 ### 集成模式
 
@@ -484,7 +484,7 @@ java -jar demos/druid/spring/target/druid-spring-1.0.0.jar
 
 ---
 
-## Demo 8: db-pwd-spring-boot-demo-api
+## Demo 8: demos/spring-boot/demo-api
 
 ### 集成模式
 
