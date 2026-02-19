@@ -241,3 +241,15 @@ Password handling: Uses PasswordService.getDatabasePassword('@druid_demo_db@')
 3. ✅ 原始应用和demo之间只有"加解密处理"的区别
 4. ✅ 数据库连接成功，users表查询正常
 
+
+==========================================
+TEST: demos/druid/original
+==========================================
+Using plaintext password 'sa'
+
+07:42:51.663 [com.dbpwd.demo.druid.DruidDemoApplication.main()] INFO com.dbpwd.demo.druid.DruidDemoApplication - 1. Querying users...
+07:42:51.678 [com.dbpwd.demo.druid.DruidDemoApplication.main()] INFO com.dbpwd.demo.druid.DruidDemoApplication -    Found 3 user(s)
+07:42:51.678 [com.dbpwd.demo.druid.DruidDemoApplication.main()] INFO com.dbpwd.demo.druid.DruidDemoApplication -    Found 3 product(s)
+07:42:51.678 [com.dbpwd.demo.druid.DruidDemoApplication.main()] INFO com.dbpwd.demo.druid.DruidDemoApplication -    Found 3 order(s)
+07:42:51.678 [com.dbpwd.demo.druid.DruidDemoApplication.main()] INFO com.dbpwd.demo.druid.DruidDemoApplication -    Demo completed successfully!
+
