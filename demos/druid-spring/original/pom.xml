@@ -7,19 +7,26 @@
 
     <parent>
         <groupId>com.dbpwd</groupId>
-        <artifactId>db-pwd-demos-spring</artifactId>
+        <artifactId>druid-spring</artifactId>
         <version>1.0.0</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>spring-xml-original</artifactId>
+    <artifactId>druid-spring-original</artifactId>
     <packaging>jar</packaging>
 
-    <name>Database Password Manager - Spring XML Original Demo</name>
-    <description>Original Spring XML configuration demo with plain text password</description>
+    <name>Database Password Manager - Druid Spring XML Original Demo</name>
+    <description>Original Druid demo with Spring XML configuration and plain text password</description>
 
     <dependencies>
-        <!-- Spring Framework -->
+        <!-- Druid connection pool -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>${druid.version}</version>
+        </dependency>
+
+        <!-- Spring Context -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -70,7 +77,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.dbpwd.demo.spring.xml.SpringXmlDemoApplication</mainClass>
+                            <mainClass>com.dbpwd.demo.druid.spring.DruidSpringDemoApplication</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

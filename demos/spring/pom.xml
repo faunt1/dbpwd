@@ -19,8 +19,6 @@
     <modules>
         <module>demo</module>
         <module>original</module>
-        <module>xml</module>
-        <module>xml/original</module>
     </modules>
 
 </project>

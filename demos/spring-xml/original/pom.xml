@@ -7,39 +7,19 @@
 
     <parent>
         <groupId>com.dbpwd</groupId>
-        <artifactId>db-pwd-demos-druid</artifactId>
+        <artifactId>spring-xml</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>druid-spring</artifactId>
+    <artifactId>spring-xml-original</artifactId>
     <packaging>jar</packaging>
 
-    <name>Database Password Manager - Druid Spring XML Demo</name>
-    <description>Druid PasswordCallback integration demo with Spring XML configuration</description>
+    <name>Database Password Manager - Spring XML Original Demo</name>
+    <description>Original Spring XML configuration demo with plain text password</description>
 
     <dependencies>
-        <!-- Core module -->
-        <dependency>
-            <groupId>com.dbpwd</groupId>
-            <artifactId>db-pwd-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Druid integration module -->
-        <dependency>
-            <groupId>com.dbpwd</groupId>
-            <artifactId>db-pwd-druid</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Druid connection pool -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>${druid.version}</version>
-        </dependency>
-
-        <!-- Spring Context -->
+        <!-- Spring Framework -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -90,7 +70,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.dbpwd.demo.druid.spring.DruidSpringDemoApplication</mainClass>
+                            <mainClass>com.dbpwd.demo.spring.xml.SpringXmlDemoApplication</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

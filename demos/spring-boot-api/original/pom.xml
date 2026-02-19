@@ -7,15 +7,16 @@
 
     <parent>
         <groupId>com.dbpwd</groupId>
-        <artifactId>db-pwd-demos-spring-boot</artifactId>
+        <artifactId>spring-boot-api</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>spring-boot-api</artifactId>
+    <artifactId>spring-boot-api-original</artifactId>
     <packaging>jar</packaging>
 
-    <name>Database Password Manager - Spring Boot API Demo</name>
-    <description>Spring Boot demo using programming API for password management</description>
+    <name>Database Password Manager - Spring Boot API Original Demo</name>
+    <description>Original Spring Boot demo with plain text password using application.yml</description>
 
     <properties>
         <spring-boot.version>2.7.18</spring-boot.version>
@@ -34,13 +35,6 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Core module (NOT using starter, directly use core API) -->
-        <dependency>
-            <groupId>com.dbpwd</groupId>
-            <artifactId>db-pwd-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- Spring Boot Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

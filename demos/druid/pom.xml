@@ -19,8 +19,6 @@
     <modules>
         <module>demo</module>
         <module>original</module>
-        <module>spring</module>
-        <module>spring/original</module>
     </modules>
 
 </project>

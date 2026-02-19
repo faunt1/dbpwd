@@ -19,7 +19,6 @@
     <modules>
         <module>demo</module>
         <module>original</module>
-        <module>api</module>
     </modules>
 
 </project>

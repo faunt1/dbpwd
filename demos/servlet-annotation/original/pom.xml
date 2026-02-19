@@ -7,31 +7,18 @@
 
     <parent>
         <groupId>com.dbpwd</groupId>
-        <artifactId>db-pwd-demos-servlet</artifactId>
+        <artifactId>servlet-annotation</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>servlet-annotation</artifactId>
+    <artifactId>servlet-annotation-original</artifactId>
     <packaging>war</packaging>
 
-    <name>Database Password Manager - Servlet Annotation Demo</name>
-    <description>Servlet annotation-based configuration demo (no web.xml required)</description>
+    <name>Database Password Manager - Servlet Annotation Original Demo</name>
+    <description>Servlet annotation-based configuration demo with plain text password</description>
 
     <dependencies>
-        <!-- Core module -->
-        <dependency>
-            <groupId>com.dbpwd</groupId>
-            <artifactId>db-pwd-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Web integration module -->
-        <dependency>
-            <groupId>com.dbpwd</groupId>
-            <artifactId>db-pwd-web</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
         <!-- Servlet API -->
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -94,16 +81,6 @@
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
-            <!-- Tomcat Maven Plugin for easy running -->
-            <plugin>
-                <groupId>org.apache.tomcat.maven</groupId>
-                <artifactId>tomcat7-maven-plugin</artifactId>
-                <version>2.2</version>
-                <configuration>
-                    <port>8083</port>
-                    <path>/dbpwd-servlet-annotation-demo</path>
-                </configuration>
-            </plugin>
             <!-- Jetty Plugin for easy running -->
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
@@ -114,9 +91,9 @@
                         <port>8083</port>
                     </httpConnector>
                     <webApp>
-                        <contextPath>/dbpwd-servlet-annotation-demo</contextPath>
+                        <contextPath>/dbpwd-servlet-annotation-original</contextPath>
                     </webApp>
-                    <stopPort>9968</stopPort>
+                    <stopPort>9969</stopPort>
                     <stopKey>dbpwd</stopKey>
                 </configuration>
             </plugin>

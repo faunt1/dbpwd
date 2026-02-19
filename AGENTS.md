@@ -79,29 +79,39 @@ db-pwd/
 ├── db-pwd-demo-init/               # Demo 初始化工具
 │
 ├── demos/                          # Demo 应用集合
-│   ├── simple-jdbc/
-│   │   ├── demo/                   # 【集成版本】方案5: 纯 JDBC
-│   │   └── original/               # 【原始版本】方案5: 纯 JDBC
-│   ├── druid/
-│   │   ├── demo/                   # 【集成版本】方案1: Druid
-│   │   ├── original/               # 【原始版本】方案1: Druid
-│   │   └── spring/                 # 【集成版本】方案1+3: Druid + Spring
-│   ├── spring-boot/
-│   │   ├── demo/                   # 【集成版本】方案2: Spring Boot (Starter)
-│   │   ├── original/               # 【原始版本】方案2: Spring Boot
-│   │   └── api/                   # 【集成版本】方案2: Spring Boot (API)
-│   ├── spring/
-│   │   ├── demo/                   # 【集成版本】方案3: Spring (Java Config)
-│   │   ├── original/               # 【原始版本】方案3: Spring
-│   │   └── xml/                   # 【集成版本】方案3: Spring (XML)
-│   ├── mybatis/
-│   │   └── demo/                   # 【集成版本】方案4: MyBatis
-│   ├── servlet/
-│   │   ├── demo/                   # 【集成版本】方案6: Servlet (web.xml)
-│   │   ├── original/               # 【原始版本】方案6: Servlet
-│   │   └── annotation/             # 【集成版本】方案6: Servlet (注解)
-│   └── struts/
-│       └── demo/                   # 【集成版本】Struts 1.x
+│   ├── simple-jdbc/               # 方案5: 纯 JDBC
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── druid/                     # 方案1: Druid
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── druid-spring/              # 方案1+3: Druid + Spring XML
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── spring-boot/                # 方案2: Spring Boot Starter
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── spring-boot-api/            # 方案2变体: Spring Boot API
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── spring/                     # 方案3: Spring Java Config
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── spring-xml/                 # 方案3: Spring XML Config
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── mybatis/                    # 方案4: MyBatis
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── servlet/                    # 方案6: Servlet (web.xml)
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   ├── servlet-annotation/         # 方案6变体: Servlet (注解)
+│   │   ├── demo/                   # 【集成版本】
+│   │   └── original/               # 【原始版本】
+│   └── struts/                     # Struts 1.x
+│       ├── demo/                   # 【集成版本】
+│       └── original/               # 【原始版本】
 │
 ├── docs/                           # 文档目录
 ├── claudedocs/                     # Sprint 进度文档
@@ -117,11 +127,17 @@ db-pwd/
 
 | 集成模式 | 原始版本 | 集成版本 |
 |---------|---------|---------|
-| 方案5: 纯JDBC | `db-pwd-simple-jdbc-demo-original` | `db-pwd-simple-jdbc-demo` |
-| 方案1: Druid | `db-pwd-druid-demo-original` | `db-pwd-druid-demo` |
-| 方案2: Spring Boot | `db-pwd-spring-boot-demo-original` | `db-pwd-spring-boot-demo` |
-| 方案3: Spring | `db-pwd-spring-demo-original` | `db-pwd-spring-demo` |
-| 方案6: Servlet | `db-pwd-servlet-demo-original` | `db-pwd-servlet-demo` |
+| 方案5: 纯JDBC | `demos/simple-jdbc/original` | `demos/simple-jdbc/demo` |
+| 方案1: Druid | `demos/druid/original` | `demos/druid/demo` |
+| 方案1+3: Druid+Spring | `demos/druid-spring/original` | `demos/druid-spring/demo` |
+| 方案2: Spring Boot Starter | `demos/spring-boot/original` | `demos/spring-boot/demo` |
+| 方案2变: Spring Boot API | `demos/spring-boot-api/original` | `demos/spring-boot-api/demo` |
+| 方案3: Spring Java Config | `demos/spring/original` | `demos/spring/demo` |
+| 方案3: Spring XML | `demos/spring-xml/original` | `demos/spring-xml/demo` |
+| 方案4: MyBatis | `demos/mybatis/original` | `demos/mybatis/demo` |
+| 方案6: Servlet (web.xml) | `demos/servlet/original` | `demos/servlet/demo` |
+| 方案6变: Servlet (注解) | `demos/servlet-annotation/original` | `demos/servlet-annotation/demo` |
+| Struts 1.x | `demos/struts/original` | `demos/struts/demo` |
 
 详细的代码差异对比请参考：[集成代码细节说明](docs/integration-code-details.md)
 

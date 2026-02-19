@@ -20,10 +20,14 @@
     <modules>
         <module>simple-jdbc</module>
         <module>spring-boot</module>
+        <module>spring-boot-api</module>
         <module>druid</module>
+        <module>druid-spring</module>
         <module>spring</module>
+        <module>spring-xml</module>
         <module>mybatis</module>
         <module>servlet</module>
+        <module>servlet-annotation</module>
         <module>struts</module>
     </modules>
 
