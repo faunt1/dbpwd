@@ -32,7 +32,7 @@ public class SimpleJdbcDemoWithVerification {
 
     // H2 FILE database configuration - password will be created during first connection
     private static final String DB_URL_BASE = "file:~/.dbpwd/h2_data/dbpwd_simple_demo_verify";
-    private static final String DB_URL = "jdbc:h2:" + DB_URL_BASE + ";DB_CLOSE_DELAY=-1;MODE=MySQL";
+    private static final String DB_URL = "jdbc:h2:" + DB_URL_BASE + ";IFEXISTS=TRUE;MODE=MySQL";
     private static final String DB_USERNAME = "sa";
 
     public static void main(String[] args) {
@@ -128,17 +128,14 @@ public class SimpleJdbcDemoWithVerification {
     private static void createSchema(Connection conn) throws Exception {
         Statement stmt = conn.createStatement();
 
-        stmt.execute("DROP TABLE IF EXISTS products");
-        stmt.execute("DROP TABLE IF EXISTS users");
-
-        stmt.execute("CREATE TABLE users (" +
+        stmt.execute("CREATE TABLE IF NOT EXISTS users (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "username VARCHAR(100) NOT NULL, " +
                 "email VARCHAR(255) NOT NULL UNIQUE, " +
                 "password_hash VARCHAR(255), " +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 
-        stmt.execute("CREATE TABLE products (" +
+        stmt.execute("CREATE TABLE IF NOT EXISTS products (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "name VARCHAR(200) NOT NULL, " +
                 "price DECIMAL(10,2) NOT NULL, " +

@@ -58,19 +58,6 @@ public class DruidSpringDemoApplication {
             try (Connection conn = dataSource.getConnection();
                  Statement stmt = conn.createStatement()) {
 
-                // 创建测试表
-                stmt.execute("CREATE TABLE IF NOT EXISTS products (" +
-                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                        "name VARCHAR(100) NOT NULL, " +
-                        "price DECIMAL(10,2) NOT NULL, " +
-                        "stock INT NOT NULL)");
-
-                // 插入测试数据
-                stmt.execute("INSERT INTO products (name, price, stock) VALUES " +
-                        "('Laptop', 1299.99, 50), " +
-                        "('Smartphone', 899.99, 100)");
-
-                // 查询数据
                 ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM products");
                 if (rs.next()) {
                     logger.info("Products count: {}", rs.getInt(1));

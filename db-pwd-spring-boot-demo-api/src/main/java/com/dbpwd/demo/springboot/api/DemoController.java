@@ -33,20 +33,6 @@ public class DemoController {
         Map<String, Object> result = new HashMap<>();
 
         try (Connection conn = dataSource.getConnection()) {
-            // 创建测试表
-            conn.createStatement().execute(
-                    "CREATE TABLE IF NOT EXISTS products (" +
-                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                    "name VARCHAR(100) NOT NULL, " +
-                    "price DECIMAL(10,2) NOT NULL)"
-            );
-
-            // 插入测试数据
-            conn.createStatement().execute(
-                    "INSERT INTO products (name, price) VALUES ('Laptop', 1299.99)"
-            );
-
-            // 查询数据
             ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM products");
             if (rs.next()) {
                 result.put("productCount", rs.getInt(1));

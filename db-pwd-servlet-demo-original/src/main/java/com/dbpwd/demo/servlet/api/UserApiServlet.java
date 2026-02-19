@@ -19,7 +19,6 @@ import java.util.Map;
  * 用户API Servlet - ORIGINAL VERSION (before integration)
  *
  * 原始版本 - 使用明文密码，未集成密码加密功能
- * 此版本用于对比展示集成密码加密功能前后的代码差异
  *
  * 【集成改动点】
  * 1. 添加 import com.dbpwd.core.PasswordService;
@@ -27,13 +26,15 @@ import java.util.Map;
  *    原始: String plainPassword = "sa";
  *    集成: String plainPassword = PasswordService.getDatabasePassword("@servlet_demo_db@");
  *
+ * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
+ *
  * @author Database Password Manager
- * @version 1.0
+ * @version 2.0
  */
 @WebServlet("/api/users/*")
 public class UserApiServlet extends HttpServlet {
 
-    private static final String H2_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_servlet_original_demo;MODE=MySQL;DB_CLOSE_DELAY=-1";
+    private static final String H2_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_servlet_original_demo;IFEXISTS=TRUE;MODE=MySQL";
     private static final String H2_USERNAME = "sa";
     private static final String H2_DRIVER = "org.h2.Driver";
 
@@ -51,12 +52,9 @@ public class UserApiServlet extends HttpServlet {
         System.out.println("=========================================");
 
         try {
-            // 【原始版本】直接使用明文密码
-            // 【集成改动】改为: String plainPassword = PasswordService.getDatabasePassword("@servlet_demo_db@");
             String plainPassword = "sa";
             System.out.println("WARNING: Using PLAINTEXT password!");
 
-            // 创建Druid数据源
             dataSource = new DruidDataSource();
             dataSource.setUrl(H2_URL);
             dataSource.setUsername(H2_USERNAME);
@@ -65,15 +63,8 @@ public class UserApiServlet extends HttpServlet {
             dataSource.setInitialSize(2);
             dataSource.setMaxActive(10);
 
-            // 创建UserDao并初始化表
             userDao = new UserDao(dataSource);
-            userDao.createTable();
-            System.out.println("Users table initialized");
-
             objectMapper = new ObjectMapper();
-
-            // 加载初始数据
-            loadInitialData();
 
             System.out.println("Servlet initialized successfully");
 
@@ -82,48 +73,48 @@ public class UserApiServlet extends HttpServlet {
         }
     }
 
-    private void loadInitialData() throws Exception {
-        User user1 = new User();
-        user1.setUsername("alice");
-        user1.setEmail("alice@example.com");
-        userDao.insert(user1);
-
-        User user2 = new User();
-        user2.setUsername("bob");
-        user2.setEmail("bob@example.com");
-        userDao.insert(user2);
-
-        System.out.println("Loaded 2 demo users");
-    }
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String pathInfo = req.getPathInfo();
         resp.setContentType("application/json;charset=UTF-8");
 
         try {
-            if (pathInfo == null || pathInfo.equals("/")) {
+            String pathInfo = req.getPathInfo();
+
+            if (pathInfo == null || pathInfo.equals("/") || pathInfo.equals("")) {
                 List<User> users = userDao.findAll();
-                objectMapper.writeValue(resp.getWriter(), users);
+                sendSuccessResponse(resp, users);
+            } else if (pathInfo.matches("/\\d+")) {
+                Long id = Long.parseLong(pathInfo.substring(1));
+                User user = userDao.findById(id);
+                if (user != null) {
+                    sendSuccessResponse(resp, user);
+                } else {
+                    sendErrorResponse(resp, 404, "User not found");
+                }
             } else {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                Map<String, Object> error = new HashMap<>();
-                error.put("error", "Not found");
-                objectMapper.writeValue(resp.getWriter(), error);
+                sendErrorResponse(resp, 400, "Invalid request path");
             }
+
         } catch (Exception e) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            objectMapper.writeValue(resp.getWriter(), error);
+            sendErrorResponse(resp, 500, e.getMessage());
         }
     }
 
-    @Override
-    public void destroy() {
-        if (dataSource != null) {
-            dataSource.close();
-        }
-        System.out.println("Servlet destroyed");
+    private void sendSuccessResponse(HttpServletResponse resp, Object data) throws IOException {
+        resp.setStatus(200);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("data", data);
+
+        resp.getWriter().write(objectMapper.writeValueAsString(result));
+    }
+
+    private void sendErrorResponse(HttpServletResponse resp, int status, String message) throws IOException {
+        resp.setStatus(status);
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", false);
+        result.put("error", message);
+
+        resp.getWriter().write(objectMapper.writeValueAsString(result));
     }
 }

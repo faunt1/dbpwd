@@ -59,19 +59,6 @@ public class SpringXmlDemoApplication {
             try (Connection conn = dataSource.getConnection();
                  Statement stmt = conn.createStatement()) {
 
-                // 创建测试表
-                stmt.execute("CREATE TABLE IF NOT EXISTS orders (" +
-                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                        "product_name VARCHAR(100) NOT NULL, " +
-                        "quantity INT NOT NULL, " +
-                        "total_price DECIMAL(10,2) NOT NULL)");
-
-                // 插入测试数据
-                stmt.execute("INSERT INTO orders (product_name, quantity, total_price) VALUES " +
-                        "('Widget', 10, 99.90), " +
-                        "('Gadget', 5, 149.95)");
-
-                // 查询数据
                 ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM orders");
                 if (rs.next()) {
                     logger.info("Orders count: {}", rs.getInt(1));

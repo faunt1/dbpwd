@@ -61,13 +61,9 @@ public class DatabaseInitializer {
         new DemoDatabase("struts_demo_db", "dbpwd_struts_demo", "Struts Demo Database")
     };
 
-    private static final String[] TABLE_SQLS = {
-        "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) NOT NULL, email VARCHAR(100) NOT NULL, password VARCHAR(100) NOT NULL)",
-        "CREATE TABLE IF NOT EXISTS products (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL, description VARCHAR(255), price DECIMAL(10,2) NOT NULL, stock INT NOT NULL)"
-    };
-
     private String sm4Key;
     private PasswordFileManager pwdManager;
+    private String initSql;
 
     static {
         try {
@@ -255,9 +251,30 @@ public class DatabaseInitializer {
             throw new RuntimeException("Failed to create directory: " + H2_DATA_DIR);
         }
 
+        loadInitSql();
+
         System.out.println("Config directory: " + DBPWD_DIR);
         System.out.println("H2 data directory: " + H2_DATA_DIR);
         System.out.println();
+    }
+
+    /**
+     * 加载初始化 SQL 脚本
+     */
+    private void loadInitSql() {
+        try {
+            java.io.InputStream is = getClass().getClassLoader().getResourceAsStream("h2_init.sql");
+            if (is != null) {
+                java.util.Scanner scanner = new java.util.Scanner(is, "UTF-8").useDelimiter("\\A");
+                initSql = scanner.hasNext() ? scanner.next() : "";
+                scanner.close();
+                System.out.println("Init SQL loaded from h2_init.sql");
+            } else {
+                throw new RuntimeException("Cannot find h2_init.sql in classpath");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load h2_init.sql: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -292,23 +309,25 @@ public class DatabaseInitializer {
 
         for (DemoDatabase db : DEMO_DATABASES) {
             String encryptedPassword = encryptPassword(DEFAULT_PASSWORD);
-
-            DatabaseEntry entry = new DatabaseEntry(
-                db.placeholder,
-                db.name,
-                "h2",
-                "jdbc:h2:file:" + H2_DATA_DIR + "/" + db.dbName + ";MODE=MySQL",
-                DEFAULT_USERNAME,
-                encryptedPassword
-            );
-            entry.setEncrypted(true);
+            String dbUrl = "jdbc:h2:file:" + H2_DATA_DIR + "/" + db.dbName + ";MODE=MySQL";
 
             DatabaseEntry existing = pwdManager.getById(db.placeholder);
             if (existing == null) {
+                DatabaseEntry entry = new DatabaseEntry(
+                    db.placeholder,
+                    db.name,
+                    "h2",
+                    dbUrl,
+                    DEFAULT_USERNAME,
+                    encryptedPassword
+                );
+                entry.setEncrypted(true);
                 pwdManager.addDatabase(entry);
                 addedCount++;
                 System.out.println("  Added: " + db.placeholder);
             } else {
+                existing.setUrl(dbUrl);
+                existing.setUsername(DEFAULT_USERNAME);
                 existing.setPassword(encryptedPassword);
                 existing.setEncrypted(true);
                 existing.touchUpdateTime();
@@ -369,16 +388,7 @@ public class DatabaseInitializer {
         try (Connection conn = DriverManager.getConnection(url, DEFAULT_USERNAME, DEFAULT_PASSWORD);
              Statement stmt = conn.createStatement()) {
 
-            boolean createdAny = false;
-            for (String sql : TABLE_SQLS) {
-                try {
-                    stmt.execute(sql);
-                    createdAny = true;
-                } catch (Exception e) {
-                    // Table already exists
-                }
-            }
-            return createdAny;
+            return executeInitSql(conn);
         }
     }
 
@@ -391,12 +401,56 @@ public class DatabaseInitializer {
         try (Connection conn = DriverManager.getConnection(url, DEFAULT_USERNAME, DEFAULT_PASSWORD);
              Statement stmt = conn.createStatement()) {
 
-            for (String sql : TABLE_SQLS) {
-                stmt.execute(sql);
-            }
+            executeInitSql(conn);
         }
 
         System.out.println("  Created: " + db.placeholder + " -> " + db.dbName);
+    }
+
+    /**
+     * 执行初始化 SQL 脚本
+     */
+    private boolean executeInitSql(Connection conn) throws Exception {
+        String[] lines = initSql.split("\n");
+        StringBuilder currentStatement = new StringBuilder();
+        boolean executedAny = false;
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            
+            if (trimmed.isEmpty() || trimmed.startsWith("--")) {
+                continue;
+            }
+            
+            currentStatement.append(" ").append(trimmed);
+            
+            if (trimmed.endsWith(";")) {
+                String stmt = currentStatement.toString().trim();
+                if (stmt.endsWith(";")) {
+                    stmt = stmt.substring(0, stmt.length() - 1);
+                }
+                
+                if (!stmt.isEmpty()) {
+                    try {
+                        conn.createStatement().execute(stmt);
+                        executedAny = true;
+                    } catch (Exception e) {
+                    }
+                }
+                currentStatement = new StringBuilder();
+            }
+        }
+        
+        String stmt = currentStatement.toString().trim();
+        if (!stmt.isEmpty()) {
+            try {
+                conn.createStatement().execute(stmt);
+                executedAny = true;
+            } catch (Exception e) {
+            }
+        }
+        
+        return executedAny;
     }
 
     /**

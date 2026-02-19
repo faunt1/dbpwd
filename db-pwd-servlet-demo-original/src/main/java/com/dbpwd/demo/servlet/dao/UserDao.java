@@ -9,47 +9,14 @@ import java.util.List;
 
 /**
  * User数据访问对象
+ *
+ * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
  */
 public class UserDao {
     private final DruidDataSource dataSource;
 
     public UserDao(DruidDataSource dataSource) {
         this.dataSource = dataSource;
-    }
-
-    public void createTable() throws Exception {
-        String sql = "CREATE TABLE IF NOT EXISTS users (" +
-                "id BIGINT PRIMARY KEY AUTO_INCREMENT, " +
-                "username VARCHAR(50) NOT NULL UNIQUE, " +
-                "email VARCHAR(100) NOT NULL, " +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
-                ")";
-
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        }
-    }
-
-    public User insert(User user) throws Exception {
-        String sql = "INSERT INTO users (username, email) VALUES (?, ?)";
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            pstmt.setString(1, user.getUsername());
-            pstmt.setString(2, user.getEmail());
-
-            int affected = pstmt.executeUpdate();
-            if (affected > 0) {
-                try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        user.setId(rs.getLong(1));
-                    }
-                }
-            }
-            return user;
-        }
     }
 
     public User findById(Long id) throws Exception {

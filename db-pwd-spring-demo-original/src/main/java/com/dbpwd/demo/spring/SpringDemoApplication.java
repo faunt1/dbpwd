@@ -6,17 +6,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.util.Date;
 import java.util.List;
 
 /**
  * Spring Demo application - ORIGINAL VERSION (before integration)
  *
  * 原始版本 - 使用明文密码，未集成密码加密功能
- * 此版本用于对比展示集成密码加密功能前后的代码差异
+ *
+ * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
  *
  * @author Database Password Manager
- * @version 1.0
+ * @version 2.0
  */
 public class SpringDemoApplication {
 
@@ -37,31 +37,24 @@ public class SpringDemoApplication {
         try {
             UserDao userDao = context.getBean(UserDao.class);
 
-            logger.info("Initializing database tables...");
-            userDao.createTables();
-            logger.info("Database tables initialized successfully.");
-
             logger.info("");
             logger.info("========================================");
-            logger.info("   CRUD Operations Demo");
+            logger.info("   Query Operations Demo");
             logger.info("========================================");
 
             logger.info("");
-            logger.info("1. Creating users...");
-            User user1 = new User();
-            user1.setUsername("john_doe");
-            user1.setEmail("john@example.com");
-            user1.setPassword("$2a$10$encryptedPasswordHash");
-            user1.setCreatedAt(new Date());
-            userDao.insert(user1);
-            logger.info("   Created user: {}", user1.getUsername());
-
-            logger.info("");
-            logger.info("2. Querying all users...");
+            logger.info("1. Querying all users...");
             List<User> users = userDao.findAll();
             logger.info("   Found {} user(s):", users.size());
             for (User user : users) {
-                logger.info("   - ID: {}, Username: {}", user.getId(), user.getUsername());
+                logger.info("   - ID: {}, Username: {}, Email: {}", user.getId(), user.getUsername(), user.getEmail());
+            }
+
+            logger.info("");
+            logger.info("2. Querying user by ID: 1...");
+            User user = userDao.findById(1L);
+            if (user != null) {
+                logger.info("   Found: {} ({})", user.getUsername(), user.getEmail());
             }
 
             logger.info("");

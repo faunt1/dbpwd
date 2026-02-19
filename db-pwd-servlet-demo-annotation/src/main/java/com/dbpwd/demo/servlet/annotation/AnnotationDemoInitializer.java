@@ -52,23 +52,12 @@ public class AnnotationDemoInitializer implements ServletContextListener {
 
             // 创建 Druid DataSource
             dataSource = new DruidDataSource();
-            dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/servlet_demo_annotation_db;MODE=MySQL");
+            dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/servlet_demo_annotation_db;IFEXISTS=TRUE;MODE=MySQL");
             dataSource.setUsername("sa");
             dataSource.setPassword(plainPassword);
             dataSource.setInitialSize(2);
             dataSource.setMaxActive(10);
 
-            // 初始化数据库表
-            try (Connection conn = dataSource.getConnection();
-                 Statement stmt = conn.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS products (" +
-                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                        "name VARCHAR(100) NOT NULL, " +
-                        "price DECIMAL(10,2) NOT NULL)");
-                logger.info("Database table created successfully");
-            }
-
-            // 将 DataSource 存入 ServletContext
             sce.getServletContext().setAttribute("dataSource", dataSource);
 
             logger.info("========================================");

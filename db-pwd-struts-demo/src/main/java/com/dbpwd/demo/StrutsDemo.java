@@ -34,7 +34,7 @@ public class StrutsDemo {
     private static final String DB_PLACEHOLDER = "struts_demo_db";
 
     // H2 FILE database configuration
-    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_struts_demo;MODE=MySQL;DB_CLOSE_DELAY=-1";
+    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_struts_demo;IFEXISTS=TRUE;MODE=MySQL";
     private static final String DB_USERNAME = "sa";
 
     public static void main(String[] args) {
@@ -97,14 +97,6 @@ public class StrutsDemo {
             Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, plainPassword);
             System.out.println("  H2 database connection successful!");
 
-            // Create demo tables
-            createTables(connection);
-            System.out.println("  Demo tables created!");
-
-            // Insert test data
-            insertTestData(connection);
-            System.out.println("  Test data inserted!");
-
             // Display data
             System.out.println();
             System.out.println("  Query Results:");
@@ -164,56 +156,6 @@ public class StrutsDemo {
                 throw new RuntimeException("Decrypt password failed: " + e.getMessage(), e);
             }
         }
-    }
-
-    /**
-     * Create demo tables
-     */
-    private static void createTables(Connection connection) throws Exception {
-        Statement stmt = connection.createStatement();
-
-        // Drop tables if exist
-        stmt.execute("DROP TABLE IF EXISTS orders");
-        stmt.execute("DROP TABLE IF EXISTS users");
-
-        // Create users table
-        stmt.execute("CREATE TABLE users (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "name VARCHAR(100) NOT NULL, " +
-                "email VARCHAR(255) NOT NULL UNIQUE, " +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
-
-        // Create orders table
-        stmt.execute("CREATE TABLE orders (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "user_id INT NOT NULL, " +
-                "product_name VARCHAR(200) NOT NULL, " +
-                "amount DECIMAL(10,2) NOT NULL, " +
-                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                "FOREIGN KEY (user_id) REFERENCES users(id))");
-
-        stmt.close();
-    }
-
-    /**
-     * Insert test data
-     */
-    private static void insertTestData(Connection connection) throws Exception {
-        Statement stmt = connection.createStatement();
-
-        // Insert users
-        stmt.executeUpdate("INSERT INTO users (name, email) VALUES " +
-                "('Alice', 'alice@example.com'), " +
-                "('Bob', 'bob@example.com'), " +
-                "('Charlie', 'charlie@example.com')");
-
-        // Insert orders
-        stmt.executeUpdate("INSERT INTO orders (user_id, product_name, amount) VALUES " +
-                "(1, 'Product A', 100.00), " +
-                "(2, 'Product B', 200.00), " +
-                "(1, 'Product C', 150.00)");
-
-        stmt.close();
     }
 
     private static void queryAndDisplayData(Connection connection) throws Exception {

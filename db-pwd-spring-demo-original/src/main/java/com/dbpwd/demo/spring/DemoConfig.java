@@ -42,7 +42,7 @@ public class DemoConfig {
         logger.info("Configuring Druid dataSource with PLAINTEXT password...");
 
         DruidDataSource dataSource = new DruidDataSource();
-        dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_original;MODE=MySQL");
+        dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_original;IFEXISTS=TRUE;MODE=MySQL");
         dataSource.setUsername("sa");
         // 【原始版本】直接使用明文密码
         dataSource.setPassword("sa");

@@ -174,14 +174,51 @@ mvn test -Dtest=Sm4GCMCipherTest -pl db-pwd-core
 
 ### 运行 Demo
 
-```bash
-# 1. 初始化 H2 数据库和密码文件
-java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
+#### 初始化数据库
 
-# 2. 运行各 Demo
-java -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
-java -jar db-pwd-spring-boot-demo/target/db-pwd-spring-boot-demo-1.0.0.jar
-java -jar db-pwd-spring-boot-demo-api/target/db-pwd-spring-boot-demo-api-1.0.0.jar
+DatabaseInitializer 统一管理所有 Demo 数据库的初始化：
+
+```bash
+# 初始化所有数据库 (注意: Windows需设置 UTF-8 编码)
+java -Dfile.encoding=UTF-8 -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0-jar-with-dependencies.jar --all
+
+# 仅创建单个测试库
+java -Dfile.encoding=UTF-8 -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0-jar-with-dependencies.jar --single
+
+# 仅验证现有配置
+java -Dfile.encoding=UTF-8 -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0-jar-with-dependencies.jar --verify
+
+# 初始化指定数据库
+java -Dfile.encoding=UTF-8 -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0-jar-with-dependencies.jar --db mybatis_demo_db
+```
+
+**重要**: Windows 环境必须设置 `-Dfile.encoding=UTF-8`，否则中文输出乱码。
+
+**数据库凭据**（所有 Demo 统一）：
+
+| 项目 | 值 |
+|------|-----|
+| 用户名 | `sa` |
+| 密码 | `sa` |
+| 存储格式 | `ENC(SM4-GCM:xxx)` |
+
+#### 运行各 Demo
+
+```bash
+# 方案5: 纯JDBC
+java -Dfile.encoding=UTF-8 -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
+
+# 方案1: Druid
+java -Dfile.encoding=UTF-8 -jar db-pwd-druid-demo/target/db-pwd-druid-demo-1.0.0.jar
+
+# 方案2: Spring Boot (随机端口)
+java -Dfile.encoding=UTF-8 -jar db-pwd-spring-boot-demo/target/db-pwd-spring-boot-demo-1.0.0.jar
+
+# 方案4: MyBatis
+java -Dfile.encoding=UTF-8 -jar db-pwd-mybatis-demo/target/db-pwd-mybatis-demo-1.0.0.jar
+
+# 方案6: Servlet (需要Tomcat)
+mvn tomcat7:run -pl db-pwd-servlet-demo
 ```
 
 ---

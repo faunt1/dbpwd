@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -37,35 +36,16 @@ public class SpringDemoApplication {
             // 获取UserDao
             UserDao userDao = context.getBean(UserDao.class);
 
-            // 初始化数据库表
-            logger.info("Initializing database tables...");
-            userDao.createTables();
-            logger.info("Database tables initialized successfully.");
-
-            // 演示CRUD操作
             logger.info("");
             logger.info("========================================");
-            logger.info("   CRUD Operations Demo");
+            logger.info("   Query Operations Demo");
             logger.info("========================================");
 
-            // 1. 创建用户
+            // 1. 查询用户总数
             logger.info("");
-            logger.info("1. Creating users...");
-            User user1 = new User();
-            user1.setUsername("john_doe");
-            user1.setEmail("john@example.com");
-            user1.setPassword("$2a$10$encryptedPasswordHash");
-            user1.setCreatedAt(new Date());
-            Long id1 = userDao.insert(user1);
-            logger.info("   Created user: {}", user1.getUsername());
-
-            User user2 = new User();
-            user2.setUsername("jane_smith");
-            user2.setEmail("jane@example.com");
-            user2.setPassword("$2a$10$encryptedPasswordHash");
-            user2.setCreatedAt(new Date());
-            Long id2 = userDao.insert(user2);
-            logger.info("   Created user: {}", user2.getUsername());
+            logger.info("1. Counting users...");
+            int count = userDao.count();
+            logger.info("   Total users: {}", count);
 
             // 2. 查询所有用户
             logger.info("");
@@ -78,36 +58,22 @@ public class SpringDemoApplication {
             }
 
             // 3. 根据ID查询用户
-            logger.info("");
-            logger.info("3. Querying user by ID: {}...", id1);
-            User user = userDao.findById(id1);
-            if (user != null) {
-                logger.info("   Found user: {} ({})", user.getUsername(), user.getEmail());
+            if (!users.isEmpty()) {
+                Long firstId = users.get(0).getId();
+                logger.info("");
+                logger.info("3. Querying user by ID: {}...", firstId);
+                User user = userDao.findById(firstId);
+                if (user != null) {
+                    logger.info("   Found user: {} ({})", user.getUsername(), user.getEmail());
+                }
             }
 
-            // 4. 更新用户
+            // 4. 根据用户名查询
             logger.info("");
-            logger.info("4. Updating user ID: {}...", id1);
-            if (user != null) {
-                user.setEmail("john.updated@example.com");
-                int updated = userDao.update(user);
-                logger.info("   Updated {} row(s).", updated);
-            }
-
-            // 5. 删除用户
-            logger.info("");
-            logger.info("5. Deleting user ID: {}...", id2);
-            int deleted = userDao.deleteById(id2);
-            logger.info("   Deleted {} row(s).", deleted);
-
-            // 6. 查询剩余用户
-            logger.info("");
-            logger.info("6. Querying remaining users...");
-            List<User> remainingUsers = userDao.findAll();
-            logger.info("   Found {} user(s):", remainingUsers.size());
-            for (User u : remainingUsers) {
-                logger.info("   - ID: {}, Username: {}, Email: {}",
-                    u.getId(), u.getUsername(), u.getEmail());
+            logger.info("4. Querying user by username: 'alice'...");
+            User alice = userDao.findByUsername("alice");
+            if (alice != null) {
+                logger.info("   Found user: {} ({})", alice.getUsername(), alice.getEmail());
             }
 
             logger.info("");
