@@ -34,7 +34,7 @@ public class SpringBootDemo {
     private static final String DB_PASSWORD = "sa";
 
     // H2 database configuration
-    private static final String DB_URL = "jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_spring_boot_original;DB_CLOSE_DELAY=-1;MODE=MySQL";
+    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_boot_original;DB_CLOSE_DELAY=-1;MODE=MySQL";
     private static final String DB_USERNAME = "sa";
 
     public static void main(String[] args) {

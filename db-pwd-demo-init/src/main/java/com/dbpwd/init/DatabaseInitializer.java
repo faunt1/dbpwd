@@ -1,156 +1,449 @@
 package com.dbpwd.init;
 
+import com.dbpwd.core.PasswordFileManager;
 import com.dbpwd.core.PasswordService;
+import com.dbpwd.core.Sm4KeyLoader;
+import com.dbpwd.crypto.ENCFormat;
+import com.dbpwd.crypto.Sm4GCMCipher;
+import com.dbpwd.model.DatabaseEntry;
 
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
  * Demo数据库初始化工具
  *
- * 为所有Demo应用初始化H2 FILE格式的数据库
- * 每个使用独立的数据库文件，支持密码验证
+ * 统一管理所有Demo应用的数据库初始化：
+ * 1. 创建/更新密钥文件 (sm4.key)
+ * 2. 创建/更新密码文件 (db.pwd)
+ * 3. 创建H2 FILE格式数据库
+ * 4. 验证密码解密和数据库连接
+ *
+ * 用法：
+ *   java -jar db-pwd-demo-init.jar           # 初始化所有数据库
+ *   java -jar db-pwd-demo-init.jar --single  # 仅创建单个测试库
+ *   java -jar db-pwd-demo-init.jar --verify  # 仅验证现有配置
+ *   java -jar db-pwd-demo-init.jar --db test_db  # 初始化指定数据库
  *
  * @author Database Password Manager
- * @version 1.0
+ * @version 2.0
  */
 public class DatabaseInitializer {
 
     private static final Logger logger = Logger.getLogger(DatabaseInitializer.class.getName());
 
-    // Demo数据库配置
+    private static final String USER_HOME = System.getProperty("user.home");
+    private static final String DBPWD_DIR = USER_HOME + "/.dbpwd";
+    private static final String KEY_FILE = DBPWD_DIR + "/sm4.key";
+    private static final String PWD_FILE = DBPWD_DIR + "/db.pwd";
+    private static final String H2_DATA_DIR = DBPWD_DIR + "/h2_data";
+
+    private static final String DEFAULT_USERNAME = "sa";
+    private static final String DEFAULT_PASSWORD = "sa";
+
     private static final DemoDatabase[] DEMO_DATABASES = {
-        new DemoDatabase("simple_jdbc_db", "dbpwd_simple_demo",
-            "Simple JDBC Demo Database"),
-        new DemoDatabase("druid_demo_db", "dbpwd_druid_demo",
-            "Druid Demo Database"),
-        new DemoDatabase("druid_demo_spring_db", "dbpwd_druid_demo_spring",
-            "Druid Spring XML Demo Database"),
-        new DemoDatabase("spring_boot_db", "dbpwd_spring_boot_demo",
-            "Spring Boot Demo Database"),
-        new DemoDatabase("spring_boot_api_db", "dbpwd_spring_boot_api_demo",
-            "Spring Boot API Demo Database"),
-        new DemoDatabase("spring_framework_db", "dbpwd_spring_demo",
-            "Spring Framework Demo Database"),
-        new DemoDatabase("spring_demo_xml_db", "dbpwd_spring_xml_demo",
-            "Spring XML Demo Database"),
-        new DemoDatabase("mybatis_demo_db", "dbpwd_mybatis_demo",
-            "MyBatis Demo Database"),
-        new DemoDatabase("servlet_demo_db", "dbpwd_servlet_demo",
-            "Servlet Demo Database"),
-        new DemoDatabase("servlet_demo_annotation_db", "dbpwd_servlet_annotation_demo",
-            "Servlet Annotation Demo Database"),
-        new DemoDatabase("struts_demo_db", "dbpwd_struts_demo",
-            "Struts Demo Database")
+        new DemoDatabase("simple_jdbc_db", "dbpwd_simple_demo", "Simple JDBC Demo Database"),
+        new DemoDatabase("druid_demo_db", "dbpwd_druid_demo", "Druid Demo Database"),
+        new DemoDatabase("druid_demo_spring_db", "dbpwd_druid_demo_spring", "Druid Spring XML Demo Database"),
+        new DemoDatabase("spring_boot_db", "dbpwd_spring_boot_demo", "Spring Boot Demo Database"),
+        new DemoDatabase("spring_boot_api_db", "dbpwd_spring_boot_api_demo", "Spring Boot API Demo Database"),
+        new DemoDatabase("spring_framework_db", "dbpwd_spring_demo", "Spring Framework Demo Database"),
+        new DemoDatabase("spring_demo_xml_db", "dbpwd_spring_xml_demo", "Spring XML Demo Database"),
+        new DemoDatabase("mybatis_demo_db", "dbpwd_mybatis_demo", "MyBatis Demo Database"),
+        new DemoDatabase("servlet_demo_db", "dbpwd_servlet_demo", "Servlet Demo Database"),
+        new DemoDatabase("servlet_demo_annotation_db", "dbpwd_servlet_annotation_demo", "Servlet Annotation Demo Database"),
+        new DemoDatabase("struts_demo_db", "dbpwd_struts_demo", "Struts Demo Database")
     };
 
-    // 数据库表初始化SQL
     private static final String[] TABLE_SQLS = {
         "CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50) NOT NULL, email VARCHAR(100) NOT NULL, password VARCHAR(100) NOT NULL)",
         "CREATE TABLE IF NOT EXISTS products (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL, description VARCHAR(255), price DECIMAL(10,2) NOT NULL, stock INT NOT NULL)"
     };
 
-    public static void main(String[] args) {
-        System.out.println("=========================================");
-        System.out.println("   Database Password Manager - Demo Database Initialization");
-        System.out.println("=========================================");
-        System.out.println();
-
-        String userHome = System.getProperty("user.home");
-        File h2DataDir = new File(userHome, ".dbpwd/h2_data");
-
-        if (!h2DataDir.exists() && !h2DataDir.mkdirs()) {
-            logger.warning("无法创建H2数据目录: " + h2DataDir.getAbsolutePath());
-            return;
-        }
-
-        System.out.println("H2 data directory: " + h2DataDir.getAbsolutePath());
-        System.out.println();
-
-        int successCount = 0;
-        int skipCount = 0;
-        int failCount = 0;
-
-        for (DemoDatabase demoDb : DEMO_DATABASES) {
-            System.out.print("Initializing: " + demoDb.placeholder + "  → " + demoDb.dbName + " ... ");
-            try {
-                if (initializeDatabase(h2DataDir, demoDb)) {
-                    System.out.println("SUCCESS");
-                    System.out.println("  Database file: jdbc:h2:file:" + h2DataDir + "/" + demoDb.dbName);
-                    System.out.println("  Password verification: ENABLED");
-                    successCount++;
-                } else {
-                    System.out.println("SKIPPED (database file already exists)");
-                    skipCount++;
-                }
-                System.out.println();
-            } catch (Exception e) {
-                System.out.println("FAILED");
-                System.out.println("  Error: " + e.getMessage());
-                failCount++;
-                System.out.println();
-            }
-        }
-
-        System.out.println("=========================================");
-        System.out.println("   Initialization Summary");
-        System.out.println("=========================================");
-        System.out.println("  Total databases: " + DEMO_DATABASES.length);
-        System.out.println("  Successfully initialized: " + successCount);
-        System.out.println("  Skipped (already exists): " + skipCount);
-        System.out.println("  Failed: " + failCount);
-        System.out.println("  H2 data directory: " + h2DataDir.getAbsolutePath());
-        System.out.println("=========================================");
-        System.out.println();
-
-        if (failCount > 0) {
-            logger.warning("部分数据库初始化失败，请检查错误信息");
-            System.exit(1);
-        }
-    }
+    private String sm4Key;
+    private PasswordFileManager pwdManager;
 
     static {
         try {
-            // 显式加载H2驱动
             Class.forName("org.h2.Driver");
         } catch (ClassNotFoundException e) {
             logger.warning("H2 driver not found: " + e.getMessage());
         }
     }
 
+    public static void main(String[] args) {
+        System.out.println("=========================================");
+        System.out.println("   Database Password Manager - Demo Init");
+        System.out.println("=========================================");
+        System.out.println();
+
+        DatabaseInitializer initializer = new DatabaseInitializer();
+
+        String mode = args.length > 0 ? args[0] : "--all";
+        String targetDb = args.length > 1 ? args[1] : null;
+
+        try {
+            switch (mode) {
+                case "--single":
+                    initializer.initSingle();
+                    break;
+                case "--verify":
+                    initializer.verify();
+                    break;
+                case "--db":
+                    if (targetDb != null) {
+                        initializer.initDatabaseById(targetDb);
+                    } else {
+                        System.err.println("Error: --db requires database id");
+                        printUsage();
+                        System.exit(1);
+                    }
+                    break;
+                case "--all":
+                default:
+                    initializer.initAll();
+                    break;
+            }
+        } catch (Exception e) {
+            System.err.println("Initialization failed: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    private static void printUsage() {
+        System.out.println("Usage:");
+        System.out.println("  java -jar db-pwd-demo-init.jar           # Initialize all databases");
+        System.out.println("  java -jar db-pwd-demo-init.jar --single  # Create single test database");
+        System.out.println("  java -jar db-pwd-demo-init.jar --verify  # Verify existing config");
+        System.out.println("  java -jar db-pwd-demo-init.jar --db <id> # Initialize specific database");
+    }
+
     /**
-     * 初始化单个数据库
+     * 初始化所有数据库
      */
-    private static boolean initializeDatabase(File dataDir, DemoDatabase demoDb) throws Exception {
-        // 检查数据库文件是否已存在
-        File dbFile = new File(dataDir, demoDb.dbName + ".mv.db");
-        if (dbFile.exists()) {
-            return false;
+    public void initAll() throws Exception {
+        System.out.println("Mode: Initialize all demo databases");
+        System.out.println();
+
+        ensureDirectories();
+        initKeyFile();
+        initPwdFile();
+        initH2Databases();
+        verify();
+
+        System.out.println();
+        System.out.println("=========================================");
+        System.out.println("   All demo databases initialized!");
+        System.out.println("=========================================");
+    }
+
+    /**
+     * 初始化单个测试数据库
+     */
+    public void initSingle() throws Exception {
+        System.out.println("Mode: Single test database");
+        System.out.println();
+
+        ensureDirectories();
+        initKeyFile();
+        initPwdFile();
+
+        DemoDatabase testDb = new DemoDatabase("test_db", "dbpwd_test", "Test Database");
+        initH2Database(testDb);
+
+        System.out.println();
+        System.out.println("Test database created: test_db");
+        System.out.println("Password: " + DEFAULT_PASSWORD);
+    }
+
+    /**
+     * 初始化指定数据库
+     */
+    public void initDatabaseById(String dbId) throws Exception {
+        System.out.println("Mode: Initialize specific database: " + dbId);
+        System.out.println();
+
+        ensureDirectories();
+        initKeyFile();
+        initPwdFile();
+
+        DemoDatabase targetDb = null;
+        for (DemoDatabase db : DEMO_DATABASES) {
+            if (db.placeholder.equals(dbId)) {
+                targetDb = db;
+                break;
+            }
         }
 
-        // 从db.pwd中获取明文密码
-        String plainPassword = PasswordService.getDatabasePassword(demoDb.placeholder);
+        if (targetDb == null) {
+            System.err.println("Database not found: " + dbId);
+            System.out.println("Available databases:");
+            for (DemoDatabase db : DEMO_DATABASES) {
+                System.out.println("  - " + db.placeholder);
+            }
+            System.exit(1);
+        }
+
+        initH2Database(targetDb);
+        verifyDatabase(targetDb);
+
         System.out.println();
-        System.out.println("  Password retrieved from db.pwd: OK");
+        System.out.println("Database initialized: " + dbId);
+    }
 
-        // 构建H2 FILE模式连接URL（使用正确的路径分隔符）
-        String dataDirPath = dataDir.getAbsolutePath().replace("\\", "/");
-        String url = "jdbc:h2:file:" + dataDirPath + "/" + demoDb.dbName + ";MODE=MySQL";
+    /**
+     * 验证现有配置
+     */
+    public void verify() throws Exception {
+        System.out.println();
+        System.out.println("=========================================");
+        System.out.println("   Verification");
+        System.out.println("=========================================");
+        System.out.println();
 
-        try (Connection conn = DriverManager.getConnection(url, "sa", plainPassword);
+        loadKeyAndPwdFile();
+
+        int successCount = 0;
+        int failCount = 0;
+        List<String> failedDbs = new ArrayList<>();
+
+        for (DemoDatabase db : DEMO_DATABASES) {
+            System.out.print("Verifying: " + db.placeholder + " ... ");
+            try {
+                if (verifyDatabase(db)) {
+                    System.out.println("OK (password=" + DEFAULT_PASSWORD + ")");
+                    successCount++;
+                } else {
+                    System.out.println("SKIPPED (database not found)");
+                }
+            } catch (Exception e) {
+                System.out.println("FAILED: " + e.getMessage());
+                failCount++;
+                failedDbs.add(db.placeholder);
+            }
+        }
+
+        System.out.println();
+        System.out.println("Verification Summary:");
+        System.out.println("  Success: " + successCount);
+        System.out.println("  Failed: " + failCount);
+
+        if (!failedDbs.isEmpty()) {
+            System.out.println("  Failed databases: " + String.join(", ", failedDbs));
+        }
+    }
+
+    /**
+     * 确保目录存在
+     */
+    private void ensureDirectories() {
+        File dbpwdDir = new File(DBPWD_DIR);
+        File h2DataDir = new File(H2_DATA_DIR);
+
+        if (!dbpwdDir.exists() && !dbpwdDir.mkdirs()) {
+            throw new RuntimeException("Failed to create directory: " + DBPWD_DIR);
+        }
+
+        if (!h2DataDir.exists() && !h2DataDir.mkdirs()) {
+            throw new RuntimeException("Failed to create directory: " + H2_DATA_DIR);
+        }
+
+        System.out.println("Config directory: " + DBPWD_DIR);
+        System.out.println("H2 data directory: " + H2_DATA_DIR);
+        System.out.println();
+    }
+
+    /**
+     * 初始化密钥文件
+     */
+    private void initKeyFile() throws Exception {
+        File keyFile = new File(KEY_FILE);
+
+        if (keyFile.exists()) {
+            System.out.println("Loading existing key file: " + KEY_FILE);
+            sm4Key = new Sm4KeyLoader(KEY_FILE).loadKey();
+        } else {
+            System.out.println("Generating new key file: " + KEY_FILE);
+            sm4Key = Sm4KeyLoader.generateKey(KEY_FILE, false);
+        }
+        System.out.println();
+    }
+
+    /**
+     * 初始化密码文件
+     */
+    private void initPwdFile() throws Exception {
+        pwdManager = new PasswordFileManager(PWD_FILE);
+        pwdManager.load();
+
+        System.out.println("Password file: " + PWD_FILE);
+        System.out.println("Existing entries: " + pwdManager.size());
+        System.out.println();
+
+        int addedCount = 0;
+        int updatedCount = 0;
+
+        for (DemoDatabase db : DEMO_DATABASES) {
+            String encryptedPassword = encryptPassword(DEFAULT_PASSWORD);
+
+            DatabaseEntry entry = new DatabaseEntry(
+                db.placeholder,
+                db.name,
+                "h2",
+                "jdbc:h2:file:" + H2_DATA_DIR + "/" + db.dbName + ";MODE=MySQL",
+                DEFAULT_USERNAME,
+                encryptedPassword
+            );
+            entry.setEncrypted(true);
+
+            DatabaseEntry existing = pwdManager.getById(db.placeholder);
+            if (existing == null) {
+                pwdManager.addDatabase(entry);
+                addedCount++;
+                System.out.println("  Added: " + db.placeholder);
+            } else {
+                existing.setPassword(encryptedPassword);
+                existing.setEncrypted(true);
+                existing.touchUpdateTime();
+                pwdManager.updateDatabase(existing);
+                updatedCount++;
+                System.out.println("  Updated: " + db.placeholder);
+            }
+        }
+
+        pwdManager.save();
+        System.out.println();
+        System.out.println("Password file updated:");
+        System.out.println("  Added: " + addedCount);
+        System.out.println("  Updated: " + updatedCount);
+        System.out.println();
+    }
+
+    /**
+     * 初始化所有H2数据库
+     */
+    private void initH2Databases() throws Exception {
+        System.out.println("=========================================");
+        System.out.println("   Creating H2 Databases");
+        System.out.println("=========================================");
+        System.out.println();
+
+        int createdCount = 0;
+        int initializedCount = 0;
+
+        for (DemoDatabase db : DEMO_DATABASES) {
+            File dbFile = new File(H2_DATA_DIR, db.dbName + ".mv.db");
+
+            if (dbFile.exists()) {
+                if (ensureTables(db)) {
+                    initializedCount++;
+                    System.out.println("  Initialized (tables created): " + db.placeholder);
+                } else {
+                    System.out.println("  Skipped (tables exist): " + db.placeholder);
+                }
+            } else {
+                initH2Database(db);
+                createdCount++;
+                System.out.println("  Created: " + db.placeholder);
+            }
+        }
+
+        System.out.println();
+        System.out.println("H2 Databases created: " + createdCount);
+        System.out.println("Tables initialized: " + initializedCount);
+    }
+
+    /**
+     * 确保表存在
+     */
+    private boolean ensureTables(DemoDatabase db) throws Exception {
+        String url = "jdbc:h2:file:" + H2_DATA_DIR + "/" + db.dbName + ";MODE=MySQL";
+
+        try (Connection conn = DriverManager.getConnection(url, DEFAULT_USERNAME, DEFAULT_PASSWORD);
              Statement stmt = conn.createStatement()) {
 
-            // 创建数据表（MySQL模式使用AUTO_INCREMENT）
+            boolean createdAny = false;
+            for (String sql : TABLE_SQLS) {
+                try {
+                    stmt.execute(sql);
+                    createdAny = true;
+                } catch (Exception e) {
+                    // Table already exists
+                }
+            }
+            return createdAny;
+        }
+    }
+
+    /**
+     * 初始化单个H2数据库
+     */
+    private void initH2Database(DemoDatabase db) throws Exception {
+        String url = "jdbc:h2:file:" + H2_DATA_DIR + "/" + db.dbName + ";MODE=MySQL";
+
+        try (Connection conn = DriverManager.getConnection(url, DEFAULT_USERNAME, DEFAULT_PASSWORD);
+             Statement stmt = conn.createStatement()) {
+
             for (String sql : TABLE_SQLS) {
                 stmt.execute(sql);
             }
-
-            System.out.println("  Table(s) created successfully: " + demoDb.dbName);
-            return true;
         }
+
+        System.out.println("  Created: " + db.placeholder + " -> " + db.dbName);
+    }
+
+    /**
+     * 验证单个数据库
+     */
+    private boolean verifyDatabase(DemoDatabase db) throws Exception {
+        File dbFile = new File(H2_DATA_DIR, db.dbName + ".mv.db");
+        if (!dbFile.exists()) {
+            return false;
+        }
+
+        String decryptedPassword = PasswordService.getDatabasePassword(db.placeholder);
+
+        if (!DEFAULT_PASSWORD.equals(decryptedPassword)) {
+            throw new Exception("Password mismatch! Expected: " + DEFAULT_PASSWORD + ", Got: " + decryptedPassword);
+        }
+
+        String url = "jdbc:h2:file:" + H2_DATA_DIR + "/" + db.dbName + ";MODE=MySQL";
+
+        try (Connection conn = DriverManager.getConnection(url, DEFAULT_USERNAME, decryptedPassword);
+             Statement stmt = conn.createStatement()) {
+
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users");
+            if (rs.next()) {
+                rs.getInt(1);
+            }
+            rs.close();
+        }
+
+        return true;
+    }
+
+    /**
+     * 加载密钥和密码文件
+     */
+    private void loadKeyAndPwdFile() throws Exception {
+        sm4Key = new Sm4KeyLoader(KEY_FILE).loadKey();
+        pwdManager = new PasswordFileManager(PWD_FILE);
+        pwdManager.load();
+    }
+
+    /**
+     * 加密密码
+     */
+    private String encryptPassword(String plainPassword) throws Exception {
+        String cipherText = Sm4GCMCipher.encrypt(plainPassword, sm4Key);
+        return ENCFormat.formatSM4GCM(cipherText);
     }
 
     /**

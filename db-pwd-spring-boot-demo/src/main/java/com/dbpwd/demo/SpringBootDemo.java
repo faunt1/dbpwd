@@ -40,9 +40,9 @@ public class SpringBootDemo {
     // 占位符标识（用于标识不同的数据库配置）
     private static final String DB_PLACEHOLDER = "spring_boot_db";
 
-    // MySQL database configuration
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-    private static final String DB_USERNAME = "dbpwd";
+    // H2 FILE database configuration
+    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_boot_demo;MODE=MySQL;DB_CLOSE_DELAY=-1";
+    private static final String DB_USERNAME = "sa";
 
     public static void main(String[] args) {
         SpringApplication.run(SpringBootDemo.class, args);
@@ -61,7 +61,7 @@ public class SpringBootDemo {
 
         // 创建数据源，使用解密后的明文密码
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        dataSource.setDriverClassName("org.h2.Driver");
         dataSource.setUrl(DB_URL);
         dataSource.setUsername(DB_USERNAME);
         dataSource.setPassword(plainPassword);

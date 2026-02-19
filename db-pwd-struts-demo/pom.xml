@@ -71,11 +71,11 @@
             <version>1.2</version>
         </dependency>
 
-        <!-- MySQL JDBC Driver -->
+        <!-- H2 database -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql.version}</version>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
         </dependency>
     </dependencies>
 

@@ -39,7 +39,7 @@ public class MybatisDemoApplication {
     private static final String DB_PLACEHOLDER = "mybatis_demo_db";
 
     // H2 FILE模式以支持密码验证
-    private static final String H2_URL = "jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_mybatis_demo;MODE=MySQL";
+    private static final String H2_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_mybatis_demo;MODE=MySQL";
     private static final String H2_USERNAME = "sa";
     private static final String H2_DRIVER = "org.h2.Driver";
 

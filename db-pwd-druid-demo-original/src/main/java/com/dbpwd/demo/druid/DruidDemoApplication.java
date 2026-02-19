@@ -98,7 +98,7 @@ public class DruidDemoApplication {
     private static DruidDataSource createDataSource() throws Exception {
         DruidDataSource dataSource = new DruidDataSource();
 
-        dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_original;MODE=MySQL");
+        dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_druid_original;MODE=MySQL");
         dataSource.setUsername("sa");
 
         // 【原始版本】直接使用明文密码

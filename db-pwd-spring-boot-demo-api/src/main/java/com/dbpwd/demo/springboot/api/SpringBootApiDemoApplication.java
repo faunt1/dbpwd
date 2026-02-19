@@ -65,7 +65,7 @@ public class SpringBootApiDemoApplication {
             // 手动创建DataSource
             DriverManagerDataSource dataSource = new DriverManagerDataSource();
             dataSource.setDriverClassName("org.h2.Driver");
-            dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/spring_boot_api_db;MODE=MySQL");
+            dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/spring_boot_api_db;MODE=MySQL");
             dataSource.setUsername("sa");
             dataSource.setPassword(plainPassword);
 

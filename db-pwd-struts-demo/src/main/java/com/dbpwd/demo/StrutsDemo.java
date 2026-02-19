@@ -31,11 +31,11 @@ import java.sql.Statement;
 public class StrutsDemo {
 
     // 占位符标识（用于标识不同的数据库配置）
-    private static final String DB_PLACEHOLDER = "struts_db";
+    private static final String DB_PLACEHOLDER = "struts_demo_db";
 
-    // MySQL database configuration
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/dbpwd_demo?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-    private static final String DB_USERNAME = "dbpwd";
+    // H2 FILE database configuration
+    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_struts_demo;MODE=MySQL;DB_CLOSE_DELAY=-1";
+    private static final String DB_USERNAME = "sa";
 
     public static void main(String[] args) {
         System.out.println("=== Struts Demo Application (Standalone) ===");
@@ -93,10 +93,9 @@ public class StrutsDemo {
             String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
             System.out.println("  解密后的密码: " + plainPassword);
 
-            // Connect to MySQL
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("org.h2.Driver");
             Connection connection = DriverManager.getConnection(DB_URL, DB_USERNAME, plainPassword);
-            System.out.println("  MySQL connection successful!");
+            System.out.println("  H2 database connection successful!");
 
             // Create demo tables
             createTables(connection);
@@ -117,7 +116,7 @@ public class StrutsDemo {
             System.out.println();
             System.out.println("=== Demo Completed Successfully ===");
             System.out.println("All SM4-GCM encryption and decryption tests passed!");
-            System.out.println("MySQL database connection and CRUD operations successful!");
+            System.out.println("H2 database connection and CRUD operations successful!");
             System.out.println("GCM mode provides authenticated encryption and tamper protection.");
 
         } catch (Exception e) {
@@ -217,20 +216,17 @@ public class StrutsDemo {
         stmt.close();
     }
 
-    /**
-     * Query and display data
-     */
     private static void queryAndDisplayData(Connection connection) throws Exception {
         // Query users
         System.out.println("    Users:");
         PreparedStatement userStmt = connection.prepareStatement(
-                "SELECT id, name, email, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as created_at FROM users ORDER BY id");
+                "SELECT id, name, email, created_at FROM users ORDER BY id");
         ResultSet userRs = userStmt.executeQuery();
         while (userRs.next()) {
             System.out.println("      ID: " + userRs.getInt("id") +
                     ", Name: " + userRs.getString("name") +
                     ", Email: " + userRs.getString("email") +
-                    ", Created: " + userRs.getString("created_at"));
+                    ", Created: " + userRs.getTimestamp("created_at"));
         }
         userRs.close();
         userStmt.close();
@@ -240,8 +236,7 @@ public class StrutsDemo {
         // Query orders with user names
         System.out.println("    Orders:");
         PreparedStatement orderStmt = connection.prepareStatement(
-                "SELECT o.id, u.name as user_name, o.product_name, o.amount, " +
-                "DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i:%s') as created_at " +
+                "SELECT o.id, u.name as user_name, o.product_name, o.amount, o.created_at " +
                 "FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id");
         ResultSet orderRs = orderStmt.executeQuery();
         while (orderRs.next()) {
@@ -249,7 +244,7 @@ public class StrutsDemo {
                     ", User: " + orderRs.getString("user_name") +
                     ", Product: " + orderRs.getString("product_name") +
                     ", Amount: " + orderRs.getBigDecimal("amount") +
-                    ", Created: " + orderRs.getString("created_at"));
+                    ", Created: " + orderRs.getTimestamp("created_at"));
         }
         orderRs.close();
         orderStmt.close();
