@@ -78,22 +78,30 @@ db-pwd/
 │
 ├── db-pwd-demo-init/               # Demo 初始化工具
 │
-├── db-pwd-simple-jdbc-demo-original/   # 【原始版本】方案5: 纯 JDBC
-├── db-pwd-simple-jdbc-demo/            # 【集成版本】方案5: 纯 JDBC
-├── db-pwd-druid-demo-original/         # 【原始版本】方案1: Druid
-├── db-pwd-druid-demo/                  # 【集成版本】方案1: Druid
-├── db-pwd-druid-demo-spring/           # 【集成版本】方案1+3: Druid + Spring
-├── db-pwd-spring-boot-demo-original/   # 【原始版本】方案2: Spring Boot
-├── db-pwd-spring-boot-demo/            # 【集成版本】方案2: Spring Boot (Starter)
-├── db-pwd-spring-boot-demo-api/        # 【集成版本】方案2: Spring Boot (API方式)
-├── db-pwd-spring-demo-original/        # 【原始版本】方案3: Spring
-├── db-pwd-spring-demo/                 # 【集成版本】方案3: Spring (Java Config)
-├── db-pwd-spring-demo-xml/             # 【集成版本】方案3: Spring (XML Config)
-├── db-pwd-mybatis-demo/                # 【集成版本】方案4: MyBatis
-├── db-pwd-servlet-demo-original/       # 【原始版本】方案6: Servlet
-├── db-pwd-servlet-demo/                # 【集成版本】方案6: Servlet (web.xml)
-├── db-pwd-servlet-demo-annotation/     # 【集成版本】方案6: Servlet (注解)
-├── db-pwd-struts-demo/                 # 【集成版本】Struts 1.x
+├── demos/                          # Demo 应用集合
+│   ├── simple-jdbc/
+│   │   ├── demo/                   # 【集成版本】方案5: 纯 JDBC
+│   │   └── original/               # 【原始版本】方案5: 纯 JDBC
+│   ├── druid/
+│   │   ├── demo/                   # 【集成版本】方案1: Druid
+│   │   ├── original/               # 【原始版本】方案1: Druid
+│   │   └── spring/                 # 【集成版本】方案1+3: Druid + Spring
+│   ├── spring-boot/
+│   │   ├── demo/                   # 【集成版本】方案2: Spring Boot (Starter)
+│   │   ├── original/               # 【原始版本】方案2: Spring Boot
+│   │   └── api/                   # 【集成版本】方案2: Spring Boot (API)
+│   ├── spring/
+│   │   ├── demo/                   # 【集成版本】方案3: Spring (Java Config)
+│   │   ├── original/               # 【原始版本】方案3: Spring
+│   │   └── xml/                   # 【集成版本】方案3: Spring (XML)
+│   ├── mybatis/
+│   │   └── demo/                   # 【集成版本】方案4: MyBatis
+│   ├── servlet/
+│   │   ├── demo/                   # 【集成版本】方案6: Servlet (web.xml)
+│   │   ├── original/               # 【原始版本】方案6: Servlet
+│   │   └── annotation/             # 【集成版本】方案6: Servlet (注解)
+│   └── struts/
+│       └── demo/                   # 【集成版本】Struts 1.x
 │
 ├── docs/                           # 文档目录
 ├── claudedocs/                     # Sprint 进度文档

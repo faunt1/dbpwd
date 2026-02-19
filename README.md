@@ -66,15 +66,17 @@ db-pwd/
 ├── db-pwd-druid/                   # Druid集成
 ├── db-pwd-spring/                  # Spring集成
 ├── db-pwd-spring-boot-starter/     # Spring Boot Starter
-├── db-pwd-mybatis/                 # MyBatis集成
-├── db-pwd-web/                     # Servlet集成
-├── db-pwd-demo-init/               # Demo初始化工具
-├── db-pwd-simple-jdbc-demo/        # Demo 1
-├── db-pwd-druid-demo/              # Demo 2
-├── db-pwd-spring-boot-demo/        # Demo 3
-├── db-pwd-spring-demo/             # Demo 4
-├── db-pwd-mybatis-demo/            # Demo 5
-└── db-pwd-servlet-demo/            # Demo 6
+├── db-pwd-mybatis/                # MyBatis集成
+├── db-pwd-web/                    # Servlet集成
+├── db-pwd-demo-init/              # Demo初始化工具
+└── demos/                         # Demo应用集合
+    ├── simple-jdbc/               # 方案5: 纯JDBC
+    ├── druid/                    # 方案1: Druid
+    ├── spring-boot/              # 方案2: Spring Boot
+    ├── spring/                   # 方案3: Spring
+    ├── mybatis/                  # 方案4: MyBatis
+    ├── servlet/                  # 方案6: Servlet
+    └── struts/                   # Struts 1.x
 ```
 
 ## 文档索引

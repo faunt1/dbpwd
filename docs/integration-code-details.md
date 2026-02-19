@@ -2,7 +2,7 @@
 
 > 本文档详细说明如何在现有应用中集成数据库密码加密功能
 >
-> 最后更新: 2026-02-15
+> 最后更新: 2026-02-19
 
 ## 目录
 
@@ -38,20 +38,20 @@
 
 | 集成模式 | 原始版本 | 集成版本 |
 |---------|---------|---------|
-| 方案5: 纯JDBC | `db-pwd-simple-jdbc-demo-original` | `db-pwd-simple-jdbc-demo` |
-| 方案2: Spring Boot | `db-pwd-spring-boot-demo-original` | `db-pwd-spring-boot-demo` |
-| 方案1: Druid | `db-pwd-druid-demo-original` | `db-pwd-druid-demo` |
-| 方案3: Spring | `db-pwd-spring-demo-original` | `db-pwd-spring-demo` |
-| 方案6: Servlet | `db-pwd-servlet-demo-original` | `db-pwd-servlet-demo` |
+| 方案5: 纯JDBC | `demos/simple-jdbc/original` | `demos/simple-jdbc/demo` |
+| 方案2: Spring Boot | `demos/spring-boot/original` | `demos/spring-boot/demo` |
+| 方案1: Druid | `demos/druid/original` | `demos/druid/demo` |
+| 方案3: Spring | `demos/spring/original` | `demos/spring/demo` |
+| 方案6: Servlet | `demos/servlet/original` | `demos/servlet/demo` |
 
 ### 类名和包名保持一致
 
 原始版本和集成版本使用完全相同的类名和包名，便于对比：
 
 ```
-# 原始版本和集成版本的文件路径完全一致
-db-pwd-simple-jdbc-demo-original/src/main/java/com/dbpwd/demo/SimpleJdbcDemo.java
-db-pwd-simple-jdbc-demo/src/main/java/com/dbpwd/demo/SimpleJdbcDemo.java
+# 原始版本和集成版本的文件路径对比
+demos/simple-jdbc/original/src/main/java/com/dbpwd/demo/SimpleJdbcDemo.java
+demos/simple-jdbc/demo/src/main/java/com/dbpwd/demo/SimpleJdbcDemo.java
 ```
 
 ---
@@ -434,16 +434,16 @@ java -jar db-pwd-core/target/db-pwd-core-1.0.0.jar add mydb
 
 ```bash
 # 对比 Simple JDBC Demo
-diff db-pwd-simple-jdbc-demo-original/src/main/java/com/dbpwd/demo/SimpleJdbcDemo.java \
-     db-pwd-simple-jdbc-demo/src/main/java/com/dbpwd/demo/SimpleJdbcDemo.java
+diff demos/simple-jdbc/original/src/main/java/com/dbpwd/demo/SimpleJdbcDemo.java \
+demos/simple-jdbc/demo/src/main/java/com/dbpwd/demo/SimpleJdbcDemo.java
 
 # 对比 Spring Boot Demo
-diff db-pwd-spring-boot-demo-original/src/main/java/com/dbpwd/demo/SpringBootDemo.java \
-     db-pwd-spring-boot-demo/src/main/java/com/dbpwd/demo/SpringBootDemo.java
+diff demos/spring-boot/original/src/main/java/com/dbpwd/demo/SpringBootDemo.java \
+demos/spring-boot/demo/src/main/java/com/dbpwd/demo/SpringBootDemo.java
 
 # 对比 Druid Demo
-diff db-pwd-druid-demo-original/src/main/java/com/dbpwd/demo/druid/DruidDemoApplication.java \
-     db-pwd-druid-demo/src/main/java/com/dbpwd/demo/druid/DruidDemoApplication.java
+diff demos/druid/original/src/main/java/com/dbpwd/demo/druid/DruidDemoApplication.java \
+demos/druid/demo/src/main/java/com/dbpwd/demo/druid/DruidDemoApplication.java
 
 # 对比 Spring Demo (配置类)
 diff db-pwd-spring-demo-original/src/main/java/com/dbpwd/demo/spring/DemoConfig.java \

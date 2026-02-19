@@ -1,7 +1,33 @@
 # Database Password Manager - Demo应用设计文档
 
-> 文档版本: v3.0
-> 最后更新: 2026-02-15
+> 文档版本: v3.1
+> 最后更新: 2026-02-19
+
+## 目录结构说明
+
+**注意**: Demo 应用已重组到 `demos/` 目录下，采用分类子目录结构：
+
+```
+demos/
+├── simple-jdbc/    # 方案5
+├── druid/         # 方案1
+├── spring-boot/   # 方案2
+├── spring/        # 方案3
+├── mybatis/       # 方案4
+├── servlet/       # 方案6
+└── struts/        # Struts 1.x
+```
+
+运行命令示例（以 simple-jdbc 为例）：
+```bash
+# 构建
+mvn package -pl demos/simple-jdbc/demo -am -DskipTests
+
+# 运行
+java -Dfile.encoding=UTF-8 -jar demos/simple-jdbc/demo/target/simple-jdbc-demo-1.0.0-jar-with-dependencies.jar
+```
+
+---
 
 ## 概述
 
@@ -136,7 +162,7 @@ public class SimpleJdbcDemo {
 ### 运行命令
 
 ```bash
-java -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
+java -jar demos/simple-jdbc/demo/target/simple-jdbc-demo-1.0.0-jar-with-dependencies.jar
 ```
 
 ### 验证点
@@ -187,7 +213,7 @@ public class DruidDemo {
 ### 运行命令
 
 ```bash
-java -jar db-pwd-druid-demo/target/db-pwd-druid-demo-1.0.0.jar
+java -jar demos/druid/demo/target/druid-demo-1.0.0.jar
 ```
 
 ### 验证点
@@ -246,7 +272,7 @@ class DemoController {
 ### 运行命令
 
 ```bash
-java -jar db-pwd-spring-boot-demo/target/db-pwd-spring-boot-demo-1.0.0.jar
+java -jar demos/spring-boot/demo/target/spring-boot-demo-1.0.0.jar
 ```
 
 ### 验证点
@@ -294,7 +320,7 @@ public class SpringAppConfig {
 ### 运行命令
 
 ```bash
-java -jar db-pwd-spring-demo/target/db-pwd-spring-demo-1.0.0.jar
+java -jar demos/spring/demo/target/spring-demo-1.0.0.jar
 ```
 
 ### 验证点
@@ -338,7 +364,7 @@ java -jar db-pwd-spring-demo/target/db-pwd-spring-demo-1.0.0.jar
 ### 运行命令
 
 ```bash
-java -jar db-pwd-mybatis-demo/target/db-pwd-mybatis-demo-1.0.0.jar
+java -jar demos/mybatis/demo/target/mybatis-demo-1.0.0.jar
 ```
 
 ### 验证点
@@ -392,7 +418,7 @@ public class UserServlet extends HttpServlet {
 cp target/db-pwd-servlet-demo-1.0.0.war $TOMCAT_HOME/webapps/
 
 # 或使用 Maven 插件
-mvn tomcat7:run -pl db-pwd-servlet-demo
+mvn tomcat7:run -pl demos/servlet/demo
 ```
 
 ### 验证点
@@ -446,7 +472,7 @@ public class DruidSpringDemoApplication {
 ### 运行命令
 
 ```bash
-java -jar db-pwd-druid-demo-spring/target/db-pwd-druid-demo-spring-1.0.0.jar
+java -jar demos/druid/spring/target/druid-spring-1.0.0.jar
 ```
 
 ### 验证点
@@ -492,7 +518,7 @@ public class SpringBootApiDemoApplication {
 ### 运行命令
 
 ```bash
-java -jar db-pwd-spring-boot-demo-api/target/db-pwd-spring-boot-demo-api-1.0.0.jar
+java -jar demos/spring-boot/api/target/spring-boot-api-1.0.0.jar
 # 访问 http://localhost:8082/api/test
 ```
 
@@ -604,7 +630,7 @@ public class ProductApiServlet extends HttpServlet {
 ### 运行命令
 
 ```bash
-mvn tomcat7:run -pl db-pwd-servlet-demo-annotation
+mvn tomcat7:run -pl demos/servlet/annotation
 # 访问 http://localhost:8083/dbpwd-servlet-annotation-demo/api/products
 ```
 
@@ -644,7 +670,7 @@ mvn tomcat7:run -pl db-pwd-servlet-demo-annotation
 ### 运行命令
 
 ```bash
-mvn tomcat7:run -pl db-pwd-struts-demo
+mvn tomcat7:run -pl demos/struts/demo
 ```
 
 ### 验证点
@@ -700,27 +726,27 @@ java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar
 # 3. 运行各 Demo 应用
 
 # 方案5: 独立JDBC应用
-java -jar db-pwd-simple-jdbc-demo/target/db-pwd-simple-jdbc-demo-1.0.0.jar
+java -jar demos/simple-jdbc/demo/target/simple-jdbc-demo-1.0.0-jar-with-dependencies.jar
 
 # 方案1: Druid PasswordCallback
-java -jar db-pwd-druid-demo/target/db-pwd-druid-demo-1.0.0.jar
-java -jar db-pwd-druid-demo-spring/target/db-pwd-druid-demo-spring-1.0.0.jar
+java -jar demos/druid/demo/target/druid-demo-1.0.0.jar
+java -jar demos/druid/spring/target/druid-spring-1.0.0.jar
 
 # 方案2: Spring Boot
-java -jar db-pwd-spring-boot-demo/target/db-pwd-spring-boot-demo-1.0.0.jar
-java -jar db-pwd-spring-boot-demo-api/target/db-pwd-spring-boot-demo-api-1.0.0.jar
+java -jar demos/spring-boot/demo/target/spring-boot-demo-1.0.0.jar
+java -jar demos/spring-boot/api/target/spring-boot-api-1.0.0.jar
 
 # 方案3: Spring Framework
-java -jar db-pwd-spring-demo/target/db-pwd-spring-demo-1.0.0.jar
+java -jar demos/spring/demo/target/spring-demo-1.0.0.jar
 java -jar db-pwd-spring-demo-xml/target/db-pwd-spring-demo-xml-1.0.0.jar
 
 # 方案4: MyBatis
-java -jar db-pwd-mybatis-demo/target/db-pwd-mybatis-demo-1.0.0.jar
+java -jar demos/mybatis/demo/target/mybatis-demo-1.0.0.jar
 
 # 方案6: Servlet/Web (需要Servlet容器)
-mvn tomcat7:run -pl db-pwd-servlet-demo           # web.xml配置
-mvn tomcat7:run -pl db-pwd-servlet-demo-annotation # 注解方式
-mvn tomcat7:run -pl db-pwd-struts-demo            # Struts集成
+mvn tomcat7:run -pl demos/servlet/demo           # web.xml配置
+mvn tomcat7:run -pl demos/servlet/annotation # 注解方式
+mvn tomcat7:run -pl demos/struts/demo            # Struts集成
 ```
 
 ---
@@ -733,13 +759,13 @@ mvn tomcat7:run -pl db-pwd-struts-demo            # Struts集成
 
 ```powershell
 # Servlet Demo (集成版本) - 端口 8081
-powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl demos/servlet/demo' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
 
 # Servlet Demo (原始版本) - 端口 8082
-powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo-original' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl demos/servlet/original' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
 
 # Servlet Demo (注解方式) - 端口 8083
-powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo-annotation' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl demos/servlet/annotation' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
 ```
 
 ### 等待服务器启动
@@ -766,9 +792,9 @@ curl -s http://localhost:8083/dbpwd-servlet-annotation-demo/api/info
 
 ```powershell
 # 停止指定模块的 Jetty
-mvn jetty:stop -pl db-pwd-servlet-demo
-mvn jetty:stop -pl db-pwd-servlet-demo-original
-mvn jetty:stop -pl db-pwd-servlet-demo-annotation
+mvn jetty:stop -pl demos/servlet/demo
+mvn jetty:stop -pl demos/servlet/original
+mvn jetty:stop -pl demos/servlet/annotation
 
 # 或者查找进程并手动停止
 netstat -ano | findstr "8081"
@@ -782,7 +808,7 @@ taskkill /F /PID <PID>
 java -Dfile.encoding=UTF-8 -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0-jar-with-dependencies.jar --all
 
 # 2. 启动 Servlet Demo
-powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl demos/servlet/demo' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
 
 # 3. 等待启动
 ping -n 15 127.0.0.1 >nul
@@ -791,7 +817,7 @@ ping -n 15 127.0.0.1 >nul
 curl -s http://localhost:8081/dbpwd-servlet-demo/api/users
 
 # 5. 停止服务器
-mvn jetty:stop -pl db-pwd-servlet-demo
+mvn jetty:stop -pl demos/servlet/demo
 ```
 
 > **注意**: Windows 环境必须使用 `-Dfile.encoding=UTF-8` 参数，否则中文输出会出现乱码。
