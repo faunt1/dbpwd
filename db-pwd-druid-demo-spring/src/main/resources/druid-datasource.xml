@@ -4,6 +4,11 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans.xsd">
 
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+    </bean>
+
     <!--
         Druid DataSource配置 - 使用PasswordCallback解密密码
 
@@ -18,7 +23,7 @@
           init-method="init" destroy-method="close">
 
         <!-- 基本连接配置 -->
-        <property name="url" value="jdbc:h2:file:~/.dbpwd/h2_data/druid_demo_spring_db;MODE=MySQL"/>
+        <property name="url" value="jdbc:h2:file:${user.home}/.dbpwd/h2_data/dbpwd_druid_demo_spring;IFEXISTS=TRUE;MODE=MySQL"/>
         <property name="username" value="sa"/>
         
         <!-- 

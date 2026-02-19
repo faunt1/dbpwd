@@ -162,11 +162,11 @@ public class StrutsDemo {
         // Query users
         System.out.println("    Users:");
         PreparedStatement userStmt = connection.prepareStatement(
-                "SELECT id, name, email, created_at FROM users ORDER BY id");
+                "SELECT id, username, email, created_at FROM users ORDER BY id");
         ResultSet userRs = userStmt.executeQuery();
         while (userRs.next()) {
             System.out.println("      ID: " + userRs.getInt("id") +
-                    ", Name: " + userRs.getString("name") +
+                    ", Username: " + userRs.getString("username") +
                     ", Email: " + userRs.getString("email") +
                     ", Created: " + userRs.getTimestamp("created_at"));
         }
@@ -178,7 +178,7 @@ public class StrutsDemo {
         // Query orders with user names
         System.out.println("    Orders:");
         PreparedStatement orderStmt = connection.prepareStatement(
-                "SELECT o.id, u.name as user_name, o.product_name, o.amount, o.created_at " +
+                "SELECT o.id, u.username as user_name, o.product_name, o.amount, o.created_at " +
                 "FROM orders o LEFT JOIN users u ON o.user_id = u.id ORDER BY o.id");
         ResultSet orderRs = orderStmt.executeQuery();
         while (orderRs.next()) {

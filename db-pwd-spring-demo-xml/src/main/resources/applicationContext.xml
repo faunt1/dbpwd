@@ -4,6 +4,11 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans.xsd">
 
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+    </bean>
+
     <!--
         Spring XML配置 - 使用BeanPostProcessor自动解密密码
 
@@ -20,7 +25,7 @@
     -->
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <property name="driverClassName" value="org.h2.Driver"/>
-        <property name="url" value="jdbc:h2:file:~/.dbpwd/h2_data/spring_demo_xml_db;MODE=MySQL"/>
+        <property name="url" value="jdbc:h2:file:${user.home}/.dbpwd/h2_data/dbpwd_spring_xml_demo;IFEXISTS=TRUE;MODE=MySQL"/>
         <property name="username" value="sa"/>
         <!--
             密码占位符: DataSourcePasswordPostProcessor会自动解密

@@ -61,7 +61,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.dbpwd.demo.original.springboot.SpringBootDemoOriginal</mainClass>
+                    <mainClass>com.dbpwd.demo.SpringBootDemo</mainClass>
                 </configuration>
                 <executions>
                     <execution>

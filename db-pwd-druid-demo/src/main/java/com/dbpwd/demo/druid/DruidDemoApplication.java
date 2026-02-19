@@ -67,7 +67,7 @@ public class DruidDemoApplication {
     private static DruidDataSource createDataSource() throws Exception {
         DruidDataSource dataSource = new DruidDataSource();
 
-        dataSource.setUrl("jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo;IFEXISTS=TRUE;MODE=MySQL");
+        dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_druid_demo;IFEXISTS=TRUE;MODE=MySQL");
         dataSource.setUsername("sa");
 
         String password = PasswordService.getDatabasePassword("@druid_demo_db@");

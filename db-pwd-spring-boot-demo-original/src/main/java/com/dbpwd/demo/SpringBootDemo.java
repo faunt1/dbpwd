@@ -32,7 +32,7 @@ public class SpringBootDemo {
 
     private static final String DB_PASSWORD = "sa";
 
-    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_boot_original;IFEXISTS=TRUE;MODE=MySQL";
+    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_boot_demo;IFEXISTS=TRUE;MODE=MySQL";
     private static final String DB_USERNAME = "sa";
 
     public static void main(String[] args) {

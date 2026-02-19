@@ -34,7 +34,7 @@ import java.util.Map;
 @WebServlet("/api/users/*")
 public class UserApiServlet extends HttpServlet {
 
-    private static final String H2_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_servlet_original_demo;IFEXISTS=TRUE;MODE=MySQL";
+    private static final String H2_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_servlet_demo;IFEXISTS=TRUE;MODE=MySQL";
     private static final String H2_USERNAME = "sa";
     private static final String H2_DRIVER = "org.h2.Driver";
 
