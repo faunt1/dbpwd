@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+    </bean>
+
+    <!--
+        Druid DataSource配置 - 使用明文密码
+
+        原始版本要点:
+        1. password设置为明文 "sa"
+    -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
+          destroy-method="close">
+
+        <!-- 基本连接配置 -->
+        <property name="url" value="jdbc:h2:file:${user.home}/.dbpwd/h2_data/dbpwd_druid_demo_spring;IFEXISTS=TRUE;MODE=MySQL"/>
+        <property name="username" value="sa"/>
+        
+        <!-- 明文密码 -->
+        <property name="password" value="sa"/>
+
+        <!-- 连接池配置 -->
+        <property name="initialSize" value="2"/>
+        <property name="minIdle" value="2"/>
+        <property name="maxActive" value="10"/>
+        <property name="maxWait" value="10000"/>
+
+        <!-- 连接有效性检测 -->
+        <property name="validationQuery" value="SELECT 1"/>
+        <property name="testOnBorrow" value="false"/>
+        <property name="testWhileIdle" value="false"/>
+
+        <!-- 连接超时配置 -->
+        <property name="connectTimeout" value="5000"/>
+        <property name="socketTimeout" value="30000"/>
+    </bean>
+
+</beans>

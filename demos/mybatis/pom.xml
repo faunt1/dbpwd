@@ -18,6 +18,7 @@
 
     <modules>
         <module>demo</module>
+        <module>original</module>
     </modules>
 
 </project>
