@@ -41,10 +41,6 @@ public class ProductApiServlet extends HttpServlet {
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
 
-            // 插入测试数据
-            stmt.execute("INSERT INTO products (name, price) VALUES ('Widget', 29.99)");
-
-            // 查询所有产品
             List<Map<String, Object>> products = new ArrayList<>();
             ResultSet rs = stmt.executeQuery("SELECT * FROM products ORDER BY id");
 

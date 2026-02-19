@@ -723,6 +723,79 @@ mvn tomcat7:run -pl db-pwd-servlet-demo-annotation # 注解方式
 mvn tomcat7:run -pl db-pwd-struts-demo            # Struts集成
 ```
 
+---
+
+## Servlet Demo 测试命令
+
+### 启动命令（后台运行）
+
+使用 PowerShell 后台启动 Jetty 服务器：
+
+```powershell
+# Servlet Demo (集成版本) - 端口 8081
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+
+# Servlet Demo (原始版本) - 端口 8082
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo-original' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+
+# Servlet Demo (注解方式) - 端口 8083
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo-annotation' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+```
+
+### 等待服务器启动
+
+```powershell
+ping -n 15 127.0.0.1 >nul
+```
+
+### 测试 API
+
+```powershell
+# Servlet Demo (集成版本)
+curl -s http://localhost:8081/dbpwd-servlet-demo/api/users
+
+# Servlet Demo (原始版本)
+curl -s http://localhost:8082/dbpwd-servlet-demo-original/api/users
+
+# Servlet Demo (注解方式)
+curl -s http://localhost:8083/dbpwd-servlet-annotation-demo/api/products
+curl -s http://localhost:8083/dbpwd-servlet-annotation-demo/api/info
+```
+
+### 停止服务器
+
+```powershell
+# 停止指定模块的 Jetty
+mvn jetty:stop -pl db-pwd-servlet-demo
+mvn jetty:stop -pl db-pwd-servlet-demo-original
+mvn jetty:stop -pl db-pwd-servlet-demo-annotation
+
+# 或者查找进程并手动停止
+netstat -ano | findstr "8081"
+taskkill /F /PID <PID>
+```
+
+### 完整测试流程
+
+```powershell
+# 1. 初始化数据库（首次或重新初始化）
+java -Dfile.encoding=UTF-8 -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0-jar-with-dependencies.jar --all
+
+# 2. 启动 Servlet Demo
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+
+# 3. 等待启动
+ping -n 15 127.0.0.1 >nul
+
+# 4. 测试 API
+curl -s http://localhost:8081/dbpwd-servlet-demo/api/users
+
+# 5. 停止服务器
+mvn jetty:stop -pl db-pwd-servlet-demo
+```
+
+> **注意**: Windows 环境必须使用 `-Dfile.encoding=UTF-8` 参数，否则中文输出会出现乱码。
+
 ### 验证检查清单
 
 | Demo | 密码解密 | 数据库连接 | CRUD操作 | 特定验证 |

@@ -54,6 +54,22 @@ mvn compile -pl db-pwd-servlet-demo
 mvn tomcat7:run -pl db-pwd-servlet-demo
 ```
 
+### 2.1 使用Jetty Maven Plugin运行（推荐）
+
+```powershell
+# 后台启动Jetty（Windows PowerShell）
+powershell -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c', 'mvn jetty:run -pl db-pwd-servlet-demo' -WorkingDirectory 'C:\gitprjs\dbpwd' -NoNewWindow"
+
+# 等待服务器启动
+ping -n 15 127.0.0.1 >nul
+
+# 测试API
+curl -s http://localhost:8081/dbpwd-servlet-demo/api/users
+
+# 停止服务器
+mvn jetty:stop -pl db-pwd-servlet-demo
+```
+
 ### 3. 访问REST API
 
 打开浏览器访问：`http://localhost:8081/dbpwd-servlet-demo/api/users`

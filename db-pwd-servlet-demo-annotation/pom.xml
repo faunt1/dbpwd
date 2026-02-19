@@ -104,6 +104,22 @@
                     <path>/dbpwd-servlet-annotation-demo</path>
                 </configuration>
             </plugin>
+            <!-- Jetty Plugin for easy running -->
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>9.4.53.v20231009</version>
+                <configuration>
+                    <httpConnector>
+                        <port>8083</port>
+                    </httpConnector>
+                    <webApp>
+                        <contextPath>/dbpwd-servlet-annotation-demo</contextPath>
+                    </webApp>
+                    <stopPort>9968</stopPort>
+                    <stopKey>dbpwd</stopKey>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

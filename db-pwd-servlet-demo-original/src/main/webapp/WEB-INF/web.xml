@@ -12,19 +12,8 @@
         此版本用于对比展示集成密码加密功能前后的代码差异
     </description>
 
-    <!-- 字符编码过滤器 -->
-    <filter>
-        <filter-name>encodingFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
-        <init-param>
-            <param-name>encoding</param-name>
-            <param-value>UTF-8</param-value>
-        </init-param>
-    </filter>
-    <filter-mapping>
-        <filter-name>encodingFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+    <!-- 字符编码配置 (Jetty兼容) -->
+    <!-- Jetty默认使用UTF-8 -->
 
     <!-- 欢迎页面 -->
     <welcome-file-list>
