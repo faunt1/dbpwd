@@ -38,7 +38,7 @@
     <!-- 字符编码过滤器 -->
     <filter>
         <filter-name>encodingFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-character-encoding>
+        <filter-class>org.apache.catalina.filters.SetCharacterEncodingFilter</filter-class>
         <init-param>
             <param-name>encoding</param-name>
             <param-value>UTF-8</param-value>

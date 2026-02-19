@@ -52,7 +52,7 @@ public class AnnotationDemoInitializer implements ServletContextListener {
 
             // 创建 Druid DataSource
             dataSource = new DruidDataSource();
-            dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/servlet_demo_annotation_db;IFEXISTS=TRUE;MODE=MySQL");
+            dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_servlet_annotation_demo;IFEXISTS=TRUE;MODE=MySQL");
             dataSource.setUsername("sa");
             dataSource.setPassword(plainPassword);
             dataSource.setInitialSize(2);
