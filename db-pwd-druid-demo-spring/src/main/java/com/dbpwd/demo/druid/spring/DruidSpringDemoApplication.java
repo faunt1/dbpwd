@@ -60,7 +60,7 @@ public class DruidSpringDemoApplication {
 
                 // 创建测试表
                 stmt.execute("CREATE TABLE IF NOT EXISTS products (" +
-                        "id INT IDENTITY PRIMARY KEY, " +
+                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
                         "name VARCHAR(100) NOT NULL, " +
                         "price DECIMAL(10,2) NOT NULL, " +
                         "stock INT NOT NULL)");

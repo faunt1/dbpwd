@@ -61,7 +61,7 @@ public class SpringXmlDemoApplication {
 
                 // 创建测试表
                 stmt.execute("CREATE TABLE IF NOT EXISTS orders (" +
-                        "id INT IDENTITY PRIMARY KEY, " +
+                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
                         "product_name VARCHAR(100) NOT NULL, " +
                         "quantity INT NOT NULL, " +
                         "total_price DECIMAL(10,2) NOT NULL)");

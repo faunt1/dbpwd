@@ -62,7 +62,7 @@ public class AnnotationDemoInitializer implements ServletContextListener {
             try (Connection conn = dataSource.getConnection();
                  Statement stmt = conn.createStatement()) {
                 stmt.execute("CREATE TABLE IF NOT EXISTS products (" +
-                        "id INT IDENTITY PRIMARY KEY, " +
+                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
                         "name VARCHAR(100) NOT NULL, " +
                         "price DECIMAL(10,2) NOT NULL)");
                 logger.info("Database table created successfully");

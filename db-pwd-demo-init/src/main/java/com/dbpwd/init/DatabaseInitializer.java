@@ -112,6 +112,15 @@ public class DatabaseInitializer {
         }
     }
 
+    static {
+        try {
+            // 显式加载H2驱动
+            Class.forName("org.h2.Driver");
+        } catch (ClassNotFoundException e) {
+            logger.warning("H2 driver not found: " + e.getMessage());
+        }
+    }
+
     /**
      * 初始化单个数据库
      */
@@ -127,15 +136,16 @@ public class DatabaseInitializer {
         System.out.println();
         System.out.println("  Password retrieved from db.pwd: OK");
 
-        // 构建H2 FILE模式连接URL
-        String url = "jdbc:h2:file:" + dataDir + "/" + demoDb.dbName + ";MODE=MySQL";
+        // 构建H2 FILE模式连接URL（使用正确的路径分隔符）
+        String dataDirPath = dataDir.getAbsolutePath().replace("\\", "/");
+        String url = "jdbc:h2:file:" + dataDirPath + "/" + demoDb.dbName + ";MODE=MySQL";
 
         try (Connection conn = DriverManager.getConnection(url, "sa", plainPassword);
              Statement stmt = conn.createStatement()) {
 
-            // 创建数据表
+            // 创建数据表（MySQL模式使用AUTO_INCREMENT）
             for (String sql : TABLE_SQLS) {
-                stmt.execute(sql.replace("AUTO_INCREMENT", "IDENTITY"));
+                stmt.execute(sql);
             }
 
             System.out.println("  Table(s) created successfully: " + demoDb.dbName);
