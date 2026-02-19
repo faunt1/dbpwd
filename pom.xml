@@ -25,25 +25,8 @@
         <!-- Demo initialization tool -->
         <module>db-pwd-demo-init</module>
 
-        <!-- Original demo applications (before integration) -->
-        <module>db-pwd-simple-jdbc-demo-original</module>
-        <module>db-pwd-spring-boot-demo-original</module>
-        <module>db-pwd-druid-demo-original</module>
-        <module>db-pwd-spring-demo-original</module>
-        <module>db-pwd-servlet-demo-original</module>
-
-        <!-- Integrated demo applications (after integration) -->
-        <module>db-pwd-simple-jdbc-demo</module>
-        <module>db-pwd-spring-boot-demo</module>
-        <module>db-pwd-spring-boot-demo-api</module>
-        <module>db-pwd-spring-demo</module>
-        <module>db-pwd-spring-demo-xml</module>
-        <module>db-pwd-druid-demo</module>
-        <module>db-pwd-druid-demo-spring</module>
-        <module>db-pwd-mybatis-demo</module>
-        <module>db-pwd-servlet-demo</module>
-        <module>db-pwd-servlet-demo-annotation</module>
-        <module>db-pwd-struts-demo</module>
+        <!-- Demo applications -->
+        <module>demos</module>
     </modules>
 
     <properties>

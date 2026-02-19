@@ -347,36 +347,49 @@ public class DatabaseInitializer {
 
     /**
      * 初始化所有H2数据库
+     * 注意：每次初始化会删除现有数据库并重新创建，确保数据不重复
      */
     private void initH2Databases() throws Exception {
         System.out.println("=========================================");
         System.out.println("   Creating H2 Databases");
+        System.out.println("   (Existing databases will be deleted)");
         System.out.println("=========================================");
         System.out.println();
 
         int createdCount = 0;
-        int initializedCount = 0;
 
         for (DemoDatabase db : DEMO_DATABASES) {
-            File dbFile = new File(H2_DATA_DIR, db.dbName + ".mv.db");
-
-            if (dbFile.exists()) {
-                if (ensureTables(db)) {
-                    initializedCount++;
-                    System.out.println("  Initialized (tables created): " + db.placeholder);
-                } else {
-                    System.out.println("  Skipped (tables exist): " + db.placeholder);
-                }
-            } else {
-                initH2Database(db);
-                createdCount++;
-                System.out.println("  Created: " + db.placeholder);
-            }
+            // 删除已存在的数据库文件，确保干净初始化
+            deleteDatabaseFiles(db.dbName);
+            
+            initH2Database(db);
+            createdCount++;
+            System.out.println("  Created: " + db.placeholder);
         }
 
         System.out.println();
-        System.out.println("H2 Databases created: " + createdCount);
-        System.out.println("Tables initialized: " + initializedCount);
+        System.out.println("H2 Databases initialized: " + createdCount);
+    }
+
+    /**
+     * 删除H2数据库文件
+     */
+    private void deleteDatabaseFiles(String dbName) {
+        File h2DataDir = new File(H2_DATA_DIR);
+        
+        // H2 file database creates .mv.db and .trace.db files
+        File[] filesToDelete = {
+            new File(h2DataDir, dbName + ".mv.db"),
+            new File(h2DataDir, dbName + ".trace.db")
+        };
+        
+        for (File file : filesToDelete) {
+            if (file.exists()) {
+                if (!file.delete()) {
+                    logger.warning("Failed to delete: " + file.getAbsolutePath());
+                }
+            }
+        }
     }
 
     /**
