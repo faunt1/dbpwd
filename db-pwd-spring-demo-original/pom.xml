@@ -70,7 +70,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.dbpwd.demo.original.spring.SpringDemoOriginal</mainClass>
+                            <mainClass>com.dbpwd.demo.spring.SpringDemoApplication</mainClass>
                             <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>
@@ -86,7 +86,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.dbpwd.demo.original.spring.SpringDemoOriginal</mainClass>
+                            <mainClass>com.dbpwd.demo.spring.SpringDemoApplication</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

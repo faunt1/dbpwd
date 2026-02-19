@@ -80,18 +80,35 @@ public class PasswordFile {
 
     /**
      * 根据ID查找数据库条目
+     * 支持 placeholder 格式：@db_name@ 会被转换为 db_name
      */
     public DatabaseEntry getById(String id) {
         if (id == null) {
             return null;
         }
 
+        String lookupId = stripPlaceholder(id);
+
         for (DatabaseEntry entry : databases) {
-            if (id.equals(entry.getId())) {
+            if (lookupId.equals(entry.getId())) {
                 return entry;
             }
         }
         return null;
+    }
+
+    /**
+     * 去除 placeholder 格式的 @ 符号
+     * @db_name@ -> db_name
+     */
+    private String stripPlaceholder(String id) {
+        if (id == null) {
+            return null;
+        }
+        if (id.startsWith("@") && id.endsWith("@") && id.length() > 2) {
+            return id.substring(1, id.length() - 1);
+        }
+        return id;
     }
 
     /**

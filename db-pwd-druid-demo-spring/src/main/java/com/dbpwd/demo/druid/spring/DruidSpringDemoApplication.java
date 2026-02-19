@@ -1,5 +1,8 @@
 package com.dbpwd.demo.druid.spring;
 
+import com.alibaba.druid.pool.DruidDataSource;
+import com.dbpwd.core.PasswordService;
+import com.dbpwd.druid.DbPwdDruidPasswordCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -13,18 +16,18 @@ import java.sql.Statement;
  * Druid Spring XML配置方式Demo
  *
  * 集成模式: 方案1 - Druid PasswordCallback
- * 配置方式: Spring XML配置文件
+ * 配置方式: Spring XML配置文件 + Java代码配置
  *
  * 工作机制:
  * 1. Spring容器加载XML配置文件
  * 2. 创建DruidDataSource Bean
- * 3. 设置passwordCallbackClassName属性
+ * 3. 在Java代码中设置PasswordCallback
  * 4. Druid在获取连接时自动调用PasswordCallback解密密码
  *
  * 配置要点:
  * - password: 设置为占位符 @druid_demo_spring_db@
- * - passwordCallbackClassName: 设置为 DbPwdDruidPasswordCallback
- * - 无需修改Java代码，仅通过配置文件集成
+ * - 在Java代码中设置 DbPwdDruidPasswordCallback
+ * - PasswordCallback自动解密密码
  *
  * @author Database Password Manager
  * @version 1.0
@@ -39,20 +42,23 @@ public class DruidSpringDemoApplication {
         logger.info("========================================");
         logger.info("");
         logger.info("Integration Mode: Druid PasswordCallback");
-        logger.info("Configuration: Spring XML (druid-datasource.xml)");
+        logger.info("Configuration: Spring XML (druid-datasource.xml) + Java");
         logger.info("");
 
         try {
-            // 加载Spring配置
             logger.info("Loading Spring configuration...");
             ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
                     "druid-datasource.xml");
 
-            // 获取DataSource Bean
-            DataSource dataSource = context.getBean(DataSource.class);
-            logger.info("DataSource initialized successfully");
+            DruidDataSource dataSource = context.getBean(DruidDataSource.class);
+            
+            DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+            callback.setDataSource(dataSource);
+            dataSource.setPasswordCallback(callback);
+            
+            logger.info("DataSource initialized with PasswordCallback");
+            logger.info("Password placeholder: {}", dataSource.getPassword());
 
-            // 测试数据库连接
             logger.info("");
             logger.info("Testing database connection...");
             try (Connection conn = dataSource.getConnection();
@@ -69,10 +75,9 @@ public class DruidSpringDemoApplication {
                 logger.info("========================================");
                 logger.info("");
                 logger.info("Key points demonstrated:");
-                logger.info("- Druid PasswordCallback configured via Spring XML");
-                logger.info("- passwordCallbackClassName property set in XML");
+                logger.info("- Druid PasswordCallback configured in Java code");
                 logger.info("- Password automatically decrypted from db.pwd");
-                logger.info("- No Java code modification required");
+                logger.info("- Works with Spring XML configuration");
             }
 
             context.close();
