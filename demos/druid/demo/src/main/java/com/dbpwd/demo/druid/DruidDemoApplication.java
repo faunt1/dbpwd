@@ -1,7 +1,7 @@
 package com.dbpwd.demo.druid;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.core.PasswordService;
+import com.dbpwd.druid.DbPwdDruidPasswordCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,10 +14,15 @@ import java.util.List;
  *
  * 使用 Druid PasswordCallback 机制自动解密密码
  *
+ * 集成要点:
+ * 1. 设置 password 为占位符格式 @druid_demo_db@
+ * 2. 创建 DbPwdDruidPasswordCallback 并设置到 DataSource
+ * 3. Druid 在获取连接时自动调用 callback 解密密码
+ *
  * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
  *
  * @author Database Password Manager
- * @version 2.0
+ * @version 3.0
  */
 public class DruidDemoApplication {
 
@@ -50,9 +55,9 @@ public class DruidDemoApplication {
                 logger.info("========================================");
                 logger.info("");
                 logger.info("Key points demonstrated:");
-                logger.info("- Druid PasswordCallback extends DruidDataSource.PasswordCallback");
-                logger.info("- Using placeholder 'druid_demo_db' as password");
-                logger.info("- Password automatically decrypted from db.pwd");
+                logger.info("- DbPwdDruidPasswordCallback extends DruidPasswordCallback");
+                logger.info("- Password set as placeholder: @druid_demo_db@");
+                logger.info("- Druid automatically calls callback to decrypt password");
             }
 
             dataSource.close();
@@ -64,25 +69,40 @@ public class DruidDemoApplication {
         }
     }
 
+    /**
+     * 创建 DataSource 并配置 PasswordCallback
+     *
+     * 核心集成点:
+     * 1. password 设置为占位符 @druid_demo_db@
+     * 2. 创建 DbPwdDruidPasswordCallback
+     * 3. callback.setDataSource(dataSource) - 关键步骤
+     * 4. dataSource.setPasswordCallback(callback)
+     */
     private static DruidDataSource createDataSource() throws Exception {
         DruidDataSource dataSource = new DruidDataSource();
 
         dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_druid_demo;IFEXISTS=TRUE;MODE=MySQL");
         dataSource.setUsername("sa");
 
-        String password = PasswordService.getDatabasePassword("@druid_demo_db@");
-        dataSource.setPassword(password);
+        // 设置占位符格式的密码，不是明文密码
+        dataSource.setPassword("@druid_demo_db@");
         dataSource.setDriverClassName("org.h2.Driver");
+
+        // 配置 PasswordCallback - 这是集成的关键
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+        callback.setDataSource(dataSource);  // 重要：让 callback 能获取原始密码
+        dataSource.setPasswordCallback(callback);
 
         dataSource.setInitialSize(2);
         dataSource.setMaxActive(10);
         dataSource.setMinIdle(2);
         dataSource.setMaxWait(60000);
 
-        logger.info("Druid DataSource configured:");
+        logger.info("Druid DataSource configured with PasswordCallback:");
         logger.info("  URL: {}", dataSource.getUrl());
         logger.info("  Username: {}", dataSource.getUsername());
-        logger.info("  Password: @druid_demo_db@ [decrypted from db.pwd]");
+        logger.info("  Password: @druid_demo_db@ (placeholder)");
+        logger.info("  PasswordCallback: DbPwdDruidPasswordCallback");
 
         return dataSource;
     }
