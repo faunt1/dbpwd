@@ -77,17 +77,15 @@ grep -r "DruidDataSource" src/ --include="*.java"
 
 ### 依赖
 ```xml
-<dependency>
-    <groupId>com.dbpwd</groupId>
-    <artifactId>db-pwd-core</artifactId>
-    <version>1.0.0</version>
-</dependency>
+<!-- 仅需此一个依赖，会自动传递 db-pwd-core -->
 <dependency>
     <groupId>com.dbpwd</groupId>
     <artifactId>db-pwd-spring-boot-starter</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
+
+> **注意**: `db-pwd-spring-boot-starter` 已包含 `db-pwd-core` 传递依赖，无需单独添加。
 
 ### 配置方式
 ```yaml
@@ -178,32 +176,54 @@ grep "spring-context" pom.xml
 
 ---
 
-## 方案4: MyBatis DataSourceFactory
+## 方案4: MyBatis集成
 
 ### 适用场景
 - 纯 MyBatis 应用（无 Spring）
 - 支持 MyBatis 3.x
 
 ### 核心机制
-扩展 MyBatis 的 `UnpooledDataSourceFactory`，在创建 DataSource 时自动注入解密逻辑。
+在构建 SqlSessionFactory 时，使用 PasswordService API 获取密码。
 
 ### 依赖
 ```xml
+<!-- 仅需核心依赖 -->
 <dependency>
     <groupId>com.dbpwd</groupId>
     <artifactId>db-pwd-core</artifactId>
     <version>1.0.0</version>
 </dependency>
-<dependency>
-    <groupId>com.dbpwd</groupId>
-    <artifactId>db-pwd-mybatis</artifactId>
-    <version>1.0.0</version>
-</dependency>
 ```
 
 ### 配置方式
+
+**方式 A: 使用 PasswordService API（推荐）**
+```java
+import com.dbpwd.core.PasswordService;
+
+public class MybatisDemoApplication {
+    
+    private static final String DB_PLACEHOLDER = "@my_db@";
+    
+    public static void main(String[] args) throws Exception {
+        // 使用 PasswordService 获取密码
+        String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
+        
+        DataSource dataSource = new UnpooledDataSource();
+        ((UnpooledDataSource) dataSource).setUrl("jdbc:mysql://localhost:3306/mydb");
+        ((UnpooledDataSource) dataSource).setUsername("root");
+        ((UnpooledDataSource) dataSource).setPassword(plainPassword);
+        
+        SqlSessionFactory sqlSessionFactory = buildSqlSessionFactory(dataSource);
+        // ...
+    }
+}
+```
+
+**方式 B: 使用 DbPwdDataSourceFactory（XML配置）**
 ```xml
 <!-- mybatis-config.xml -->
+<!-- 需要额外依赖: db-pwd-mybatis -->
 <configuration>
     <environments default="development">
         <environment id="development">

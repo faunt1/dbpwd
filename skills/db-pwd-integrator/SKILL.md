@@ -141,25 +141,78 @@ cp pom.xml .dbpwd-backup/$(date +%Y%m%d_%H%M%S)/
 
 #### 4.2 添加 Maven 依赖
 
-**通用依赖（所有项目）**：
+**按方案添加依赖**：
+
+| 方案 | 需要的依赖 | 说明 |
+|------|-----------|------|
+| 方案1: Druid | db-pwd-core + db-pwd-druid | 两个依赖都需要 |
+| 方案2: Spring Boot Starter | db-pwd-spring-boot-starter | **仅需此一个**，会自动传递 db-pwd-core |
+| 方案2变体: Spring Boot API | db-pwd-core | 手动配置时仅需 core |
+| 方案3: Spring | db-pwd-core + db-pwd-spring | 两个依赖都需要 |
+| 方案4: MyBatis | db-pwd-core | 纯 MyBatis 直接调用 API |
+| 方案4变体: MyBatis XML | db-pwd-core + db-pwd-mybatis | 使用 DbPwdDataSourceFactory |
+| 方案5: 纯 JDBC | db-pwd-core | 直接调用 PasswordService |
+| 方案6: Servlet | db-pwd-core + db-pwd-web | 两个依赖都需要 |
+
+**依赖示例**：
 ```xml
+<!-- 方案1: Druid -->
 <dependency>
     <groupId>com.dbpwd</groupId>
     <artifactId>db-pwd-core</artifactId>
-    <version>${dbpwd.version}</version>
+    <version>1.0.0</version>
+</dependency>
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-druid</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 方案2: Spring Boot Starter（推荐，仅需一个）-->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-spring-boot-starter</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 方案3: Spring -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-spring</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 方案4: MyBatis -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 方案5: 纯 JDBC -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 方案6: Servlet -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-web</artifactId>
+    <version>1.0.0</version>
 </dependency>
 ```
-
-**按方案添加额外依赖**：
-
-| 方案 | 额外依赖 |
-|------|---------|
-| 方案1: Druid | db-pwd-druid |
-| 方案2: Spring Boot | db-pwd-spring-boot-starter |
-| 方案3: Spring | db-pwd-spring |
-| 方案4: MyBatis | db-pwd-mybatis |
-| 方案5: 纯 JDBC | 无 |
-| 方案6: Servlet | db-pwd-web |
 
 #### 4.3 代码修改规则
 
