@@ -1003,9 +1003,9 @@ mvn test
 如果以上方案无法解决问题，请：
 
 1. 查看项目文档：
-   - `AGENTS.md`
-   - `docs/FAQ.md`
-   - `docs/api-reference.md`
+   - [AGENTS.md](../../AGENTS.md)
+   - [FAQ.md](../../docs/FAQ.md)
+   - [api-reference.md](../../docs/api-reference.md)
 
 2. 运行诊断并收集信息：
    ```bash

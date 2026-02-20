@@ -256,7 +256,6 @@ dbpwd-cli test db001
 
 ## 相关文档
 
-- [集成模式设计](integration-patterns.md) - 6种集成模式详细设计
+- [应用集成指南](integration-guide.md) - 6种集成模式详细设计
 - [Demo应用设计](demo-applications.md) - Demo应用设计和验证
-- [开发计划](development-plan.md) - Sprint划分和任务列表
 - [API参考文档](api-reference.md) - 核心API使用指南

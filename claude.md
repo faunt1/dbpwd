@@ -1,7 +1,7 @@
 # Database Password Manager - 设计文档
 
-> 文档版本: v5.0
-> 最后更新: 2026-02-15
+> 文档版本: v6.0
+> 最后更新: 2026-02-20
 
 ## 目录
 
@@ -180,7 +180,7 @@ db-pwd/
 │       └── original/               # 【原始版本】
 │
 ├── docs/                           # 文档目录
-├── claudedocs/                     # Sprint 进度文档
+├── skills/                         # 自动化集成 Skill
 ├── config/                         # 配置模板
 ├── scripts/                        # 脚本目录
 ├── .mvn/                           # Maven Wrapper
@@ -205,7 +205,7 @@ db-pwd/
 | 方案6变: Servlet (注解) | `demos/servlet-annotation/original` | `demos/servlet-annotation/demo` |
 | Struts 1.x | `demos/struts/original` | `demos/struts/demo` |
 
-详细的代码差异对比请参考：[集成代码细节说明](docs/integration-code-details.md)
+详细的代码差异对比请参考：[应用集成参考文档](docs/integration-guide.md)
 
 ### 核心模块详解
 
@@ -368,16 +368,20 @@ spring:
 
 ## 相关文档
 
-### 核心文档
-- [集成模式设计](docs/integration-patterns.md) - 6种集成模式详细设计
-- [集成代码细节说明](docs/integration-code-details.md) - **原始版本 vs 集成版本代码对比**
-- [Demo应用设计](docs/demo-applications.md) - Demo应用的设计和验证
-- [API参考文档](docs/api-reference.md) - 核心API使用指南
+### 设计文档
+- [AGENTS.md](AGENTS.md) - 项目上下文（AI Agent 参考）
+- [架构设计](docs/architecture.md) - 系统架构和核心设计
+- [应用集成指南](docs/integration-guide.md) - **完整集成参考**：代码修改详解
+- [Demo应用设计](docs/demo-applications.md) - Demo 应用设计和验证
 
 ### 用户文档
 - [用户使用手册](docs/user-guide.md) - 完整操作指南
 - [系统部署文档](docs/deployment-guide.md) - 部署运维指南
+- [API参考文档](docs/api-reference.md) - 核心 API 使用指南
 - [常见问题FAQ](docs/FAQ.md) - 常见问题解答
+
+### 自动化工具
+- [db-pwd-integrator Skill](skills/db-pwd-integrator/SKILL.md) - 自动扫描并集成密码加密功能
 
 ---
 

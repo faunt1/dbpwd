@@ -842,5 +842,5 @@ mvn jetty:stop -pl demos/servlet/demo
 
 ## 相关文档
 
-- [集成模式设计文档](integration-patterns.md) - 6种集成模式的详细设计
+- [应用集成指南](integration-guide.md) - 6种集成模式的详细设计
 - [API参考文档](api-reference.md) - 核心API使用指南

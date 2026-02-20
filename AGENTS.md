@@ -2,7 +2,7 @@
 
 > 本文档为 AI Agent 提供项目上下文，帮助理解和操作本代码库。
 >
-> 最后更新: 2026-02-15
+> 最后更新: 2026-02-20
 
 ## 项目概述
 
@@ -114,7 +114,7 @@ db-pwd/
 │       └── original/               # 【原始版本】
 │
 ├── docs/                           # 文档目录
-├── claudedocs/                     # Sprint 进度文档
+├── skills/                         # 自动化集成 Skill
 ├── config/                         # 配置模板
 ├── scripts/                        # 脚本目录
 ├── .mvn/                           # Maven Wrapper
@@ -139,7 +139,7 @@ db-pwd/
 | 方案6变: Servlet (注解) | `demos/servlet-annotation/original` | `demos/servlet-annotation/demo` |
 | Struts 1.x | `demos/struts/original` | `demos/struts/demo` |
 
-详细的代码差异对比请参考：[集成代码细节说明](docs/integration-code-details.md)
+详细的代码差异对比请参考：[应用集成参考文档](docs/integration-guide.md)
 
 ---
 
@@ -345,14 +345,14 @@ spring:
 
 | 文档 | 说明 |
 |------|------|
-| `docs/architecture.md` | 架构设计文档 |
-| `docs/api-reference.md` | API 参考文档 |
-| `docs/integration-patterns.md` | 集成模式设计 |
-| `docs/integration-code-details.md` | **集成代码细节说明（原始版本 vs 集成版本）** |
-| `docs/user-guide.md` | 用户使用手册 |
-| `docs/deployment-guide.md` | 部署指南 |
-| `docs/FAQ.md` | 常见问题 |
-| `claude.md` | 项目设计文档（中文） |
+| [architecture.md](docs/architecture.md) | 架构设计文档 |
+| [api-reference.md](docs/api-reference.md) | API 参考文档 |
+| [integration-guide.md](docs/integration-guide.md) | **应用集成参考文档** |
+| [demo-applications.md](docs/demo-applications.md) | Demo 应用设计 |
+| [user-guide.md](docs/user-guide.md) | 用户使用手册 |
+| [deployment-guide.md](docs/deployment-guide.md) | 部署指南 |
+| [FAQ.md](docs/FAQ.md) | 常见问题 |
+| [SKILL.md](skills/db-pwd-integrator/SKILL.md) | 自动化集成 Skill |
 
 ---
 

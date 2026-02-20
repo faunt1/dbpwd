@@ -108,7 +108,7 @@ ELSE:
 - DBCP2 / C3P0 / Tomcat JDBC → 方案5（手动调用 PasswordService）
 - JNDI DataSource → 在应用服务器配置或使用 DataSourceDecorator
 
-**特殊场景**（详见 `references/troubleshooting.md`）：
+**特殊场景**（详见 [troubleshooting.md](references/troubleshooting.md)）：
 - Gradle 项目、多环境配置、配置中心、Docker/K8s、密码轮换、CI/CD
 
 ### Phase 3: 用户确认
@@ -317,18 +317,157 @@ lsp_diagnostics
 | 已集成 db-pwd | 询问是升级还是跳过 |
 | 编译错误 | 回滚修改，显示错误详情 |
 
+---
+
+## 用户交互模板
+
+### 场景 A：识别成功
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📊 项目分析结果
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**检测到项目类型**: Spring Boot 2.7.18
+**推荐集成方案**: 方案2 - Spring Boot Starter
+**集成模块**: db-pwd-spring-boot-starter
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📝 修改计划
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+需要修改的文件：
+┌───────────────────────────────────────────────────────────────┐
+│ 文件                                    │ 修改内容            │
+├───────────────────────────────────────────────────────────────┤
+│ pom.xml                                │ 添加依赖            │
+│ src/main/resources/application.yml     │ 密码改为占位符格式  │
+│ .gitignore                             │ 添加敏感文件配置    │
+└───────────────────────────────────────────────────────────────┘
+
+是否继续执行集成？[Y/n]
+```
+
+### 场景 B：无法识别
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ❓ 无法自动识别项目类型
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+请选择您的项目类型：
+
+┌────┬─────────────────────────┬────────────────────────────┐
+│ #  │ 项目类型                 │ 说明                       │
+├────┼─────────────────────────┼────────────────────────────┤
+│ 1  │ Spring Boot 应用        │ 使用 Spring Boot 框架      │
+│ 2  │ Spring + Druid 应用     │ 传统 Spring + Druid 连接池 │
+│ 3  │ 传统 Spring 应用        │ 使用 Spring Framework     │
+│ 4  │ MyBatis 应用            │ 纯 MyBatis，无 Spring     │
+│ 5  │ Servlet/Web 应用        │ 传统 Java Web 应用        │
+│ 6  │ 纯 JDBC 应用            │ 无框架，直接使用 JDBC     │
+└────┴─────────────────────────┴────────────────────────────┘
+
+请输入选项编号 (1-6)：
+```
+
+### 场景 C：已集成 db-pwd
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ℹ️ 项目已集成 db-pwd
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+当前集成状态：
+- db-pwd-core: 1.0.0 ✅
+- db-pwd-spring-boot-starter: 1.0.0 ✅
+- 占位符配置: 已配置 ✅
+
+可用的操作：
+┌────┬─────────────────────────────────────────────────────────┐
+│ #  │ 操作                                                   │
+├────┼─────────────────────────────────────────────────────────┤
+│ 1  │ 升级到最新版本                                         │
+│ 2  │ 检查集成状态（诊断）                                   │
+│ 3  │ 添加新的数据库配置                                     │
+│ 4  │ 取消                                                   │
+└────┴─────────────────────────────────────────────────────────┘
+
+请选择操作 [1-4]：
+```
+
+---
+
+## 边界情况处理
+
+### 环境变量密码
+
+```java
+// BEFORE
+@Value("${DB_PASSWORD}")
+private String password;
+
+// AFTER - 方案 A：保留环境变量，值改为占位符
+// 环境变量: DB_PASSWORD=@my_db@
+@Value("${DB_PASSWORD}")
+private String placeholder;
+
+String password = PasswordService.getDatabasePassword(placeholder);
+```
+
+### 多数据源
+
+```
+检测到多数据源时：
+
+┌────┬──────────────────┬───────────────────────────┐
+│ #  │ Bean 名称         │ 占位符名称                │
+├────┼──────────────────┼───────────────────────────┤
+│ 1  │ primaryDataSource │ @primary_db@             │
+│ 2  │ secondaryDS       │ [请输入或跳过]            │
+└────┴──────────────────┴───────────────────────────┘
+
+逐个确认每个数据源的占位符名称。
+```
+
+### Jasypt 冲突
+
+```
+⚠️ 检测到 Jasypt 加密已集成
+
+选项：
+1. 完全迁移到 db-pwd（推荐）- 更强的安全性，国密合规
+2. 并行使用（不推荐）- 两套密钥管理，增加复杂度
+3. 保持现状 - 不进行集成
+```
+
+---
+
+## 安全检查清单
+
+### 集成前检查
+- [ ] 代码库中无明文密码（除测试代码）
+- [ ] .gitignore 已配置
+
+### 集成后检查
+- [ ] 密钥文件权限为 600（Linux/Mac）
+- [ ] 配置目录权限为 700（Linux/Mac）
+- [ ] 密钥文件不在版本控制中
+- [ ] 密码文件不在版本控制中
+
+---
+
 ## 详细参考
 
-- `references/integration-patterns.md` - 6 种集成模式详细说明
-- `references/code-examples.md` - 代码修改前后对比示例
-- `references/troubleshooting.md` - 常见问题处理
+- [integration-patterns.md](references/integration-patterns.md) - 6 种集成模式详细说明
+- [code-examples.md](references/code-examples.md) - 代码修改前后对比示例
+- [troubleshooting.md](references/troubleshooting.md) - 常见问题处理
 
 ## 项目文档
 
-- `AGENTS.md` - 项目上下文
-- `docs/integration-patterns.md` - 6 种集成模式
-- `docs/integration-code-details.md` - 代码修改细节
-- `docs/api-reference.md` - PasswordService API
+- [AGENTS.md](../../AGENTS.md) - 项目上下文
+- [integration-guide.md](../../docs/integration-guide.md) - 应用集成指南
+- [api-reference.md](../../docs/api-reference.md) - PasswordService API
 
 ## 示例
 
