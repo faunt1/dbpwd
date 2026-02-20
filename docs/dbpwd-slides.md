@@ -163,8 +163,8 @@ pre {
   padding: 16px;
   overflow-x: auto;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 pre code {
@@ -180,7 +180,7 @@ pre code {
 
 ## 基于 SM4 国密算法的数据库密码管理系统
 
-**设计思路与培训交流**
+**设计思路与实践分享**
 
 ---
 
@@ -326,38 +326,33 @@ spring:
 
 ## 4.1 整体架构
 
-```mermaid
-flowchart TB
-    subgraph APP["应用层 Application"]
-        direction LR
-        S1[SpringBoot] --- S2[MyBatis] --- S3[纯JDBC] --- S4[Servlet]
-    end
-
-    subgraph INT["集成层 Integration Layer"]
-        direction LR
-        I1["方案1\nDruid"] --- I2["方案2\nBoot"] --- I3["方案3\nSpring"] --- I4["方案4\nMyBatis"]
-        I4 --- I5["方案5\nJDBC"] --- I6["方案6\nServlet"]
-    end
-
-    subgraph CORE["核心服务层 PasswordService"]
-        direction LR
-        C1[SM4加解密] --- C2[占位符解析] --- C3[文件管理]
-        C2 -.-> C4["固定路径: ~/.dbpwd/\n(应用无感知)"]
-    end
-
-    subgraph STORE["存储层 Storage"]
-        direction LR
-        D1["~/.dbpwd/db.pwd\n密码文件\n权限:600"] --- D2["~/.dbpwd/sm4.key\n密钥文件\n权限:600"]
-    end
-
-    APP --> INT
-    INT --> CORE
-    CORE --> STORE
-
-    style APP fill:#e1f5fe,stroke:#01579b
-    style INT fill:#e8f5e9,stroke:#2e7d32
-    style CORE fill:#fff3e0,stroke:#e65100
-    style STORE fill:#fce4ec,stroke:#c2185b
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        应用层 (Application)                       │
+├─────────────────────────────────────────────────────────────────┤
+│  SpringBoot   │   MyBatis   │   纯JDBC   │   Servlet        │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      集成层 (Integration Layer)                   │
+├─────────────────────────────────────────────────────────────────┤
+│  方案1:Druid  │  方案2:Boot  │  方案3:Spring  │  方案4:MyBatis │
+│  方案5:JDBC   │  方案6:Servlet                                   │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                  核心服务层 (PasswordService)                    │
+├─────────────────────────────────────────────────────────────────┤
+│  SM4加解密  │  占位符解析  │  文件管理                          │
+│           (固定路径: ~/.dbpwd/ 应用无感知)                       │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                        存储层 (Storage)                         │
+├─────────────────────────────────────────────────────────────────┤
+│  ~/.dbpwd/db.pwd    │    ~/.dbpwd/sm4.key                     │
+│  (密码文件 权限600) │    (密钥文件 权限600)                    │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
