@@ -253,3 +253,24 @@ Using plaintext password 'sa'
 07:42:51.678 [com.dbpwd.demo.druid.DruidDemoApplication.main()] INFO com.dbpwd.demo.druid.DruidDemoApplication -    Found 3 order(s)
 07:42:51.678 [com.dbpwd.demo.druid.DruidDemoApplication.main()] INFO com.dbpwd.demo.druid.DruidDemoApplication -    Demo completed successfully!
 
+
+==========================================
+TEST: demos/druid-spring/original
+========================================
+Result: SUCCESS - Products count: 3
+Password handling: Plain text password 'sa'
+=======================================================================
+
+
+==========================================
+TEST: demos/spring/demo
+==========================================
+查询成功: Found 3 user(s)
+用户列表: alice, bob, charlie
+集成方式: DataSourcePasswordProcessor自动解密
+=======================================================================
+
+08:04:09.155 [com.dbpwd.demo.spring.SpringDemoApplication.main()] INFO  c.d.d.spring.SpringDemoApplication - 1. Querying all users...
+08:04:09.436 [com.dbpwd.demo.spring.SpringDemoApplication.main()] INFO  c.d.d.spring.SpringDemoApplication -    Found 3 user(s):
+08:04:09.436 [com.dbpwd.demo.spring.SpringDemoApplication.main()] INFO  c.d.d.spring.SpringDemoApplication - 2. Querying user by ID: 1...
+
