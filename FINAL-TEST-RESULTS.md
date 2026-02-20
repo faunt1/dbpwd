@@ -705,3 +705,53 @@ mvn jetty:stop -pl demos/struts/demo
 **测试完成时间**: 2026-02-20 08:36
 **测试方法**: JAR运行、Maven exec:java、curl API测试、日志分析
 **数据来源**: 实际运行日志 + curl JSON响应
+
+## Druid Demo 修正记录 (2026-02-20 08:49)
+
+### 问题发现
+druid/demo 之前使用 `PasswordService.getDatabasePassword()` 直接获取密码，
+这不符合 Druid PasswordCallback 集成模式的设计。
+
+### 修正方案
+改为使用 `DbPwdDruidPasswordCallback` 机制:
+
+```java
+// 设置占位符格式的密码
+dataSource.setPassword("@druid_demo_db@");
+
+// 配置 PasswordCallback
+DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+callback.setDataSource(dataSource);  // 关键步骤
+dataSource.setPasswordCallback(callback);
+```
+
+### 工作原理
+1. DataSource 的 password 设置为占位符 `@druid_demo_db@`
+2. Druid 在获取连接时调用 `callback.getPassword()`
+3. Callback 从 DataSource 获取原始密码（占位符）
+4. Callback 调用 `PasswordService.getDatabasePassword()` 解密
+5. 返回明文密码给 Druid
+
+### 重新测试结果
+```
+Druid DataSource configured with PasswordCallback:
+  URL: jdbc:h2:file:.../dbpwd_druid_demo;IFEXISTS=TRUE;MODE=MySQL
+  Username: sa
+  Password: @druid_demo_db@ (placeholder)
+  PasswordCallback: DbPwdDruidPasswordCallback
+
+Query Results:
+  - Found 3 user(s): alice, bob, charlie
+  - Found 3 product(s): Laptop, Smartphone, Java Programming
+  - Found 3 order(s)
+
+Status: ✅ 测试通过
+```
+
+### 提交记录
+- Commit: 3c374e2
+- Date: 2026-02-20 08:49
+
+---
+
+**所有Demo现在都使用正确的集成模式实现**
