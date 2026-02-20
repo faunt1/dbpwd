@@ -89,12 +89,8 @@ my-project/
 **正确做法**：添加到具体子模块
 ```xml
 <!-- ✅ 正确：在 service-user/pom.xml 添加 -->
+<!-- Spring Boot 项目仅需 starter，会自动传递 db-pwd-core -->
 <dependencies>
-    <dependency>
-        <groupId>com.dbpwd</groupId>
-        <artifactId>db-pwd-core</artifactId>
-        <version>1.0.0</version>
-    </dependency>
     <dependency>
         <groupId>com.dbpwd</groupId>
         <artifactId>db-pwd-spring-boot-starter</artifactId>
@@ -111,9 +107,9 @@ my-project/
 ┌─────────────────┬─────────────────┬───────────────────────────┐
 │ 模块             │ 集成方案        │ 添加依赖                   │
 ├─────────────────┼─────────────────┼───────────────────────────┤
-│ service-user    │ 方案2: Starter  │ db-pwd-core, starter      │
-│ service-order   │ 方案2: Starter  │ db-pwd-core, starter      │
-│ web-admin       │ 方案4: MyBatis  │ db-pwd-core, mybatis      │
+│ service-user    │ 方案2: Starter  │ db-pwd-spring-boot-starter│
+│ service-order   │ 方案2: Starter  │ db-pwd-spring-boot-starter│
+│ web-admin       │ 方案4: MyBatis  │ db-pwd-core               │
 └─────────────────┴─────────────────┴───────────────────────────┘
 
 注意：所有模块共享同一个密钥文件 ~/.dbpwd/
@@ -353,8 +349,8 @@ glob("**/build.gradle.kts")
 
 ```groovy
 // build.gradle
+// Spring Boot 项目仅需 starter，会自动传递 db-pwd-core
 dependencies {
-    implementation 'com.dbpwd:db-pwd-core:1.0.0'
     implementation 'com.dbpwd:db-pwd-spring-boot-starter:1.0.0'
 }
 ```
@@ -362,7 +358,6 @@ dependencies {
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("com.dbpwd:db-pwd-core:1.0.0")
     implementation("com.dbpwd:db-pwd-spring-boot-starter:1.0.0")
 }
 ```

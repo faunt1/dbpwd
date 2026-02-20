@@ -44,17 +44,15 @@ spring.datasource.password=@my_db@
 
 ```xml
 <!-- ========== 添加到 <dependencies> 中 ========== -->
-<dependency>
-    <groupId>com.dbpwd</groupId>
-    <artifactId>db-pwd-core</artifactId>
-    <version>1.0.0</version>
-</dependency>
+<!-- 仅需此一个依赖，会自动传递 db-pwd-core -->
 <dependency>
     <groupId>com.dbpwd</groupId>
     <artifactId>db-pwd-spring-boot-starter</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```
+
+> **注意**: `db-pwd-spring-boot-starter` 已包含 `db-pwd-core` 传递依赖，无需单独添加。
 
 ---
 
@@ -183,9 +181,76 @@ public class DatabaseConfig {
 
 ---
 
-## 方案4: MyBatis DataSourceFactory
+## 方案4: MyBatis集成
 
-### mybatis-config.xml 修改
+### pom.xml 修改
+
+```xml
+<!-- ========== 添加到 <dependencies> 中 ========== -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+### Java代码修改（推荐方式）
+
+```java
+// ========== BEFORE ==========
+package com.example;
+
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
+import javax.sql.DataSource;
+
+public class MybatisDemoApplication {
+    
+    private static final String H2_PASSWORD = "sa";  // 明文密码
+    
+    public static void main(String[] args) throws Exception {
+        DataSource dataSource = new UnpooledDataSource();
+        ((UnpooledDataSource) dataSource).setUrl("jdbc:mysql://localhost:3306/mydb");
+        ((UnpooledDataSource) dataSource).setUsername("root");
+        ((UnpooledDataSource) dataSource).setPassword(H2_PASSWORD);
+        
+        SqlSessionFactory sqlSessionFactory = buildSqlSessionFactory(dataSource);
+        // ...
+    }
+}
+
+// ========== AFTER ==========
+package com.example;
+
+import com.dbpwd.core.PasswordService;  // 新增导入
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.apache.ibatis.datasource.unpooled.UnpooledDataSource;
+import javax.sql.DataSource;
+
+public class MybatisDemoApplication {
+    
+    private static final String DB_PLACEHOLDER = "@my_db@";  // 改为占位符
+    
+    public static void main(String[] args) throws Exception {
+        // 使用 PasswordService 获取密码
+        String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
+        
+        DataSource dataSource = new UnpooledDataSource();
+        ((UnpooledDataSource) dataSource).setUrl("jdbc:mysql://localhost:3306/mydb");
+        ((UnpooledDataSource) dataSource).setUsername("root");
+        ((UnpooledDataSource) dataSource).setPassword(plainPassword);
+        
+        SqlSessionFactory sqlSessionFactory = buildSqlSessionFactory(dataSource);
+        // ...
+    }
+}
+```
+
+### mybatis-config.xml 修改（可选方式）
+
+> 使用 DbPwdDataSourceFactory 需要额外添加 `db-pwd-mybatis` 依赖
 
 ```xml
 <!-- ========== BEFORE ========== -->
