@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+    
+    <id>docs</id>
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+    
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>db-pwd-${project.version}-docs</baseDirectory>
+    
+    <fileSets>
+        <!-- 根目录文档 -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>README.md</include>
+                <include>AGENTS.md</include>
+                <include>claude.md</include>
+                <include>LICENSE</include>
+            </includes>
+        </fileSet>
+        
+        <!-- docs 目录 -->
+        <fileSet>
+            <directory>${project.basedir}/docs</directory>
+            <outputDirectory>/docs</outputDirectory>
+            <includes>
+                <include>**/*.md</include>
+            </includes>
+        </fileSet>
+        
+        <!-- skills 目录 -->
+        <fileSet>
+            <directory>${project.basedir}/skills</directory>
+            <outputDirectory>/skills</outputDirectory>
+            <includes>
+                <include>**/*.md</include>
+            </includes>
+        </fileSet>
+        
+        <!-- 核心模块 README -->
+        <fileSet>
+            <directory>${project.basedir}/db-pwd-core</directory>
+            <outputDirectory>/modules/db-pwd-core</outputDirectory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+        </fileSet>
+        
+        <!-- Druid 模块 README -->
+        <fileSet>
+            <directory>${project.basedir}/db-pwd-druid</directory>
+            <outputDirectory>/modules/db-pwd-druid</outputDirectory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+        </fileSet>
+        
+        <!-- Spring 模块 README -->
+        <fileSet>
+            <directory>${project.basedir}/db-pwd-spring</directory>
+            <outputDirectory>/modules/db-pwd-spring</outputDirectory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+        </fileSet>
+        
+        <!-- Spring Boot Starter 模块 README -->
+        <fileSet>
+            <directory>${project.basedir}/db-pwd-spring-boot-starter</directory>
+            <outputDirectory>/modules/db-pwd-spring-boot-starter</outputDirectory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+        </fileSet>
+        
+        <!-- Web 模块 README -->
+        <fileSet>
+            <directory>${project.basedir}/db-pwd-web</directory>
+            <outputDirectory>/modules/db-pwd-web</outputDirectory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+        </fileSet>
+        
+        <!-- Demo 应用 README -->
+        <fileSet>
+            <directory>${project.basedir}/demos</directory>
+            <outputDirectory>/demos</outputDirectory>
+            <includes>
+                <include>**/*.md</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+    
+</assembly>
