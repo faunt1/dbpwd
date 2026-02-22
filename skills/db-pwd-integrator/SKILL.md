@@ -90,7 +90,9 @@ grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
 IF @SpringBootApplication OR spring-boot-starter-parent:
     → 方案2: db-pwd-spring-boot-starter
 ELSE IF DruidDataSource:
-    → 方案1: db-pwd-druid (+ db-pwd-spring 如有 @Configuration)
+    → 方案1: db-pwd-druid (使用 DbPwdDruidPasswordCallback 自动解密)
+    → 注意: 不要使用 PasswordService.getDatabasePassword()
+    → 如有 @Configuration: 可选加 db-pwd-spring 实现自动解密
 ELSE IF @Configuration + DataSource Bean:
     → 方案3: db-pwd-spring
 ELSE IF mybatis-config.xml OR *Mapper.xml:
@@ -98,9 +100,19 @@ ELSE IF mybatis-config.xml OR *Mapper.xml:
 ELSE IF web.xml OR @WebServlet/@WebListener:
     → 方案6: db-pwd-web
 ELSE IF DriverManager.getConnection:
-    → 方案5: db-pwd-core (手动调用)
+    → 方案5: db-pwd-core (手动调用 PasswordService)
 ELSE:
     → 询问用户选择项目类型
+```
+
+**重要：方案1 vs 方案5 的选择**
+```
+Druid 项目 → 必须使用方案1 (DbPwdDruidPasswordCallback)
+  ✅ 正确: dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback())
+  ❌ 错误: PasswordService.getDatabasePassword() + dataSource.setPassword()
+
+纯 JDBC 项目 → 使用方案5 (PasswordService.getDatabasePassword)
+  ✅ 正确: String pwd = PasswordService.getDatabasePassword("@db@")
 ```
 
 **其他连接池支持**：
@@ -244,7 +256,28 @@ String password = DB_PASSWORD;
 String password = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
 ```
 
-**规则4: Spring 配置（方案3）**
+**规则4: Druid 配置（方案1 - 必须使用 PasswordCallback）**
+```java
+// BEFORE (明文密码)
+DruidDataSource dataSource = new DruidDataSource();
+dataSource.setPassword("sa");  // 明文密码
+
+// AFTER (使用 PasswordCallback 自动解密)
+import com.dbpwd.druid.DbPwdDruidPasswordCallback;
+
+DruidDataSource dataSource = new DruidDataSource();
+dataSource.setPassword("@my_db@");  // 设置占位符
+
+DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+callback.setDataSource(dataSource);  // 重要: 让 callback 能获取原始密码
+dataSource.setPasswordCallback(callback);
+
+// ❌ 错误做法 - 不要在 Druid 项目中使用 PasswordService.getDatabasePassword()
+// String password = PasswordService.getDatabasePassword("@my_db@");
+// dataSource.setPassword(password);  // 这是方案5的做法，不适用于 Druid
+```
+
+**规则5: Spring 配置（方案3）**
 ```java
 @Configuration
 public class DatabaseConfig {
@@ -255,21 +288,21 @@ public class DatabaseConfig {
 }
 ```
 
-**规则5: MyBatis 配置（方案4）**
+**规则6: MyBatis 配置（方案4）**
 ```xml
 <dataSource type="com.dbpwd.mybatis.DbPwdDataSourceFactory">
     <property name="password" value="@my_db@"/>
 </dataSource>
 ```
 
-**规则6: Servlet 配置（方案6）**
+**规则7: Servlet 配置（方案6）**
 ```xml
 <listener>
     <listener-class>com.dbpwd.web.DatabasePasswordInitListener</listener-class>
 </listener>
 ```
 
-**规则7: 更新 .gitignore**
+**规则8: 更新 .gitignore**
 ```gitignore
 # db-pwd 密码管理
 .dbpwd/
