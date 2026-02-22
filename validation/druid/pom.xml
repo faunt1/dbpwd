@@ -10,8 +10,8 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>Database Password Manager - Druid Validation (INTEGRATED)</name>
-    <description>集成版本 - Druid连接池应用，使用PasswordService</description>
+    <name>Database Password Manager - Druid Validation</name>
+    <description>验证版本 - Druid连接池应用（独立运行）</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -21,14 +21,10 @@
         <h2.version>2.2.224</h2.version>
         <slf4j.version>1.7.36</slf4j.version>
         <logback.version>1.2.13</logback.version>
+        <db-pwd.version>1.0.0</db-pwd.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>com.dbpwd</groupId>
-            <artifactId>db-pwd-core</artifactId>
-            <version>1.0.0</version>
-        </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
@@ -48,6 +44,18 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+        </dependency>
+
+        <!-- db-pwd dependencies (方案1: Druid PasswordCallback) -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-core</artifactId>
+            <version>${db-pwd.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-druid</artifactId>
+            <version>${db-pwd.version}</version>
         </dependency>
     </dependencies>
 

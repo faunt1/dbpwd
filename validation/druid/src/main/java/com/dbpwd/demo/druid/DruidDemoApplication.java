@@ -1,7 +1,7 @@
 package com.dbpwd.demo.druid;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.core.PasswordService;
+import com.dbpwd.druid.DbPwdDruidPasswordCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,29 +11,33 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Druid Demo application - INTEGRATED VERSION (with db-pwd)
+ * Druid Demo application - INTEGRATED VERSION
  *
- * 集成版本 - 使用 PasswordService 获取加密密码
+ * 集成版本 - 使用 DbPwdDruidPasswordCallback 自动解密密码
  *
- * 【集成改动】
- * 1. 添加 db-pwd-core 依赖
- * 2. 使用 PasswordService.getDatabasePassword() 获取密码
- * 3. 密码占位符: @druid_demo_db@
+ * 【集成改动点】
+ * 1. 添加 import com.dbpwd.druid.DbPwdDruidPasswordCallback;
+ * 2. 在 createDataSource() 方法中:
+ *    原始: String password = "sa"; dataSource.setPassword(password);
+ *    集成: dataSource.setPassword("@druid_demo_db@"); 
+ *         dataSource.setPasswordCallback(new DbPwdDruidPasswordCallback());
  *
- * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
+ * 注意: 使用 DbPwdDruidPasswordCallback 实现 Druid 连接池自动解密
+ *      不要使用 PasswordService.getDatabasePassword() + setPassword()
  *
  * @author Database Password Manager
- * @version 2.0
+ * @version 3.0
  */
 public class DruidDemoApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(DruidDemoApplication.class);
+
     private static final String DB_PLACEHOLDER = "@druid_demo_db@";
 
     public static void main(String[] args) {
         logger.info("========================================");
         logger.info("   Druid Demo - INTEGRATED VERSION");
-        logger.info("   (使用加密密码，已集成密码管理)");
+        logger.info("   (使用 DbPwdDruidPasswordCallback 自动解密)");
         logger.info("========================================");
         logger.info("");
 
@@ -58,8 +62,9 @@ public class DruidDemoApplication {
                 logger.info("========================================");
                 logger.info("");
                 logger.info("Security Features in INTEGRATED version:");
-                logger.info("- Password encrypted with SM4-GCM");
-                logger.info("- Password stored in ~/.dbpwd/db.pwd");
+                logger.info("- Password is encrypted with SM4-GCM");
+                logger.info("- Using DbPwdDruidPasswordCallback for auto-decryption");
+                logger.info("- Placeholder: {}", DB_PLACEHOLDER);
             }
 
             dataSource.close();
@@ -76,9 +81,15 @@ public class DruidDemoApplication {
         dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_druid_demo;IFEXISTS=TRUE;MODE=MySQL");
         dataSource.setUsername("sa");
 
-        String password = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
-        dataSource.setPassword(password);
+        // 方案1: Druid PasswordCallback 自动解密
+        // 设置占位符密码
+        dataSource.setPassword(DB_PLACEHOLDER);
         dataSource.setDriverClassName("org.h2.Driver");
+
+        // 配置 PasswordCallback - Druid 获取连接时自动解密
+        DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+        callback.setDataSource(dataSource);  // 重要: 让 callback 能获取原始密码
+        dataSource.setPasswordCallback(callback);
 
         dataSource.setInitialSize(2);
         dataSource.setMaxActive(10);
@@ -88,7 +99,8 @@ public class DruidDemoApplication {
         logger.info("Druid DataSource configured:");
         logger.info("  URL: {}", dataSource.getUrl());
         logger.info("  Username: {}", dataSource.getUsername());
-        logger.info("  Password: loaded from ~/.dbpwd/db.pwd (encrypted)");
+        logger.info("  Password: {} (encrypted, auto-decrypted by DbPwdDruidPasswordCallback)", DB_PLACEHOLDER);
+        logger.info("  Integration Mode: 方案1 - Druid PasswordCallback");
 
         return dataSource;
     }
