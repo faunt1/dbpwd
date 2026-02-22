@@ -1,6 +1,7 @@
 package com.dbpwd.demo.servlet.api;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.dbpwd.core.PasswordService;
 import com.dbpwd.demo.servlet.dao.UserDao;
 import com.dbpwd.demo.servlet.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,27 +16,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 用户API Servlet - ORIGINAL VERSION (before integration)
- *
- * 原始版本 - 使用明文密码，未集成密码加密功能
- *
- * 【集成改动点】
- * 1. 添加 import com.dbpwd.core.PasswordService;
- * 2. 在 init() 方法中:
- *    原始: String plainPassword = "sa";
- *    集成: String plainPassword = PasswordService.getDatabasePassword("@servlet_demo_db@");
- *
- * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
- *
- * @author Database Password Manager
- * @version 2.0
- */
 @WebServlet("/api/users/*")
 public class UserApiServlet extends HttpServlet {
 
     private static final String H2_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_servlet_demo;IFEXISTS=TRUE;MODE=MySQL";
     private static final String H2_USERNAME = "sa";
+    private static final String DB_PLACEHOLDER = "@servlet_demo_db@";
     private static final String H2_DRIVER = "org.h2.Driver";
 
     private static final long serialVersionUID = 1L;
@@ -47,18 +33,18 @@ public class UserApiServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         System.out.println("=========================================");
-        System.out.println("   Servlet Demo - ORIGINAL VERSION");
-        System.out.println("   (使用明文密码，未集成密码加密)");
+        System.out.println("   Servlet Demo - INTEGRATED VERSION");
+        System.out.println("   (使用加密密码，已集成密码管理)");
         System.out.println("=========================================");
 
         try {
-            String plainPassword = "sa";
-            System.out.println("WARNING: Using PLAINTEXT password!");
+            String password = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
+            System.out.println("INFO: Using encrypted password from ~/.dbpwd/db.pwd");
 
             dataSource = new DruidDataSource();
             dataSource.setUrl(H2_URL);
             dataSource.setUsername(H2_USERNAME);
-            dataSource.setPassword(plainPassword);
+            dataSource.setPassword(password);
             dataSource.setDriverClassName(H2_DRIVER);
             dataSource.setInitialSize(2);
             dataSource.setMaxActive(10);
@@ -83,7 +69,7 @@ public class UserApiServlet extends HttpServlet {
             if (pathInfo == null || pathInfo.equals("/") || pathInfo.equals("")) {
                 List<User> users = userDao.findAll();
                 sendSuccessResponse(resp, users);
-            } else if (pathInfo.matches("/\\d+")) {
+            } else if (pathInfo.matches("/\d+")) {
                 Long id = Long.parseLong(pathInfo.substring(1));
                 User user = userDao.findById(id);
                 if (user != null) {
