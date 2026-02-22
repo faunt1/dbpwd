@@ -1,0 +1,17 @@
+server:
+  port: 0  # 随机端口
+
+spring:
+  application:
+    name: spring-boot-demo
+  
+  # 数据源配置 - 方案C: 密码使用占位符，自动解密
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:file:${user.home}/.dbpwd/h2_data/dbpwd_spring_boot_demo;IFEXISTS=TRUE;MODE=MySQL
+    username: sa
+    password: "@spring_boot_db@"  # 占位符，DataSourcePasswordProcessor 自动解密
+
+# 可选：配置 dbpwd（使用默认路径 ~/.dbpwd/ 则不需要配置）
+# dbpwd:
+#   enabled: true

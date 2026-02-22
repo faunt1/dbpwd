@@ -20,7 +20,6 @@
     <modules>
         <module>simple-jdbc</module>
         <module>spring-boot</module>
-        <module>spring-boot-api</module>
         <module>druid</module>
         <module>druid-spring</module>
         <module>spring</module>

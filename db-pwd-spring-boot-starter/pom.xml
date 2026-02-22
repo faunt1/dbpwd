@@ -25,6 +25,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Spring Integration module for DataSourcePasswordProcessor -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-spring</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Spring Boot Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

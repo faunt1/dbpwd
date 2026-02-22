@@ -14,8 +14,8 @@
     <artifactId>spring-boot-demo</artifactId>
     <packaging>jar</packaging>
 
-    <name>Database Password Manager - Spring Boot Demo</name>
-    <description>Spring Boot web demo application demonstrating SM4 encryption</description>
+    <name>Database Password Manager - Spring Boot Demo (方案C)</name>
+    <description>Spring Boot web demo demonstrating 方案C: BeanPostProcessor 自动解密</description>
 
     <properties>
         <spring-boot.version>2.7.18</spring-boot.version>
@@ -35,10 +35,10 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Core module -->
+        <!-- db-pwd Spring Boot Starter - 方案C：自动解密，无需代码修改 -->
         <dependency>
             <groupId>com.dbpwd</groupId>
-            <artifactId>db-pwd-core</artifactId>
+            <artifactId>db-pwd-spring-boot-starter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -48,10 +48,10 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring JDBC -->
+        <!-- Spring Boot Starter JDBC - 必需，用于自动配置 DataSource -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
 
         <!-- H2 Database -->

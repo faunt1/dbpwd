@@ -1,56 +1,37 @@
 package com.dbpwd.demo;
 
-import com.dbpwd.core.PasswordService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Spring Boot demo application (集成版本)
+ * Spring Boot demo application (方案C集成版本)
  *
- * 使用 PasswordService 从 db.pwd 获取解密后的密码
+ * 集成方式：BeanPostProcessor 自动解密
+ * - 数据源配置：application.yml
+ * - 密码格式：@spring_boot_db@
+ * - 自动解密：DataSourcePasswordProcessor 自动处理
  *
- * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
+ * 注意：数据库表和初始数据由 DatabaseInitializer 预先创建
  *
  * @author Database Password Manager
- * @version 2.0
+ * @version 3.0
  */
 @SpringBootApplication
 public class SpringBootDemo {
-
-    private static final String DB_PLACEHOLDER = "spring_boot_db";
-
-    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_boot_demo;IFEXISTS=TRUE;MODE=MySQL";
-    private static final String DB_USERNAME = "sa";
 
     public static void main(String[] args) {
         SpringApplication.run(SpringBootDemo.class, args);
     }
 
     @Bean
-    public DataSource dataSource() throws Exception {
-        String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
-        System.out.println("解密后的密码: " + plainPassword);
-
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.h2.Driver");
-        dataSource.setUrl(DB_URL);
-        dataSource.setUsername(DB_USERNAME);
-        dataSource.setPassword(plainPassword);
-
-        return dataSource;
-    }
-
-    @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    public JdbcTemplate jdbcTemplate(javax.sql.DataSource dataSource) {
         return new JdbcTemplate(dataSource);
     }
 
@@ -67,9 +48,11 @@ public class SpringBootDemo {
         public Map<String, Object> index() {
             Map<String, Object> result = new HashMap<>();
             result.put("application", "Database Password Manager - Spring Boot Demo");
+            result.put("integraton_mode", "方案C: BeanPostProcessor (自动解密)");
             result.put("status", "running");
             result.put("encryption", "SM4-GCM (Authenticated Encryption)");
             result.put("placeholder", "@spring_boot_db@");
+            result.put("note", "应用代码无需任何修改，仅需配置 application.yml");
             return result;
         }
 

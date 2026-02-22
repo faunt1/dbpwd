@@ -10,15 +10,22 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 配置属性示例：
  * <pre>
  * dbpwd:
- *   enabled: true                    # 是否启用密码管理
- *   password-file: ~/.dbpwd/db.pwd  # 密码文件路径
- *   key-file: ~/.dbpwd/sm4.key      # 密钥文件路径
- *   placeholder-prefix: "@"         # 占位符前缀
- *   placeholder-suffix: "@"         # 占位符后缀
+ *   enabled: true                           # 是否启用密码管理
+ *   mode: bean-post-processor              # 模式: bean-post-processor(默认)/property-source
+ *   password-file: ~/.dbpwd/db.pwd         # 密码文件路径
+ *   key-file: ~/.dbpwd/sm4.key             # 密钥文件路径
+ *   placeholder-prefix: "@"                # 占位符前缀
+ *   placeholder-suffix: "@"                # 占位符后缀
+ *   enable-password-service: false         # 启用密码服务Bean（可选）
+ *   enable-placeholder-resolver: false     # 启用占位符解析器Bean（可选）
  * </pre>
  *
+ * 模式说明：
+ * - bean-post-processor (默认): 方案C - 拦截 DataSource Bean，自动解密密码
+ * - property-source: 方案B - 装饰 PropertySource，自动解密所有密码属性
+ *
  * @author Database Password Manager
- * @version 5.3
+ * @version 6.0
  */
 @ConfigurationProperties(prefix = "dbpwd")
 public class DbPwdProperties {
@@ -27,6 +34,13 @@ public class DbPwdProperties {
      * 是否启用密码管理功能
      */
     private boolean enabled = true;
+
+    /**
+     * 集成模式
+     * - bean-post-processor (默认): 方案C - BeanPostProcessor 模式
+     * - property-source: 方案B - PropertySource 装饰器模式
+     */
+    private String mode = "bean-post-processor";
 
     /**
      * 密码文件路径
@@ -61,6 +75,14 @@ public class DbPwdProperties {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 
     public String getPasswordFile() {
