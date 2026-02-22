@@ -10,8 +10,8 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>Database Password Manager - Druid Spring Validation</name>
-    <description>验证版本 - Druid + Spring应用（独立运行）</description>
+    <name>Database Password Manager - Druid Spring Validation (INTEGRATED)</name>
+    <description>Integrated - Druid Spring application with encrypted password</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -24,6 +24,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-spring</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>

@@ -10,35 +10,27 @@
     </bean>
 
     <!--
-        Druid DataSource配置 - 使用明文密码
-
-        原始版本要点:
-        1. password设置为明文 "sa"
+        Druid DataSource配置 - INTEGRATED VERSION
+        使用占位符密码，DataSourcePasswordProcessor自动解密
     -->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
           destroy-method="close">
-
-        <!-- 基本连接配置 -->
         <property name="url" value="jdbc:h2:file:${user.home}/.dbpwd/h2_data/dbpwd_druid_demo_spring;IFEXISTS=TRUE;MODE=MySQL"/>
         <property name="username" value="sa"/>
-        
-        <!-- 明文密码 -->
-        <property name="password" value="sa"/>
-
-        <!-- 连接池配置 -->
+        <!-- 占位符密码 -->
+        <property name="password" value="@druid_spring_db@"/>
         <property name="initialSize" value="2"/>
         <property name="minIdle" value="2"/>
         <property name="maxActive" value="10"/>
         <property name="maxWait" value="10000"/>
-
-        <!-- 连接有效性检测 -->
         <property name="validationQuery" value="SELECT 1"/>
         <property name="testOnBorrow" value="false"/>
         <property name="testWhileIdle" value="false"/>
-
-        <!-- 连接超时配置 -->
         <property name="connectTimeout" value="5000"/>
         <property name="socketTimeout" value="30000"/>
     </bean>
+
+    <!-- DataSourcePasswordProcessor - 自动解密密码 -->
+    <bean class="com.dbpwd.spring.DataSourcePasswordProcessor"/>
 
 </beans>

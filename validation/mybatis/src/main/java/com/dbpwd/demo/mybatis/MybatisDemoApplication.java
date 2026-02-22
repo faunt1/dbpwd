@@ -1,5 +1,6 @@
 package com.dbpwd.demo.mybatis;
 
+import com.dbpwd.core.PasswordService;
 import com.dbpwd.demo.mybatis.dao.ProductMapper;
 import com.dbpwd.demo.mybatis.model.Product;
 import org.apache.ibatis.io.Resources;
@@ -12,21 +13,11 @@ import javax.sql.DataSource;
 import java.io.InputStream;
 import java.util.List;
 
-/**
- * MyBatis集成Demo主程序 (原始版本)
- *
- * 使用明文密码直接连接数据库
- *
- * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
- *
- * @author Database Password Manager
- * @version 2.0
- */
 public class MybatisDemoApplication {
 
     private static final String H2_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_mybatis_demo;IFEXISTS=TRUE;MODE=MySQL";
     private static final String H2_USERNAME = "sa";
-    private static final String H2_PASSWORD = "sa";
+    private static final String DB_PLACEHOLDER = "@mybatis_demo_db@";
     private static final String H2_DRIVER = "org.h2.Driver";
 
     public static void main(String[] args) {
@@ -37,10 +28,11 @@ public class MybatisDemoApplication {
 
         SqlSession sqlSession = null;
         try {
-            System.out.println("Getting database password (plain text)...");
-            System.out.println("  Using plain password: *****");
+            System.out.println("Getting database password (encrypted)...");
+            String password = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
+            System.out.println("  Using encrypted password from ~/.dbpwd/db.pwd");
 
-            SqlSessionFactory sqlSessionFactory = buildSqlSessionFactory(H2_PASSWORD);
+            SqlSessionFactory sqlSessionFactory = buildSqlSessionFactory(password);
 
             System.out.println("\n=========================================");
             System.out.println("   Query Operations Demo");
@@ -80,11 +72,11 @@ public class MybatisDemoApplication {
         }
     }
 
-    private static SqlSessionFactory buildSqlSessionFactory(String plainPassword) throws Exception {
+    private static SqlSessionFactory buildSqlSessionFactory(String password) throws Exception {
         DataSource dataSource = new UnpooledDataSource();
         ((UnpooledDataSource) dataSource).setUrl(H2_URL);
         ((UnpooledDataSource) dataSource).setUsername(H2_USERNAME);
-        ((UnpooledDataSource) dataSource).setPassword(plainPassword);
+        ((UnpooledDataSource) dataSource).setPassword(password);
         ((UnpooledDataSource) dataSource).setDriver(H2_DRIVER);
 
         InputStream inputStream = Resources.getResourceAsStream("mybatis-config.xml");

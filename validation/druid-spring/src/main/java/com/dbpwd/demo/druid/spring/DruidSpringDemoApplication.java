@@ -19,7 +19,7 @@ public class DruidSpringDemoApplication {
         logger.info("   Database Password Manager - Druid Spring XML Demo");
         logger.info("========================================");
         logger.info("");
-        logger.info("Mode: Original (plain text password)");
+        logger.info("Mode: INTEGRATED (encrypted password)");
         logger.info("Configuration: Spring XML (druid-datasource.xml)");
         logger.info("");
 
@@ -31,7 +31,7 @@ public class DruidSpringDemoApplication {
             DruidDataSource dataSource = context.getBean(DruidDataSource.class);
             
             logger.info("DataSource initialized");
-            logger.info("Using plain text password");
+            logger.info("Using encrypted password (auto-decrypted)");
 
             logger.info("");
             logger.info("Testing database connection...");
@@ -49,8 +49,9 @@ public class DruidSpringDemoApplication {
                 logger.info("========================================");
                 logger.info("");
                 logger.info("Key points demonstrated:");
-                logger.info("- Druid DataSource with plain text password");
+                logger.info("- Druid DataSource with encrypted password");
                 logger.info("- Works with Spring XML configuration");
+                logger.info("- DataSourcePasswordProcessor auto-decrypts");
             }
 
             context.close();
