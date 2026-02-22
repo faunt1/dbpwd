@@ -10,8 +10,8 @@
     <version>1.0.0</version>
     <packaging>war</packaging>
 
-    <name>Database Password Manager - Struts Validation</name>
-    <description>验证版本 - Struts 1.x应用（独立运行）</description>
+    <name>Database Password Manager - Struts Validation (INTEGRATED)</name>
+    <description>Integrated - Struts 1.x application with encrypted password</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -25,6 +25,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.struts</groupId>
             <artifactId>struts-core</artifactId>
