@@ -1,6 +1,7 @@
 package com.dbpwd.demo.druid;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.dbpwd.core.PasswordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,15 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Druid Demo application - ORIGINAL VERSION (before integration)
+ * Druid Demo application - INTEGRATED VERSION (with db-pwd)
  *
- * 原始版本 - 使用明文密码，未集成密码加密功能
+ * 集成版本 - 使用 PasswordService 获取加密密码
  *
- * 【集成改动点】
- * 1. 添加 import com.dbpwd.core.PasswordService;
- * 2. 在 createDataSource() 方法中:
- *    原始: String password = "sa";
- *    集成: String password = PasswordService.getDatabasePassword("@druid_demo_db@");
+ * 【集成改动】
+ * 1. 添加 db-pwd-core 依赖
+ * 2. 使用 PasswordService.getDatabasePassword() 获取密码
+ * 3. 密码占位符: @druid_demo_db@
  *
  * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
  *
@@ -28,11 +28,12 @@ import java.util.List;
 public class DruidDemoApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(DruidDemoApplication.class);
+    private static final String DB_PLACEHOLDER = "@druid_demo_db@";
 
     public static void main(String[] args) {
         logger.info("========================================");
-        logger.info("   Druid Demo - ORIGINAL VERSION");
-        logger.info("   (使用明文密码，未集成密码加密)");
+        logger.info("   Druid Demo - INTEGRATED VERSION");
+        logger.info("   (使用加密密码，已集成密码管理)");
         logger.info("========================================");
         logger.info("");
 
@@ -56,8 +57,9 @@ public class DruidDemoApplication {
                 logger.info("   Demo completed successfully!");
                 logger.info("========================================");
                 logger.info("");
-                logger.info("Security Issues in ORIGINAL version:");
-                logger.info("- Password is hardcoded in source code");
+                logger.info("Security Features in INTEGRATED version:");
+                logger.info("- Password encrypted with SM4-GCM");
+                logger.info("- Password stored in ~/.dbpwd/db.pwd");
             }
 
             dataSource.close();
@@ -74,7 +76,7 @@ public class DruidDemoApplication {
         dataSource.setUrl("jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_druid_demo;IFEXISTS=TRUE;MODE=MySQL");
         dataSource.setUsername("sa");
 
-        String password = "sa";
+        String password = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
         dataSource.setPassword(password);
         dataSource.setDriverClassName("org.h2.Driver");
 
@@ -86,7 +88,7 @@ public class DruidDemoApplication {
         logger.info("Druid DataSource configured:");
         logger.info("  URL: {}", dataSource.getUrl());
         logger.info("  Username: {}", dataSource.getUsername());
-        logger.warn("  Password: sa (PLAINTEXT - WARNING!)");
+        logger.info("  Password: loaded from ~/.dbpwd/db.pwd (encrypted)");
 
         return dataSource;
     }
