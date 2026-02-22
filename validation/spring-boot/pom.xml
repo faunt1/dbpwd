@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
 
     <name>Database Password Manager - Spring Boot Validation</name>
-    <description>验证版本 - Spring Boot应用（独立运行）</description>
+    <description>验证版本 - Spring Boot应用（方案2c: BeanPostProcessor 自动解密）</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -39,18 +39,21 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-jdbc</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>${h2.version}</version>
-        </dependency>
+
+        <!-- db-pwd Spring Boot Starter - 方案2c: BeanPostProcessor 自动解密 -->
         <dependency>
             <groupId>com.dbpwd</groupId>
             <artifactId>db-pwd-spring-boot-starter</artifactId>
             <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
         </dependency>
     </dependencies>
 
