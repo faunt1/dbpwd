@@ -9,11 +9,13 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import java.util.List;
 
 /**
- * Spring Demo application - ORIGINAL VERSION (before integration)
+ * Spring Demo application - INTEGRATED VERSION (with db-pwd)
  *
- * 原始版本 - 使用明文密码，未集成密码加密功能
+ * 集成版本 - 使用 db-pwd-spring 自动解密密码
  *
- * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
+ * 【集成改动】
+ * 1. 添加 db-pwd-spring 依赖
+ * 2. DataSourcePasswordProcessor 自动解密密码
  *
  * @author Database Password Manager
  * @version 2.0
@@ -24,8 +26,8 @@ public class SpringDemoApplication {
 
     public static void main(String[] args) {
         logger.info("========================================");
-        logger.info("   Spring Demo - ORIGINAL VERSION");
-        logger.info("   (使用明文密码，未集成密码加密)");
+        logger.info("   Spring Demo - INTEGRATED VERSION");
+        logger.info("   (使用加密密码，已集成密码管理)");
         logger.info("========================================");
         logger.info("");
 
@@ -62,8 +64,10 @@ public class SpringDemoApplication {
             logger.info("   Demo completed successfully!");
             logger.info("========================================");
             logger.info("");
-            logger.info("Security Issues in ORIGINAL version:");
-            logger.info("- Password is hardcoded in configuration class");
+            logger.info("Security Features in INTEGRATED version:");
+            logger.info("- Password encrypted with SM4-GCM");
+            logger.info("- Password stored in ~/.dbpwd/db.pwd");
+            logger.info("- DataSourcePasswordProcessor auto-decrypts password");
 
         } catch (Exception e) {
             logger.error("Error during demo execution", e);
