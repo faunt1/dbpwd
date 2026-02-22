@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<struts-config>
+    <form-beans>
+        <form-bean name="userForm" type="com.dbpwd.demo.struts.UserForm"/>
+    </form-beans>
+
+    <global-forwards>
+        <forward name="home" path="/pages/index.jsp"/>
+    </global-forwards>
+
+    <action-mappings>
+        <action path="/index"
+                forward="/pages/index.jsp"/>
+
+        <action path="/users"
+                type="com.dbpwd.demo.struts.UserAction"
+                name="userForm"
+                scope="request">
+            <forward name="success" path="/pages/users.jsp"/>
+        </action>
+
+        <action path="/user/list"
+                type="com.dbpwd.demo.struts.UserListAction">
+            <forward name="success" path="/pages/userList.jsp"/>
+        </action>
+    </action-mappings>
+
+    <message-resources parameter="ApplicationResources"/>
+</struts-config>

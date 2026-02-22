@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+
+    <display-name>Database Password Manager - Servlet Demo (Original)</display-name>
+
+    <description>
+        原始版本 - Servlet Demo，使用明文密码（集成前版本）
+        此版本用于对比展示集成密码加密功能前后的代码差异
+    </description>
+
+    <!-- 字符编码配置 (Jetty兼容) -->
+    <!-- Jetty默认使用UTF-8 -->
+
+    <!-- 欢迎页面 -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+    </welcome-file-list>
+
+</web-app>
