@@ -7,20 +7,22 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.dbpwd.core.PasswordService;
+
 import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Spring Boot demo application - ORIGINAL VERSION (before integration)
+ * Spring Boot demo application - INTEGRATED VERSION (with db-pwd)
  *
- * 原始版本 - 使用明文密码，未集成密码加密功能
+ * 集成版本 - 使用 PasswordService 获取加密密码
  *
- * 【集成改动点】
- * 1. 添加 import com.dbpwd.core.PasswordService;
- * 2. 将 DB_PASSWORD 改为 DB_PLACEHOLDER
- * 3. 在 dataSource() 方法中调用 PasswordService.getDatabasePassword(DB_PLACEHOLDER)
+ * 【集成改动】
+ * 1. 添加 db-pwd-spring-boot-starter 依赖
+ * 2. 使用 PasswordService.getDatabasePassword() 获取密码
+ * 3. 密码占位符: @spring_boot_db@
  *
  * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
  *
@@ -30,7 +32,7 @@ import java.util.Map;
 @SpringBootApplication
 public class SpringBootDemo {
 
-    private static final String DB_PASSWORD = "sa";
+    private static final String DB_PLACEHOLDER = "@spring_boot_db@";
 
     private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_boot_demo;IFEXISTS=TRUE;MODE=MySQL";
     private static final String DB_USERNAME = "sa";
@@ -41,14 +43,14 @@ public class SpringBootDemo {
 
     @Bean
     public DataSource dataSource() throws Exception {
-        String plainPassword = DB_PASSWORD;
-        System.out.println("WARNING: Using plaintext password!");
+        String password = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
+        System.out.println("INFO: Using encrypted password from ~/.dbpwd/db.pwd");
 
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.h2.Driver");
         dataSource.setUrl(DB_URL);
         dataSource.setUsername(DB_USERNAME);
-        dataSource.setPassword(plainPassword);
+        dataSource.setPassword(password);
 
         return dataSource;
     }
@@ -70,9 +72,9 @@ public class SpringBootDemo {
         @GetMapping("/")
         public Map<String, Object> index() {
             Map<String, Object> result = new HashMap<>();
-            result.put("application", "Database Password Manager - Spring Boot Demo (ORIGINAL)");
+            result.put("application", "Database Password Manager - Spring Boot Demo (INTEGRATED)");
             result.put("status", "running");
-            result.put("warning", "Using PLAINTEXT password!");
+            result.put("security", "Password encrypted with SM4-GCM");
             return result;
         }
 

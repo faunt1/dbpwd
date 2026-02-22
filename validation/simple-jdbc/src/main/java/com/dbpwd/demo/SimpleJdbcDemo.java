@@ -1,20 +1,21 @@
 package com.dbpwd.demo;
 
+import com.dbpwd.core.PasswordService;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 /**
- * Simple JDBC demo application - ORIGINAL VERSION (before integration)
+ * Simple JDBC demo application - INTEGRATED VERSION (with db-pwd)
  *
- * 原始版本 - 使用明文密码，未集成密码加密功能
- * 此版本用于对比展示集成密码加密功能前后的代码差异
+ * 集成版本 - 使用 PasswordService 获取加密密码
  *
- * 【集成改动点】
- * 1. 添加 import com.dbpwd.core.PasswordService;
- * 2. 将 DB_PASSWORD 改为 DB_PLACEHOLDER
- * 3. 将 PasswordService.getDatabasePassword(DB_PLACEHOLDER) 替换直接使用密码
+ * 【集成改动】
+ * 1. 添加 db-pwd-core 依赖
+ * 2. 使用 PasswordService.getDatabasePassword() 获取密码
+ * 3. 密码占位符: @simple_jdbc_db@
  *
  * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
  *
@@ -23,7 +24,7 @@ import java.sql.ResultSet;
  */
 public class SimpleJdbcDemo {
 
-    private static final String DB_PASSWORD = "sa";
+    private static final String DB_PLACEHOLDER = "@simple_jdbc_db@";
 
     private static final String DB_URL_BASE = "file:~/.dbpwd/h2_data/dbpwd_simple_demo";
     private static final String DB_URL = "jdbc:h2:" + DB_URL_BASE + ";IFEXISTS=TRUE;MODE=MySQL";
@@ -31,16 +32,16 @@ public class SimpleJdbcDemo {
 
     public static void main(String[] args) {
         System.out.println("=========================================");
-        System.out.println("   Simple JDBC Demo - ORIGINAL VERSION");
-        System.out.println("   (使用明文密码，未集成密码加密)");
+        System.out.println("   Simple JDBC Demo - INTEGRATED VERSION");
+        System.out.println("   (使用加密密码，已集成密码管理)");
         System.out.println("=========================================\n");
 
         try {
-            String plainPassword = DB_PASSWORD;
-            System.out.println("Testing connection with plaintext password...");
+            String password = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
+            System.out.println("INFO: Using encrypted password from ~/.dbpwd/db.pwd...\n");
 
             Class.forName("org.h2.Driver");
-            Connection conn = DriverManager.getConnection(DB_URL, DB_USERNAME, plainPassword);
+            Connection conn = DriverManager.getConnection(DB_URL, DB_USERNAME, password);
             System.out.println("  Database connection established\n");
 
             System.out.println("=========================================");
@@ -57,9 +58,10 @@ public class SimpleJdbcDemo {
             System.out.println("   Demo completed successfully!");
             System.out.println("=========================================\n");
 
-            System.out.println("Security Issues in ORIGINAL version:");
-            System.out.println("- Password is hardcoded in source code");
-            System.out.println("- Password visible in configuration");
+            System.out.println("Security Features in INTEGRATED version:");
+            System.out.println("- Password encrypted with SM4-GCM");
+            System.out.println("- Password stored in ~/.dbpwd/db.pwd");
+            System.out.println("- Application uses placeholder: " + DB_PLACEHOLDER);
 
         } catch (Exception e) {
             System.err.println("Demo failed: " + e.getMessage());
