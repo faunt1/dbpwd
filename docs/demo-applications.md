@@ -518,7 +518,6 @@ public class SpringBootApiDemoApplication {
 ### 运行命令
 
 ```bash
-java -jar demos/spring-boot/api/target/spring-boot-api-1.0.0.jar
 # 访问 http://localhost:8082/api/test
 ```
 
@@ -734,7 +733,6 @@ java -jar demos/druid/spring/target/druid-spring-1.0.0.jar
 
 # 方案2: Spring Boot
 java -jar demos/spring-boot/demo/target/spring-boot-demo-1.0.0.jar
-java -jar demos/spring-boot/api/target/spring-boot-api-1.0.0.jar
 
 # 方案3: Spring Framework
 java -jar demos/spring/demo/target/spring-demo-1.0.0.jar
@@ -830,7 +828,6 @@ mvn jetty:stop -pl demos/servlet/demo
 | druid | ✅ | ✅ | ✅ | 回调机制 |
 | druid-spring | ✅ | ✅ | ✅ | XML配置方式 |
 | spring-boot | ✅ | ✅ | ✅ | REST API |
-| spring-boot-api | ✅ | ✅ | ✅ | 手动配置DataSource |
 | spring | ✅ | ✅ | ✅ | Bean拦截 |
 | spring-xml | ✅ | ✅ | ✅ | XML配置方式 |
 | mybatis | ✅ | ✅ | ✅ | Mapper接口 |

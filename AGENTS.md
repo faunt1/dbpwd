@@ -91,7 +91,6 @@ db-pwd/
 │   ├── spring-boot/                # 方案2: Spring Boot Starter
 │   │   ├── demo/                   # 【集成版本】
 │   │   └── original/               # 【原始版本】
-│   ├── spring-boot-api/            # 方案2变体: Spring Boot API
 │   │   ├── demo/                   # 【集成版本】
 │   │   └── original/               # 【原始版本】
 │   ├── spring/                     # 方案3: Spring Java Config
@@ -131,8 +130,6 @@ db-pwd/
 | 方案1: Druid | `demos/druid/original` | `demos/druid/demo` |
 | 方案1+3: Druid+Spring | `demos/druid-spring/original` | `demos/druid-spring/demo` |
 | 方案2: Spring Boot Starter | `demos/spring-boot/original` | `demos/spring-boot/demo` |
-| 方案2变: Spring Boot API | `demos/spring-boot-api/original` | `demos/spring-boot-api/demo` |
-| 方案3: Spring Java Config | `demos/spring/original` | `demos/spring/demo` |
 | 方案3: Spring XML | `demos/spring-xml/original` | `demos/spring-xml/demo` |
 | 方案4: MyBatis | `demos/mybatis/original` | `demos/mybatis/demo` |
 | 方案6: Servlet (web.xml) | `demos/servlet/original` | `demos/servlet/demo` |

@@ -225,7 +225,6 @@ Password handling: Uses PasswordService.getDatabasePassword('@druid_demo_db@')
 
 由于时间和篇幅限制，剩余demo的测试需要继续进行:
 - spring-boot / original
-- spring-boot-api / original
 - spring / original
 - spring-xml / original
 - mybatis / original

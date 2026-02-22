@@ -39,7 +39,6 @@
 | druid | ✅ | ✅ | ✅ 通过 |
 | druid-spring | ✅ | ✅ | ✅ 通过 |
 | spring-boot | ✅ | ✅ | ✅ 通过 |
-| spring-boot-api | ✅ | ✅ | ✅ 通过 |
 | spring (Java Config) | ✅ | ✅ | ✅ 通过 |
 | spring-xml | ✅ | ✅ | ✅ 通过 |
 | mybatis | ✅ | ✅ | ✅ 通过 |

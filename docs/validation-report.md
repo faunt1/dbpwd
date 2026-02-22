@@ -14,7 +14,7 @@ paginate: true
 # 目录
 
 1. **技能原理** - db-pwd-integrator 工作机制
-2. **验证概述** - 11 个项目验证汇总
+ 2. **验证概述** - 10 个项目验证汇总
 3. **项目详情** - Before/After 代码对比分析
 4. **验证结论** - 总结与建议
 
@@ -116,7 +116,7 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 
 ## 验证目标
 
-验证 db-pwd-integrator 技能在 **11 个不同技术栈项目**上的集成效果。
+验证 db-pwd-integrator 技能在 **10 个不同技术栈项目**上的集成效果。
 
 **验证维度：**
 - ✅ 集成后代码编译通过
@@ -134,12 +134,11 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | 3 | spring-xml | Spring XML | db-pwd-spring | 3 | +31/-9 |
 | 4 | druid-spring | Druid + Spring | db-pwd-spring | 2 | +33/-38 |
 | 5 | spring-boot | Spring Boot | db-pwd-core | 2 | +44/-30 |
-| 6 | spring-boot-api | Spring Boot API | db-pwd-core | 2 | +47/-69 |
-| 7 | mybatis | MyBatis | db-pwd-core | 2 | +33/-38 |
-| 8 | servlet | Servlet web.xml | db-pwd-core | 2 | +15/-24 |
-| 9 | servlet-annotation | Servlet 注解 | db-pwd-core | 4 | +199/-32 |
-| 10 | struts | Struts 1.x | db-pwd-core | 3 | +32/-30 |
-| 11 | simple-jdbc | 纯 JDBC | db-pwd-core | 2 | +44/-30 |
+| 6 | mybatis | MyBatis | db-pwd-core | 2 | +33/-38 |
+| 7 | servlet | Servlet web.xml | db-pwd-core | 2 | +15/-24 |
+| 8 | servlet-annotation | Servlet 注解 | db-pwd-core | 4 | +199/-32 |
+| 9 | struts | Struts 1.x | db-pwd-core | 3 | +32/-30 |
+| 10 | simple-jdbc | 纯 JDBC | db-pwd-core | 2 | +44/-30 |
 
 ---
 
@@ -149,11 +148,10 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 ┌────────────────────────────────────────────┐
 │           验证结果统计                       │
 ├────────────────────────────────────────────┤
-│  项目总数:     11 个                        │
-│  集成成功:     11 个 (100%)                 │
-│  编译通过:     11 个 (100%)                 │
-│  标签创建:     22 个 (before/after 各 11)   │
-├────────────────────────────────────────────┤
+│  项目总数:     10 个                        │
+│  集成成功:     10 个 (100%)                 │
+│  编译通过:     10 个 (100%)                 │
+│  标签创建:     20 个 (before/after 各 10)   │
 │  总代码变更:   +533 行 / -311 行             │
 │  平均改动:     每项目约 2-3 个文件           │
 └────────────────────────────────────────────┘
@@ -535,30 +533,10 @@ public class SimpleJdbcDemo {
 
 ---
 
-# 项目 11: Spring Boot API
-
-**技术栈:** Spring Boot + REST API
-
-**集成方案:** db-pwd-core
-
----
-
-# 四、验证结论
-
-## 总结
-
-| 维度 | 结果 |
-|------|------|
-| **集成成功率** | 100% (11/11) |
-| **编译通过率** | 100% (11/11) |
-| **代码改动量** | 平均每项目 2-3 个文件 |
-| **安全提升** | 明文密码 → 加密占位符 |
-
----
 
 # 验证结论 - 关键发现
-
-**1. 集成模式匹配准确**
+| **集成成功率** | 100% (10/10) |
+| **编译通过率** | 100% (10/10) |
 - 技术栈识别正确
 - 自动选择最优集成方案
 
@@ -581,7 +559,7 @@ public class SimpleJdbcDemo {
 git diff validation-druid-before..validation-druid-after
 git diff validation-spring-boot-before..validation-spring-boot-after
 git diff validation-spring-xml-before..validation-spring-xml-after
-# ... 共 11 组 before/after 标签
+# ... 共 10 组 before/after 标签
 ```
 
 ---
@@ -589,7 +567,7 @@ git diff validation-spring-xml-before..validation-spring-xml-after
 # 验证结论 - 建议
 
 **技能优化方向：**
-1. 增加对 Gradle 构建工具的支持
+# ... 共 10 组 before/after 标签
 2. 支持 Spring Boot 3.x (Jakarta EE)
 3. 增加集成后自动化测试
 
@@ -609,7 +587,6 @@ git diff validation-spring-xml-before..validation-spring-xml-after
 | spring-xml | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
 | druid-spring | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
 | spring-boot | db-pwd-core | PasswordService | 手动 |
-| spring-boot-api | db-pwd-core | PasswordService | 手动 |
 | mybatis | db-pwd-core | PasswordService | 手动 |
 | servlet | db-pwd-core | PasswordService | 手动 |
 | servlet-annotation | db-pwd-core | PasswordService | 手动 |
