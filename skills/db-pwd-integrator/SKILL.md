@@ -78,7 +78,7 @@ grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
 
 | 优先级 | 检测信号 | 项目类型 | 集成方案 |
 |--------|---------|---------|---------|
-| 1 | `@SpringBootApplication` 或 `spring-boot-starter-parent` | Spring Boot | **方案C: BeanPostProcessor** |
+| 1 | `@SpringBootApplication` 或 `spring-boot-starter-parent` | Spring Boot | **方案2c: BeanPostProcessor** |
 | 2 | `DruidDataSource` + `@Configuration` | Spring + Druid | 方案1+3 |
 | 3 | `@Configuration` + `spring-context` | Spring | 方案3 |
 | 4 | `mybatis-config.xml` 或 `*Mapper.xml` | MyBatis | 方案4 |
@@ -88,7 +88,7 @@ grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
 **决策树**：
 ```
 IF @SpringBootApplication OR spring-boot-starter-parent:
-    → 方案C: db-pwd-spring-boot-starter (BeanPostProcessor 自动解密)
+    → 方案2c: db-pwd-spring-boot-starter (BeanPostProcessor 自动解密)
 ELSE IF DruidDataSource:
     → 方案1: db-pwd-druid (使用 DbPwdDruidPasswordCallback 自动解密)
     → 注意: 不要使用 PasswordService.getDatabasePassword()
@@ -158,7 +158,7 @@ cp pom.xml .dbpwd-backup/$(date +%Y%m%d_%H%M%S)/
 | 方案 | 需要的依赖 | 说明 |
 |------|-----------|------|
 | 方案1: Druid | db-pwd-core + db-pwd-druid | 两个依赖都需要 |
-| **方案C: Spring Boot Starter** | db-pwd-spring-boot-starter | **仅需此一个**，会自动传递 db-pwd-core |
+| **方案2c: Spring Boot Starter** | db-pwd-spring-boot-starter | **仅需此一个**，会自动传递 db-pwd-core |
 | 方案3: Spring | db-pwd-core + db-pwd-spring | 两个依赖都需要 |
 | 方案4: MyBatis | db-pwd-core | 纯 MyBatis 直接调用 API |
 | 方案4变体: MyBatis XML | db-pwd-core + db-pwd-mybatis | 使用 DbPwdDataSourceFactory |
@@ -179,7 +179,7 @@ cp pom.xml .dbpwd-backup/$(date +%Y%m%d_%H%M%S)/
     <version>1.0.0</version>
 </dependency>
 
-<!-- **方案C: Spring Boot Starter**（推荐，仅需一个）-->
+<!-- **方案2c: Spring Boot Starter**（推荐，仅需一个）-->
 <dependency>
     <groupId>com.dbpwd</groupId>
     <artifactId>db-pwd-spring-boot-starter</artifactId>
@@ -361,7 +361,7 @@ lsp_diagnostics
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 **检测到项目类型**: Spring Boot 2.7.18
-**推荐集成方案**: 方案C - BeanPostProcessor (默认模式)
+**推荐集成方案**: 方案2c - BeanPostProcessor (默认模式)
 **集成模块**: db-pwd-spring-boot-starter
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -508,7 +508,7 @@ String password = PasswordService.getDatabasePassword(placeholder);
 **响应**:
 1. 扫描项目结构
 2. 识别为 Spring Boot 项目
-3. 推荐方案C: BeanPostProcessor
+3. 推荐方案2c: BeanPostProcessor
 4. 获取用户确认
 5. 执行修改：添加依赖、修改配置
 6. 验证编译
