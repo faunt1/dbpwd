@@ -89,6 +89,7 @@ grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
 ```
 IF @SpringBootApplication OR spring-boot-starter-parent:
     → 方案2c: db-pwd-spring-boot-starter (BeanPostProcessor 自动解密)
+    → 可选 方案2b: 配置 dbpwd.mode=property-source (装饰器模式)
 ELSE IF DruidDataSource:
     → 方案1: db-pwd-druid (使用 DbPwdDruidPasswordCallback 自动解密)
     → 注意: 不要使用 PasswordService.getDatabasePassword()
