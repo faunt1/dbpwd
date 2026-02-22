@@ -9,6 +9,19 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+/**
+ * Spring XML Demo - INTEGRATED VERSION (with db-pwd)
+ *
+ * 集成版本 - 使用 db-pwd-spring 自动解密密码
+ *
+ * 【集成改动】
+ * 1. 添加 db-pwd-spring 依赖
+ * 2. applicationContext.xml 中配置 DataSourcePasswordProcessor
+ * 3. 密码使用占位符 @spring_demo_xml_db@
+ *
+ * @author Database Password Manager
+ * @version 2.0
+ */
 public class SpringXmlDemoApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringXmlDemoApplication.class);
@@ -18,7 +31,7 @@ public class SpringXmlDemoApplication {
         logger.info("   Database Password Manager - Spring XML Demo");
         logger.info("========================================");
         logger.info("");
-        logger.info("Mode: Original (plain text password)");
+        logger.info("Mode: INTEGRATED (encrypted password)");
         logger.info("Configuration: Spring XML (applicationContext.xml)");
         logger.info("");
 
@@ -29,7 +42,7 @@ public class SpringXmlDemoApplication {
 
             DataSource dataSource = context.getBean(DataSource.class);
             logger.info("DataSource initialized successfully");
-            logger.info("Using plain text password");
+            logger.info("Using encrypted password (auto-decrypted)");
 
             logger.info("");
             logger.info("Testing database connection...");
@@ -47,7 +60,8 @@ public class SpringXmlDemoApplication {
                 logger.info("========================================");
                 logger.info("");
                 logger.info("Key points demonstrated:");
-                logger.info("- Spring DataSource with plain text password");
+                logger.info("- Spring DataSource with encrypted password");
+                logger.info("- DataSourcePasswordProcessor auto-decrypts password");
                 logger.info("- Works with Spring XML configuration");
             }
 

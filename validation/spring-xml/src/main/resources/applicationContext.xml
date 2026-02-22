@@ -10,16 +10,19 @@
     </bean>
 
     <!--
-        DataSource配置
-        使用明文密码
+        DataSource配置 - INTEGRATED VERSION
+        使用占位符密码，DataSourcePasswordProcessor自动解密
     -->
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
         <property name="driverClassName" value="org.h2.Driver"/>
         <property name="url" value="jdbc:h2:file:${user.home}/.dbpwd/h2_data/dbpwd_spring_xml_demo;IFEXISTS=TRUE;MODE=MySQL"/>
         <property name="username" value="sa"/>
-        <!-- 明文密码 -->
-        <property name="password" value="sa"/>
+        <!-- 占位符密码，DataSourcePasswordProcessor自动解密 -->
+        <property name="password" value="@spring_demo_xml_db@"/>
     </bean>
+
+    <!-- DataSourcePasswordProcessor - 自动解密密码 -->
+    <bean class="com.dbpwd.spring.DataSourcePasswordProcessor"/>
 
     <!-- JdbcTemplate for database operations -->
     <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
