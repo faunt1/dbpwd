@@ -10,8 +10,8 @@
     <version>1.0.0</version>
     <packaging>war</packaging>
 
-    <name>Database Password Manager - Servlet Annotation Validation</name>
-    <description>验证版本 - Servlet注解应用（独立运行）</description>
+    <name>Database Password Manager - Servlet Annotation Validation (INTEGRATED)</name>
+    <description>Integrated - Servlet annotation application with encrypted password</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -24,6 +24,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
