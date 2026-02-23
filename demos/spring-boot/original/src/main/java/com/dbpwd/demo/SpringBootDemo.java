@@ -4,10 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,44 +15,28 @@ import java.util.Map;
  *
  * 原始版本 - 使用明文密码，未集成密码加密功能
  *
+ * 数据源配置方式：application.properties
+ * - 密码明文存储在配置文件中
+ *
  * 【集成改动点】
- * 1. 添加 import com.dbpwd.core.PasswordService;
- * 2. 将 DB_PASSWORD 改为 DB_PLACEHOLDER
- * 3. 在 dataSource() 方法中调用 PasswordService.getDatabasePassword(DB_PLACEHOLDER)
+ * 1. 添加 db-pwd-spring-boot-starter 依赖
+ * 2. 将密码改为占位符格式: @spring_boot_db@
+ * 3. 无需修改 Java 代码
  *
  * 注意: 数据库表和初始数据由 DatabaseInitializer 预先创建
  *
  * @author Database Password Manager
- * @version 2.0
+ * @version 3.0
  */
 @SpringBootApplication
 public class SpringBootDemo {
-
-    private static final String DB_PASSWORD = "sa";
-
-    private static final String DB_URL = "jdbc:h2:file:" + System.getProperty("user.home") + "/.dbpwd/h2_data/dbpwd_spring_boot_demo;IFEXISTS=TRUE;MODE=MySQL";
-    private static final String DB_USERNAME = "sa";
 
     public static void main(String[] args) {
         SpringApplication.run(SpringBootDemo.class, args);
     }
 
     @Bean
-    public DataSource dataSource() throws Exception {
-        String plainPassword = DB_PASSWORD;
-        System.out.println("WARNING: Using plaintext password!");
-
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.h2.Driver");
-        dataSource.setUrl(DB_URL);
-        dataSource.setUsername(DB_USERNAME);
-        dataSource.setPassword(plainPassword);
-
-        return dataSource;
-    }
-
-    @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    public JdbcTemplate jdbcTemplate(javax.sql.DataSource dataSource) {
         return new JdbcTemplate(dataSource);
     }
 
@@ -73,6 +55,7 @@ public class SpringBootDemo {
             result.put("application", "Database Password Manager - Spring Boot Demo (ORIGINAL)");
             result.put("status", "running");
             result.put("warning", "Using PLAINTEXT password!");
+            result.put("datasource_config", "application.properties");
             return result;
         }
 
