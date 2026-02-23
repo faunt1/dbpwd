@@ -146,6 +146,7 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | 9 | struts | Struts 1.x | **方案5: PasswordService** | 3 | +32/-30 |
 | 10 | simple-jdbc | 纯JDBC | **方案5: PasswordService** | 2 | +44/-30 |
 </div>
+
 ---
 
 # 验证统计
