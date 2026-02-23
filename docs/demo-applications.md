@@ -547,7 +547,7 @@ public class SpringBootApiDemoApplication {
 <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
     <property name="url" value="jdbc:h2:file:~/.dbpwd/h2_data/spring_demo_xml_db;MODE=MySQL"/>
     <property name="username" value="sa"/>
-    <!-- 密码占位符会被 BeanPostProcessor 自动解密 -->
+    <!-- 密码占位符会被 Starter自动配置 -->
     <property name="password" value="@spring_demo_xml_db@"/>
 </bean>
 
@@ -563,7 +563,7 @@ public class SpringXmlDemoApplication {
         ClassPathXmlApplicationContext context = 
             new ClassPathXmlApplicationContext("applicationContext.xml");
         DataSource dataSource = context.getBean(DataSource.class);
-        // 密码已被 BeanPostProcessor 自动解密
+        // 密码已被 Starter自动配置
     }
 }
 ```

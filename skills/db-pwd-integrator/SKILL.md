@@ -78,7 +78,7 @@ grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
 
 | 优先级 | 检测信号 | 项目类型 | 集成方案 |
 |--------|---------|---------|---------|
-| 1 | `@SpringBootApplication` 或 `spring-boot-starter-parent` | Spring Boot | **方案2c: BeanPostProcessor** |
+| 1 | `@SpringBootApplication` 或 `spring-boot-starter-parent` | Spring Boot | **方案2c: Starter自动配置** |
 | 2 | `DruidDataSource` + `@Configuration` | Spring + Druid | 方案1+3 |
 | 3 | `@Configuration` + `spring-context` | Spring | 方案3 |
 | 4 | `mybatis-config.xml` 或 `*Mapper.xml` | MyBatis | 方案4 |
@@ -88,7 +88,7 @@ grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
 **决策树**：
 ```
 IF @SpringBootApplication OR spring-boot-starter-parent:
-    → 方案2c: db-pwd-spring-boot-starter (BeanPostProcessor 自动解密)
+    → 方案2c: db-pwd-spring-boot-starter (Starter自动配置)
     → 可选 方案2b: 配置 dbpwd.mode=property-source (装饰器模式)
 ELSE IF DruidDataSource:
     → 方案1: db-pwd-druid (使用 DbPwdDruidPasswordCallback 自动解密)
@@ -362,7 +362,7 @@ lsp_diagnostics
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 **检测到项目类型**: Spring Boot 2.7.18
-**推荐集成方案**: 方案2c - BeanPostProcessor (默认模式)
+**推荐集成方案**: 方案2c - Starter自动配置 (默认模式)
 **集成模块**: db-pwd-spring-boot-starter
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -509,7 +509,7 @@ String password = PasswordService.getDatabasePassword(placeholder);
 **响应**:
 1. 扫描项目结构
 2. 识别为 Spring Boot 项目
-3. 推荐方案2c: BeanPostProcessor
+3. 推荐方案2c: Starter自动配置
 4. 获取用户确认
 5. 执行修改：添加依赖、修改配置
 6. 验证编译

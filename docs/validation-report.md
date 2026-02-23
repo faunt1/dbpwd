@@ -133,7 +133,7 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | 2 | spring | Spring Java Config | db-pwd-spring | 2 | +37/-26 |
 | 3 | spring-xml | Spring XML | db-pwd-spring | 3 | +31/-9 |
 | 4 | druid-spring | Druid + Spring | db-pwd-spring | 2 | +33/-38 |
-| 5 | spring-boot | Spring Boot | **方案2c: BeanPostProcessor** | 2 | +12/-3 |
+| 5 | spring-boot | Spring Boot | **方案2c: Starter自动配置** | 2 | +12/-3 |
 | 6 | mybatis | MyBatis | db-pwd-core | 2 | +33/-38 |
 | 7 | servlet | Servlet web.xml | db-pwd-core | 2 | +15/-24 |
 | 8 | servlet-annotation | Servlet 注解 | db-pwd-core | 4 | +199/-32 |
@@ -223,7 +223,7 @@ public class DruidDemoApplication {
 
 **技术栈:** Spring Boot 2.x + H2
 
-**集成方案:** 方案2c - db-pwd-spring-boot-starter (**BeanPostProcessor 自动解密**)
+**集成方案:** 方案2c - db-pwd-spring-boot-starter (**Starter自动配置**)
 
 ---
 
@@ -589,7 +589,7 @@ git diff validation-spring-xml-before..validation-spring-xml-after
 | spring | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
 | spring-xml | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
 | druid-spring | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
-| spring-boot | **方案2c: BeanPostProcessor** | db-pwd-spring-boot-starter | **自动** |
+| spring-boot | **方案2c: Starter自动配置** | db-pwd-spring-boot-starter | **自动** |
 | mybatis | db-pwd-core | PasswordService | 手动 |
 | servlet | db-pwd-core | PasswordService | 手动 |
 | servlet-annotation | db-pwd-core | PasswordService | 手动 |
