@@ -336,7 +336,7 @@ spring:
 ┌─────────────────────────────────────────────────────────────────┐
 │                      集成层 (Integration Layer)                   │
 ├─────────────────────────────────────────────────────────────────┤
-│  方案1:Druid  │  方案2:Boot  │  方案3:Spring  │  方案4:MyBatis │
+│  方案1:Druid  │  方案2c:Boot  │  方案3:Spring  │  方案4:MyBatis │
 │  方案5:JDBC   │  方案6:Servlet                                   │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
@@ -408,7 +408,7 @@ spring:
 | 模式 | 适用场景 | 核心机制 | 自动解密 |
 |------|---------|---------|----------|
 | 方案1 | Druid 连接池 | PasswordCallback | ✅ |
-| 方案2 | Spring Boot | Starter 自动配置 | ✅ |
+| 方案2c | Spring Boot | Starter 自动配置 | ✅ |
 | 方案3 | 传统 Spring | BeanPostProcessor | ✅ |
 | 方案4 | MyBatis | API 调用 | ❌ 手动 |
 | 方案5 | 纯 JDBC | API 调用 | ❌ 手动 |
@@ -434,7 +434,7 @@ dataSource.setPasswordCallback(callback);
 
 ---
 
-## 5.3 方案2: Spring Boot Starter
+## 5.3 方案2c: Spring Boot Starter
 
 **适用场景**：Spring Boot 应用
 
@@ -663,7 +663,7 @@ public class UserApiServlet extends HttpServlet {
 
 | 你的应用类型 | 推荐模式 | 难度 |
 |------------|---------|-----|
-| Spring Boot 新项目 | 方案2: Starter | ⭐ |
+| Spring Boot 新项目 | 方案2c: Starter | ⭐ |
 | 传统 Spring 项目 | 方案3: BeanPostProcessor | ⭐⭐ |
 | Druid 连接池 | 方案1: PasswordCallback | ⭐⭐ |
 | MyBatis 应用 | 方案4: PasswordService API | ⭐⭐ |
@@ -718,18 +718,17 @@ java -jar db-pwd-demo-init/target/db-pwd-demo-init-1.0.0.jar --all
 </dependency>
 ```
 
-**步骤 2：修改配置**
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/mydb
-    username: root
-    password: "@my_db@"  # 改为占位符
+**步骤 2：修改配置 (application.properties)**
+```properties
+# 修改前: spring.datasource.password=sa
+# 修改后:
+spring.datasource.password=@my_db@
 ```
 
----
+**Java 代码：无需修改！**
+- DataSourcePasswordProcessor 自动拦截 DataSource Bean
+- 密码占位符自动解密
 
-## 6.5 纯 JDBC 集成示例
 
 **原始代码**：
 ```java
@@ -763,7 +762,7 @@ Connection conn = DriverManager.getConnection(url, user, password);
 | 集成模式 | Demo 应用 | 测试状态 |
 |---------|----------|---------|
 | 方案1: Druid | demos/druid/ | ✅ 通过 |
-| 方案2: Spring Boot | demos/spring-boot/ | ✅ 通过 |
+| 方案2c: Spring Boot | demos/spring-boot/ | ✅ 通过 |
 | 方案3: Spring | demos/spring/ | ✅ 通过 |
 | 方案4: MyBatis | demos/mybatis/ | ✅ 通过 |
 | 方案5: 纯 JDBC | demos/simple-jdbc/ | ✅ 通过 |

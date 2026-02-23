@@ -133,7 +133,7 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | 2 | spring | Spring Java Config | db-pwd-spring | 2 | +37/-26 |
 | 3 | spring-xml | Spring XML | db-pwd-spring | 3 | +31/-9 |
 | 4 | druid-spring | Druid + Spring | db-pwd-spring | 2 | +33/-38 |
-| 5 | spring-boot | Spring Boot | db-pwd-core | 2 | +44/-30 |
+| 5 | spring-boot | Spring Boot | **方案2c: BeanPostProcessor** | 2 | +12/-3 |
 | 6 | mybatis | MyBatis | db-pwd-core | 2 | +33/-38 |
 | 7 | servlet | Servlet web.xml | db-pwd-core | 2 | +15/-24 |
 | 8 | servlet-annotation | Servlet 注解 | db-pwd-core | 4 | +199/-32 |
@@ -223,38 +223,35 @@ public class DruidDemoApplication {
 
 **技术栈:** Spring Boot 2.x + H2
 
-**集成方案:** db-pwd-core (PasswordService API)
+**集成方案:** 方案2c - db-pwd-spring-boot-starter (**BeanPostProcessor 自动解密**)
 
 ---
 
 # Spring Boot - 代码对比
 
-```java
-// ===== BEFORE (明文密码) =====
-@SpringBootApplication
-public class SpringBootDemo {
-    private static final String DB_PASSWORD = "sa";  // 明文！
-    
-    @Bean
-    public DataSource dataSource() {
-        DriverManagerDataSource ds = new DriverManagerDataSource();
-        ds.setPassword(DB_PASSWORD);  // 直接使用明文
-        return ds;
-    }
-}
+**配置文件方式** - application.properties
 
-// ===== AFTER (加密密码) =====
+```properties
+# ===== BEFORE (明文密码) =====
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.url=jdbc:h2:file:${user.home}/.dbpwd/h2_data/dbpwd_spring_boot_demo;IFEXISTS=TRUE;MODE=MySQL
+spring.datasource.username=sa
+spring.datasource.password=sa  # 明文！
+
+# ===== AFTER (方案2c: 占位符密码) =====
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.url=jdbc:h2:file:${user.home}/.dbpwd/h2_data/dbpwd_spring_boot_demo;IFEXISTS=TRUE;MODE=MySQL
+spring.datasource.username=sa
+spring.datasource.password=@spring_boot_db@  # 占位符，自动解密
+```
+
+**Java 代码** - 无需修改！
+```java
 @SpringBootApplication
 public class SpringBootDemo {
-    private static final String DB_PLACEHOLDER = "@spring_boot_db@";
-    
-    @Bean
-    public DataSource dataSource() {
-        String password = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
-        DriverManagerDataSource ds = new DriverManagerDataSource();
-        ds.setPassword(password);  // 运行时解密
-        return ds;
-    }
+    // 无需任何代码改动
+    // DataSourcePasswordProcessor 自动拦截 DataSource Bean
+    // 并解密密码占位符
 }
 ```
 
@@ -264,13 +261,19 @@ public class SpringBootDemo {
 
 | 改动项 | Before | After |
 |--------|--------|-------|
-| 密码定义 | `DB_PASSWORD = "sa"` | `DB_PLACEHOLDER = "@spring_boot_db@"` |
-| 密码获取 | 直接引用常量 | API 调用解密 |
-| 新增 import | 无 | `com.dbpwd.core.PasswordService` |
+| 密码配置 | `password=sa` | `password=@spring_boot_db@` |
+| 新增依赖 | 无 | `db-pwd-spring-boot-starter` |
+| Java 代码 | 无改动 | **无改动** |
+| 自动解密 | 无 | DataSourcePasswordProcessor |
 
-**安全提升:**
-- 配置文件无明文密码
-- 密码存储在独立加密文件 `~/.dbpwd/db.pwd`
+**核心特点:**
+- ✅ **零代码改动** - 仅修改配置文件
+- ✅ **自动解密** - BeanPostProcessor 拦截 DataSource
+- ✅ **配置简单** - 添加 starter 依赖即可
+
+**文件变更:**
+- `pom.xml`: +5 行 (添加 starter 依赖)
+- `application.properties`: +1/-1 行 (密码改为占位符)
 
 ---
 
@@ -586,7 +589,7 @@ git diff validation-spring-xml-before..validation-spring-xml-after
 | spring | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
 | spring-xml | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
 | druid-spring | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
-| spring-boot | db-pwd-core | PasswordService | 手动 |
+| spring-boot | **方案2c: BeanPostProcessor** | db-pwd-spring-boot-starter | **自动** |
 | mybatis | db-pwd-core | PasswordService | 手动 |
 | servlet | db-pwd-core | PasswordService | 手动 |
 | servlet-annotation | db-pwd-core | PasswordService | 手动 |
