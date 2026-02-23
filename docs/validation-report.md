@@ -127,19 +127,25 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 
 # 验证项目汇总
 
-| # | 项目 | 技术栈 | 集成方案 | 修改文件 | 行数变化 |
-|---|------|--------|---------|:--------:|:--------:|
+<style>
+.xsmall { font-size: 0.65em; }
+</style>
+
+<div class="xsmall">
+
+| # | 项目 | 技术栈 | 集成方案 | 文件 | 变化 |
+|---|------|--------|---------|:----:|:----:|
 | 1 | druid | Druid | **方案1: PasswordCallback** | 2 | +42/-22 |
-| 2 | spring | Spring Java Config | **方案3: BeanPostProcessor** | 2 | +37/-26 |
+| 2 | spring | Spring Config | **方案3: BeanPostProcessor** | 2 | +37/-26 |
 | 3 | spring-xml | Spring XML | **方案3: BeanPostProcessor** | 3 | +31/-9 |
-| 4 | druid-spring | Druid + Spring | **方案3: BeanPostProcessor** | 2 | +33/-38 |
+| 4 | druid-spring | Druid+Spring | **方案3: BeanPostProcessor** | 2 | +33/-38 |
 | 5 | spring-boot | Spring Boot | **方案2c: Starter自动配置** | 2 | +12/-3 |
 | 6 | mybatis | MyBatis | **方案5: PasswordService** | 2 | +33/-38 |
-| 7 | servlet | Servlet web.xml | **方案5: PasswordService** | 2 | +15/-24 |
-| 8 | servlet-annotation | Servlet 注解 | **方案5: PasswordService** | 4 | +199/-32 |
+| 7 | servlet | Servlet | **方案5: PasswordService** | 2 | +15/-24 |
+| 8 | servlet-ann | Servlet注解 | **方案5: PasswordService** | 4 | +199/-32 |
 | 9 | struts | Struts 1.x | **方案5: PasswordService** | 3 | +32/-30 |
-| 10 | simple-jdbc | 纯 JDBC | **方案5: PasswordService** | 2 | +44/-30 |
-
+| 10 | simple-jdbc | 纯JDBC | **方案5: PasswordService** | 2 | +44/-30 |
+</div>
 ---
 
 # 验证统计
