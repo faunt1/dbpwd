@@ -130,15 +130,15 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | # | 项目 | 技术栈 | 集成方案 | 修改文件 | 行数变化 |
 |---|------|--------|---------|:--------:|:--------:|
 | 1 | druid | Druid | **方案1: PasswordCallback** | 2 | +42/-22 |
-| 2 | spring | Spring Java Config | db-pwd-spring | 2 | +37/-26 |
-| 3 | spring-xml | Spring XML | db-pwd-spring | 3 | +31/-9 |
-| 4 | druid-spring | Druid + Spring | db-pwd-spring | 2 | +33/-38 |
+| 2 | spring | Spring Java Config | **方案3: BeanPostProcessor** | 2 | +37/-26 |
+| 3 | spring-xml | Spring XML | **方案3: BeanPostProcessor** | 3 | +31/-9 |
+| 4 | druid-spring | Druid + Spring | **方案3: BeanPostProcessor** | 2 | +33/-38 |
 | 5 | spring-boot | Spring Boot | **方案2c: Starter自动配置** | 2 | +12/-3 |
-| 6 | mybatis | MyBatis | db-pwd-core | 2 | +33/-38 |
-| 7 | servlet | Servlet web.xml | db-pwd-core | 2 | +15/-24 |
-| 8 | servlet-annotation | Servlet 注解 | db-pwd-core | 4 | +199/-32 |
-| 9 | struts | Struts 1.x | db-pwd-core | 3 | +32/-30 |
-| 10 | simple-jdbc | 纯 JDBC | db-pwd-core | 2 | +44/-30 |
+| 6 | mybatis | MyBatis | **方案5: PasswordService** | 2 | +33/-38 |
+| 7 | servlet | Servlet web.xml | **方案5: PasswordService** | 2 | +15/-24 |
+| 8 | servlet-annotation | Servlet 注解 | **方案5: PasswordService** | 4 | +199/-32 |
+| 9 | struts | Struts 1.x | **方案5: PasswordService** | 3 | +32/-30 |
+| 10 | simple-jdbc | 纯 JDBC | **方案5: PasswordService** | 2 | +44/-30 |
 
 ---
 
@@ -586,15 +586,15 @@ git diff validation-spring-xml-before..validation-spring-xml-after
 | 项目 | 集成方案 | 依赖模块 | 解密方式 |
 |------|---------|---------|---------|
 | druid | **方案1: PasswordCallback** | db-pwd-core + db-pwd-druid | **自动** |
-| spring | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
-| spring-xml | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
-| druid-spring | 方案3: DataSourcePasswordProcessor | db-pwd-spring | 自动 |
+| spring | **方案3: BeanPostProcessor** | db-pwd-spring | 自动 |
+| spring-xml | **方案3: BeanPostProcessor** | db-pwd-spring | 自动 |
+| druid-spring | **方案3: BeanPostProcessor** | db-pwd-spring | 自动 |
 | spring-boot | **方案2c: Starter自动配置** | db-pwd-spring-boot-starter | **自动** |
-| mybatis | db-pwd-core | PasswordService | 手动 |
-| servlet | db-pwd-core | PasswordService | 手动 |
-| servlet-annotation | db-pwd-core | PasswordService | 手动 |
-| struts | db-pwd-core | PasswordService | 手动 |
-| simple-jdbc | db-pwd-core | PasswordService | 手动 |
+| mybatis | **方案5: PasswordService** | db-pwd-core | 手动 |
+| servlet | **方案5: PasswordService** | db-pwd-core | 手动 |
+| servlet-annotation | **方案5: PasswordService** | db-pwd-core | 手动 |
+| struts | **方案5: PasswordService** | db-pwd-core | 手动 |
+| simple-jdbc | **方案5: PasswordService** | db-pwd-core | 手动 |
 
 ---
 
