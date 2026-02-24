@@ -25,6 +25,20 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- db-pwd core -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- db-pwd druid integration -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-druid</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Druid connection pool -->
         <dependency>
             <groupId>com.alibaba</groupId>
