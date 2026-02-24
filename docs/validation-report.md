@@ -8,6 +8,7 @@ paginate: true
 基于文档: docs/integration-guide.md
 生成时间: 2026-02-24
 下次重新生成时直接根据该信息从 integration-guide.md 重新生成
+更新: 2026-02-24 添加 multi-module-druid 多模块 Druid 项目验证
 -->
 
 <!--
@@ -29,7 +30,7 @@ section.small th, section.small td { padding: 3px 6px; }
 # 目录
 
 1. **技能原理** - db-pwd-integrator 工作机制
-  2. **验证概述** - 11 个项目验证汇总
+  2. **验证概述** - 12 个项目验证汇总
 3. **项目详情** - Before/After 代码对比分析
 4. **验证结论** - 总结与建议
 
@@ -130,7 +131,7 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 # 二、验证概述
 
 ## 验证目标
-验证 db-pwd-integrator 技能在 **11 个不同技术栈项目**上的集成效果。
+验证 db-pwd-integrator 技能在 **12 个不同技术栈项目**上的集成效果。
 
 **验证维度：**
 - ✅ 集成后代码编译通过
@@ -155,7 +156,8 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | 8 | servlet-ann | Servlet注解 | **方案5: PasswordService** | 4 | +199/-32 |
 | 9 | struts | Struts 1.x | **方案5: PasswordService** | 3 | +32/-30 |
 | 10 | simple-jdbc | 纯JDBC | **方案5: PasswordService** | 2 | +44/-30 |
-| 11 | **struts-zero-code** | **Struts 1.x** | **方案7: 零代码集成** | **2** | **+31/-6** |
+| 11 | struts-zero-code | Struts 1.x | **方案7: 零代码集成** | **2** | **+31/-6** |
+| 12 | **multi-module-druid** | **多模块 Druid** | **方案1: PasswordCallback** | **3** | **+28/-2** |
 
 ---
 
@@ -167,18 +169,18 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 ┌────────────────────────────────────────────┐
 │           验证结果统计                       │
 ├────────────────────────────────────────────┤
-│  项目总数:     11 个                        │
-│  集成成功:     11 个 (100%)                 │
-│  编译通过:     11 个 (100%)                 │
-│  标签创建:     22 个 (before/after 各 11)   │
-│  总代码变更:   +564 行 / -317 行             │
+│  项目总数:     12 个                        │
+│  集成成功:     12 个 (100%)                 │
+│  编译通过:     12 个 (100%)                 │
+│  标签创建:     24 个 (before/after 各 12)   │
+│  总代码变更:   +592 行 / -319 行            │
 │  平均改动:     每项目约 2-3 个文件           │
 └────────────────────────────────────────────┘
 ```
 
 ---
 
-# 三、项目详情 - Before/After 对比
+# 项目详情 - Before/After 对比
 
 ## 项目 1: Druid
 
@@ -238,7 +240,72 @@ public class DruidDemoApplication {
 
 ---
 
-# 项目 2: Spring Boot
+# 项目 2: Multi-Module Druid
+
+**技术栈:** Maven 多模块 + Druid 连接池 + H2 数据库
+
+**集成方案:** 方案1 - db-pwd-druid (**DbPwdDruidPasswordCallback**)
+
+**特殊说明:** 验证多模块 Maven 项目的集成方式
+
+---
+
+# Multi-Module Druid - 代码对比
+
+**多模块结构:**
+```
+multi-module-druid/
+├── parent/           # 父 POM
+├── common/           # 公共模块 (User 实体)
+├── service/          # 服务模块 (UserService)
+│   └── pom.xml      # 添加 db-pwd-core + db-pwd-druid 依赖
+└── demo/            # 主程序模块
+    └── pom.xml      # 添加 db-pwd-druid 依赖
+```
+
+```java
+// ===== BEFORE (明文密码) =====
+// MultiModuleDruidDemo.java
+private static final String DB_PASSWORD = "sa";  // 明文！
+
+dataSource.setPassword(DB_PASSWORD);  // 直接使用明文
+
+// ===== AFTER (方案1: PasswordCallback 自动解密) =====
+// MultiModuleDruidDemo.java
+private static final String DB_PLACEHOLDER = "@druid_demo_spring_db@";
+
+dataSource.setPassword(DB_PLACEHOLDER);  // 设置占位符
+
+// 配置 PasswordCallback - Druid 获取连接时自动解密
+DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+callback.setDataSource(dataSource);
+dataSource.setPasswordCallback(callback);
+```
+
+---
+
+# Multi-Module Druid - 变更分析
+
+| 改动项 | Before | After |
+|--------|--------|-------|
+| 密码定义 | `DB_PASSWORD = "sa"` | `DB_PLACEHOLDER = "@druid_demo_spring_db@"` |
+| 密码使用 | 直接引用明文 | **DbPwdDruidPasswordCallback** 自动解密 |
+| service/pom.xml | 无 db-pwd 依赖 | +db-pwd-core + db-pwd-druid |
+| demo/pom.xml | 无 db-pwd 依赖 | +db-pwd-druid |
+
+**多模块项目集成要点:**
+- ✅ 依赖添加到**具体子模块**的 pom.xml（不是父 pom）
+- ✅ 配置文件修改在**对应模块**的 resources 目录
+- ✅ 代码修改在**对应模块**的 src 目录
+
+**文件变更:**
+- `service/pom.xml`: +16 行 (添加 db-pwd-core + db-pwd-druid 依赖)
+- `demo/pom.xml`: +6 行 (添加 db-pwd-druid 依赖)
+- `MultiModuleDruidDemo.java`: +6/-2 行
+
+---
+
+# 项目 3: Spring Boot
 
 **技术栈:** Spring Boot 2.x + H2
 
@@ -296,7 +363,7 @@ public class SpringBootDemo {
 
 ---
 
-# 项目 3: Spring XML Config
+# 项目 4: Spring XML Config
 
 **技术栈:** Spring Framework 5.x + XML 配置
 
@@ -340,7 +407,7 @@ public class SpringBootDemo {
 
 ---
 
-# 项目 4: Spring Java Config
+# 项目 5: Spring Java Config
 
 **技术栈:** Spring Framework 5.x + Java Config
 
@@ -380,7 +447,7 @@ public class DemoConfig {
 
 ---
 
-# 项目 5: MyBatis
+# 项目 6: MyBatis
 
 **技术栈:** MyBatis 3.x + XML 配置
 
@@ -413,7 +480,7 @@ public class MybatisDemoApplication {
 
 ---
 
-# 项目 6: Servlet (web.xml)
+# 项目 7: Servlet (web.xml)
 
 **技术栈:** Servlet 3.x + web.xml 配置
 
@@ -446,7 +513,7 @@ public class UserApiServlet extends HttpServlet {
 
 ---
 
-# 项目 7: Servlet Annotation
+# 项目 8: Servlet Annotation
 
 **技术栈:** Servlet 3.x + 注解配置 (@WebListener, @WebServlet)
 
@@ -479,7 +546,7 @@ public class AnnotationDemoInitializer implements ServletContextListener {
 
 ---
 
-# 项目 8: Struts 1.x
+# 项目 9: Struts 1.x
 
 **技术栈:** Struts 1.3.10 (传统框架)
 
@@ -514,7 +581,7 @@ public class UserAction extends Action {
 
 ---
 
-# 项目 9: Simple JDBC
+# 项目 10: Simple JDBC
 
 **技术栈:** 纯 JDBC (无框架)
 
@@ -547,13 +614,13 @@ public class SimpleJdbcDemo {
 
 ---
 
-# 项目 10: Druid + Spring
+# 项目 11: Druid + Spring
 
 **技术栈:** Druid 连接池 + Spring XML
 
 **集成方案:** db-pwd-spring (自动解密)
 
-## 项目 11: Struts Zero-Code
+## 项目 12: Struts Zero-Code
 
 **技术栈:** Struts 1.3.10 (ServletContext共享DataSource)
 
@@ -616,8 +683,8 @@ IMPORTANT: Make sure all statistics are updated consistently throughout the docu
 
 
 # 验证结论 - 关键发现
-| **集成成功率** | 100% (11/11) |
-| **编译通过率** | 100% (11/11) |
+| **集成成功率** | 100% (12/12) |
+| **编译通过率** | 100% (12/12) |
 - 技术栈识别正确
 - 自动选择最优集成方案
 
@@ -640,7 +707,8 @@ IMPORTANT: Make sure all statistics are updated consistently throughout the docu
 git diff validation-druid-before..validation-druid-after
 git diff validation-spring-boot-before..validation-spring-boot-after
 git diff validation-spring-xml-before..validation-spring-xml-after
-# ... 共 11 组 before/after 标签
+git diff validation-multi-module-druid-before..validation-multi-module-druid-after
+# ... 共 12 组 before/after 标签
 ```
 
 ---
@@ -648,7 +716,7 @@ git diff validation-spring-xml-before..validation-spring-xml-after
 # 验证结论 - 建议
 
 **技能优化方向：**
-# ... 共 11 组 before/after 标签
+# ... 共 12 组 before/after 标签
 2. 支持 Spring Boot 3.x (Jakarta EE)
 3. 增加集成后自动化测试
 
@@ -673,6 +741,7 @@ git diff validation-spring-xml-before..validation-spring-xml-after
 | servlet-annotation | **方案5: PasswordService** | db-pwd-core | 手动 |
 | struts | **方案5: PasswordService** | db-pwd-core | 手动 |
 | simple-jdbc | **方案5: PasswordService** | db-pwd-core | 手动 |
+| **multi-module-druid** | **方案1: PasswordCallback** | **db-pwd-core + db-pwd-druid** | **自动** |
 
 ---
 
