@@ -1,4 +1,5 @@
 target/
+dependency-reduced-pom.xml
 .claude/settings.local.json
 .vscode/settings.json
 ~/.dbpwd/db.pwd

@@ -9,6 +9,7 @@ paginate: true
 生成时间: 2026-02-24
 下次重新生成时直接根据该信息从 integration-guide.md 重新生成
 更新: 2026-02-24 添加 multi-module-druid 多模块 Druid 项目验证
+更新: 2026-02-24 添加 multi-module-druid-props (properties外置) 项目验证
 -->
 
 <!--
@@ -131,7 +132,7 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 # 二、验证概述
 
 ## 验证目标
-验证 db-pwd-integrator 技能在 **12 个不同技术栈项目**上的集成效果。
+验证 db-pwd-integrator 技能在 **13 个不同技术栈项目**上的集成效果。
 
 **验证维度：**
 - ✅ 集成后代码编译通过
@@ -157,7 +158,8 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | 9 | struts | Struts 1.x | **方案5: PasswordService** | 3 | +32/-30 |
 | 10 | simple-jdbc | 纯JDBC | **方案5: PasswordService** | 2 | +44/-30 |
 | 11 | struts-zero-code | Struts 1.x | **方案7: 零代码集成** | **2** | **+31/-6** |
-| 12 | **multi-module-druid** | **多模块 Druid** | **方案1: PasswordCallback** | **3** | **+28/-2** |
+| 12 | **multi-module-druid** | **多模块 Druid** | **方案1: PasswordCallback** | **3** | **+28/-1** |
+| 13 | **multi-module-druid-props** | **多模块 Druid (配置外置)** | **方案1: PasswordCallback** | **4** | **+45/-1** |
 
 ---
 
@@ -169,10 +171,10 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 ┌────────────────────────────────────────────┐
 │           验证结果统计                       │
 ├────────────────────────────────────────────┤
-│  项目总数:     12 个                        │
+│  项目总数:     13 个                        │
 │  集成成功:     12 个 (100%)                 │
 │  编译通过:     12 个 (100%)                 │
-│  标签创建:     24 个 (before/after 各 12)   │
+│  标签创建:     26 个 (before/after 各 13)   │
 │  总代码变更:   +592 行 / -319 行            │
 │  平均改动:     每项目约 2-3 个文件           │
 └────────────────────────────────────────────┘
@@ -299,9 +301,84 @@ dataSource.setPasswordCallback(callback);
 - ✅ 代码修改在**对应模块**的 src 目录
 
 **文件变更:**
-- `service/pom.xml`: +16 行 (添加 db-pwd-core + db-pwd-druid 依赖)
-- `demo/pom.xml`: +6 行 (添加 db-pwd-druid 依赖)
-- `MultiModuleDruidDemo.java`: +6/-2 行
+- `service/pom.xml`: +14 行 (添加 db-pwd-core + db-pwd-druid 依赖)
+- `demo/pom.xml`: +7 行 (添加 db-pwd-druid 依赖)
+- `MultiModuleDruidDemo.java`: +8/-1 行
+
+---
+
+# 项目 13: Multi-Module Druid (Properties外置)
+
+**技术栈:** Maven 多模块 + Druid 连接池 + **properties 文件配置** + H2 数据库
+
+**集成方案:** 方案1 - db-pwd-druid (**DbPwdDruidPasswordCallback**)
+
+**特殊说明:** 验证从外部 properties 文件读取配置的集成方式
+
+---
+
+# Multi-Module Druid (Props) - 代码对比
+
+**多模块结构:**
+```
+multi-module-druid-props/
+├── parent/           # 父 POM
+├── common/           # 公共模块 (User 实体)
+├── service/          # 服务模块 (UserService)
+│   └── pom.xml      # 添加 db-pwd-core + db-pwd-druid 依赖
+└── demo/            # 主程序模块
+    ├── pom.xml      # 添加 db-pwd-druid 依赖
+    └── src/main/resources/db.properties  # 数据库配置
+```
+
+**配置文件方式** - db.properties
+```properties
+# ===== BEFORE (明文密码) =====
+db.url=jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo_spring;MODE=MySQL
+db.username=sa
+db.password=sa  # 明文！
+db.driver=org.h2.Driver
+
+# ===== AFTER (占位符密码) =====
+db.url=jdbc:h2:file:~/.dbpwd/h2_data/dbpwd_druid_demo_spring;MODE=MySQL
+db.username=sa
+db.password=@druid_demo_spring_db@  # 占位符，自动解密
+db.driver=org.h2.Driver
+```
+
+```java
+// ===== Java 代码: 从 properties 加载配置 =====
+Properties props = new Properties();
+props.load(is);
+DruidDataSource dataSource = UserService.createDataSourceFromProperties(props);
+
+// 配置 PasswordCallback - Druid 获取连接时自动解密
+DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+callback.setDataSource(dataSource);
+dataSource.setPasswordCallback(callback);
+```
+
+---
+
+# Multi-Module Druid (Props) - 变更分析
+
+| 改动项 | Before | After |
+|--------|--------|-------|
+| 密码配置 | `db.password=sa` | `db.password=@druid_demo_spring_db@` |
+| 密码使用 | 直接引用明文 | **DbPwdDruidPasswordCallback** 自动解密 |
+| service/pom.xml | 无 db-pwd 依赖 | +db-pwd-core + db-pwd-druid |
+| demo/pom.xml | 无 db-pwd 依赖 | +db-pwd-druid + shade plugin |
+
+**Properties 外置配置集成要点:**
+- ✅ 密码在 properties 文件中使用占位符
+- ✅ DruidPasswordCallback 在运行时自动解密
+- ✅ 无需修改 Java 代码中的密码处理逻辑
+
+**文件变更:**
+- `service/pom.xml`: +14 行 (添加 db-pwd-core + db-pwd-druid 依赖)
+- `demo/pom.xml`: +28 行 (添加 db-pwd-druid + shade plugin)
+- `db.properties`: +1/-1 行 (密码改为占位符)
+- `MultiModuleDruidPropsDemo.java`: +6/-0 行 (添加 PasswordCallback)
 
 ---
 
@@ -683,8 +760,8 @@ IMPORTANT: Make sure all statistics are updated consistently throughout the docu
 
 
 # 验证结论 - 关键发现
-| **集成成功率** | 100% (12/12) |
-| **编译通过率** | 100% (12/12) |
+| **集成成功率** | 100% (13/13) |
+| **编译通过率** | 100% (13/13) |
 - 技术栈识别正确
 - 自动选择最优集成方案
 
@@ -708,7 +785,7 @@ git diff validation-druid-before..validation-druid-after
 git diff validation-spring-boot-before..validation-spring-boot-after
 git diff validation-spring-xml-before..validation-spring-xml-after
 git diff validation-multi-module-druid-before..validation-multi-module-druid-after
-# ... 共 12 组 before/after 标签
+# ... 共 13 组 before/after 标签
 ```
 
 ---
@@ -716,7 +793,7 @@ git diff validation-multi-module-druid-before..validation-multi-module-druid-aft
 # 验证结论 - 建议
 
 **技能优化方向：**
-# ... 共 12 组 before/after 标签
+# ... 共 13 组 before/after 标签
 2. 支持 Spring Boot 3.x (Jakarta EE)
 3. 增加集成后自动化测试
 
@@ -742,6 +819,7 @@ git diff validation-multi-module-druid-before..validation-multi-module-druid-aft
 | struts | **方案5: PasswordService** | db-pwd-core | 手动 |
 | simple-jdbc | **方案5: PasswordService** | db-pwd-core | 手动 |
 | **multi-module-druid** | **方案1: PasswordCallback** | **db-pwd-core + db-pwd-druid** | **自动** |
+| **multi-module-druid-props** | **方案1: PasswordCallback** | **db-pwd-core + db-pwd-druid** | **自动** |
 
 ---
 
