@@ -1,22 +1,19 @@
 package com.dbpwd.demo.common;
 
-/**
- * User entity
- */
 public class User {
     private Long id;
     private String username;
     private String email;
-    private String status;
+    private String password;
 
     public User() {
     }
 
-    public User(Long id, String username, String email, String status) {
+    public User(Long id, String username, String email, String password) {
         this.id = id;
         this.username = username;
         this.email = email;
-        this.status = status;
+        this.password = password;
     }
 
     public Long getId() {
@@ -43,12 +40,12 @@ public class User {
         this.email = email;
     }
 
-    public String getStatus() {
-        return status;
+    public String getPassword() {
+        return password;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     @Override
@@ -57,7 +54,7 @@ public class User {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", status='" + status + '\'' +
+                ", password='[PROTECTED]'" +
                 '}';
     }
 }

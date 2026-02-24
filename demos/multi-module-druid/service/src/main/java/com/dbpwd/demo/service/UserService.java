@@ -20,7 +20,7 @@ public class UserService {
     public List<User> findAllUsers() throws Exception {
         List<User> users = new ArrayList<>();
         
-        String sql = "SELECT id, username, email, status FROM users ORDER BY id LIMIT 20";
+        String sql = "SELECT id, username, email, password FROM users ORDER BY id LIMIT 20";
         
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -31,7 +31,7 @@ public class UserService {
                 user.setId(rs.getLong("id"));
                 user.setUsername(rs.getString("username"));
                 user.setEmail(rs.getString("email"));
-                user.setStatus(rs.getString("status"));
+                user.setPassword(rs.getString("password"));
                 users.add(user);
             }
         }
