@@ -24,6 +24,13 @@
             <artifactId>multi-module-druid-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- db-pwd druid integration -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-druid</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>
