@@ -10,6 +10,15 @@ paginate: true
 下次重新生成时直接根据该信息从 integration-guide.md 重新生成
 -->
 
+<!--
+小字体样式 - 仅应用于带 small 类的页面
+-->
+<style>
+section.small { font-size: 16px !important; }
+section.small table { font-size: 11px; }
+section.small th, section.small td { padding: 3px 6px; }
+</style>
+
 # Database Password Manager
 ## Skill 验证报告
 
@@ -130,13 +139,10 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 
 ---
 
+<!-- class: small -->
+
 # 验证项目汇总
 
-<style>
-.xsmall { font-size: 0.65em; }
-</style>
-
-<div class="xsmall">
 | # | 项目 | 技术栈 | 集成方案 | 文件 | 变化 |
 |---|------|--------|---------|:----:|:----:|
 | 1 | druid | Druid | **方案1: PasswordCallback** | 2 | +42/-22 |
@@ -152,6 +158,8 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | 11 | **struts-zero-code** | **Struts 1.x** | **方案7: 零代码集成** | **2** | **+31/-6** |
 
 ---
+
+<!-- class: normal -->
 
 # 验证统计
 
