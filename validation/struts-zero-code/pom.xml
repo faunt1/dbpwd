@@ -10,9 +10,8 @@
     <version>1.0.0</version>
     <packaging>war</packaging>
 
-    <name>Database Password Manager - Struts Zero-Code Validation (ORIGINAL)</name>
-    <description>Original - Struts 1.x application using DataSourceInitializer to set up DataSource from ServletContext</description>
-
+    <name>Database Password Manager - Struts Zero-Code Validation (INTEGRATED)</name>
+    <description>Integrated - Struts 1.x application using DbPwdStrutsInitializer for zero-code password encryption</description>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -40,6 +39,20 @@
             <groupId>org.apache.struts</groupId>
             <artifactId>struts-tiles</artifactId>
             <version>${struts.version}</version>
+        </dependency>
+
+        <!-- db-pwd 核心依赖 - ServletContext共享DataSource集成 -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-core</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- db-pwd-web 模块 - 零代码集成支持 -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-web</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
         <!-- Servlet API -->
@@ -89,6 +102,13 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+        </dependency>
+
+        <!-- Bouncy Castle 加密库 - SM4-GCM加密 -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78</version>
         </dependency>
     </dependencies>
 

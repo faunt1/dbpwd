@@ -5,12 +5,17 @@
          http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
          version="4.0">
 
-    <display-name>Database Password Manager - Struts Original Demo</display-name>
+    <display-name>Database Password Manager - Struts Zero-Code Validation (INTEGRATED)</display-name>
 
-    <!-- DataSource 初始化器（明文密码版本） -->
+    <!-- 方案7: ServletContext共享DataSource集成 - 自动解密 -->
     <listener>
-        <listener-class>com.dbpwd.demo.struts.zerocode.DataSourceInitializer</listener-class>
+        <listener-class>com.dbpwd.web.DbPwdStrutsInitializer</listener-class>
     </listener>
+    <!-- 配置数据库占位符 -->
+    <context-param>
+        <param-name>dbpwd.databases</param-name>
+        <param-value>@struts_original_db@</param-value>
+    </context-param>
 
     <!-- Struts Action Servlet -->
     <servlet>
