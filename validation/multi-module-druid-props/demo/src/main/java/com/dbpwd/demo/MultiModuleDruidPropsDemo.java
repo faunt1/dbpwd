@@ -1,6 +1,7 @@
 package com.dbpwd.demo;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.dbpwd.druid.DbPwdDruidPasswordCallback;
 import com.dbpwd.demo.common.User;
 import com.dbpwd.demo.service.UserService;
 import java.io.InputStream;
@@ -19,6 +20,11 @@ public class MultiModuleDruidPropsDemo {
                 props.load(is);
             }
             DruidDataSource dataSource = UserService.createDataSourceFromProperties(props);
+            
+            // Integrate db-pwd: configure PasswordCallback for automatic decryption
+            DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+            callback.setDataSource(dataSource);
+            dataSource.setPasswordCallback(callback);
             
             UserService userService = new UserService(dataSource);
             List<User> users = userService.findAllUsers();
