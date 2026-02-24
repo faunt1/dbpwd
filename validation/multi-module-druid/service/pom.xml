@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.dbpwd</groupId>
+        <artifactId>multi-module-druid</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>multi-module-druid-service</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Database Password Manager - Multi-Module Druid Service</name>
+    <description>Service module for multi-module Druid demo</description>
+
+    <dependencies>
+        <!-- Common module -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>multi-module-druid-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Druid connection pool -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>1.2.20</version>
+        </dependency>
+
+        <!-- H2 database -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+        </dependency>
+
+        <!-- SLF4J -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+    </dependencies>
+
+</project>
