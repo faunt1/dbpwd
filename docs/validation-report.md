@@ -4,6 +4,12 @@ theme: business
 paginate: true
 ---
 
+<!--
+基于文档: docs/integration-guide.md
+生成时间: 2026-02-24
+下次重新生成时直接根据该信息从 integration-guide.md 重新生成
+-->
+
 # Database Password Manager
 ## Skill 验证报告
 
