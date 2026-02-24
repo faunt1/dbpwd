@@ -24,6 +24,13 @@
             <artifactId>multi-module-druid-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- db-pwd druid integration -->
+        <dependency>
+            <groupId>com.dbpwd</groupId>
+            <artifactId>db-pwd-druid</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -60,6 +67,18 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
