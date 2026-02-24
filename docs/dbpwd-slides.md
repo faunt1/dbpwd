@@ -234,7 +234,7 @@ spring:
 **Database Password Manager**
 
 - 基于 **SM4-GCM** 国密算法
-- 提供 **6 种集成模式**
+- 提供 **7 种集成模式**
 - 覆盖主流 Java 技术栈
 - **应用无感知设计**
 
@@ -245,7 +245,7 @@ spring:
 | 特性 | 说明 |
 |------|------|
 | 🔐 SM4-GCM 认证加密 | 国密标准，认证加密防篡改 |
-| 🔧 6 种集成模式 | Druid/Spring Boot/Spring/MyBatis/Servlet/JDBC |
+| 🔧 7 种集成模式 | Druid/Spring Boot/Spring/MyBatis/Servlet/JDBC/ServletContext共享DataSource |
 | 🙈 应用无感知 | 文件路径固定为 `~/.dbpwd/`，应用无需配置 |
 | 📝 占位符格式 | `@db_name@` 格式，自动解密 |
 
@@ -413,6 +413,7 @@ spring:
 | 方案4 | MyBatis | API 调用 | ❌ 手动 |
 | 方案5 | 纯 JDBC | API 调用 | ❌ 手动 |
 | 方案6 | Servlet/Web | ContextListener | ✅ |
+| 方案7: ServletContext共享DataSource | Struts/Servlet (零代码) | web.xml | ✅ |
 
 ---
 
@@ -669,6 +670,7 @@ public class UserApiServlet extends HttpServlet {
 | MyBatis 应用 | 方案4: PasswordService API | ⭐⭐ |
 | 纯 JDBC 应用 | 方案5: PasswordService API | ⭐ |
 | Servlet/Web 应用 | 方案6: ContextListener | ⭐⭐ |
+| Servlet/Web 应用 | 方案7: ServletContext共享DataSource | ⭐⭐ |
 
 ---
 
@@ -767,6 +769,7 @@ Connection conn = DriverManager.getConnection(url, user, password);
 | 方案4: MyBatis | demos/mybatis/ | ✅ 通过 |
 | 方案5: 纯 JDBC | demos/simple-jdbc/ | ✅ 通过 |
 | 方案6: Servlet | demos/servlet/ | ✅ 通过 |
+| 方案7: ServletContext共享DataSource | demos/servlet/zero-code-demo | ✅ 通过 |
 
 **总计**：22 个应用（11 demo + 11 original）全部测试通过
 

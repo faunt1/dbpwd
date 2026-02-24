@@ -14,7 +14,7 @@ paginate: true
 # 目录
 
 1. **技能原理** - db-pwd-integrator 工作机制
- 2. **验证概述** - 10 个项目验证汇总
+  2. **验证概述** - 11 个项目验证汇总
 3. **项目详情** - Before/After 代码对比分析
 4. **验证结论** - 总结与建议
 
@@ -27,8 +27,9 @@ paginate: true
 一个**自动化集成技能**，用于将数据库密码加密功能集成到现有 Java 项目中。
 
 **核心目标：**
-- 消除配置文件中的明文数据库密码
-- 支持 6 种主流 Java 技术栈
+ 消除配置文件中的明文数据库密码
+ 支持 **7 种**主流 Java 技术栈
+ 最小化代码改动
 - 最小化代码改动
 
 ---
@@ -59,8 +60,7 @@ paginate: true
 
 ---
 
-# 技能原理 - 6 种集成模式
-
+# 技能原理 - 7 种集成模式
 | 模式 | 适用场景 | 集成方式 | 自动解密 |
 |------|---------|---------|:--------:|
 | **方案1** | Druid 连接池 | PasswordCallback | ✅ |
@@ -69,7 +69,7 @@ paginate: true
 | **方案4** | MyBatis | DataSourceFactory | ✅ |
 | **方案5** | 纯 JDBC | StandalonePasswordDecryptor | ❌ 手动 |
 | **方案6** | Servlet/Web | ContextListener | ✅ |
-
+| **方案7** | ServletContext共享 | **零代码集成** | ✅ **推荐** |
 ---
 
 # 技能原理 - 核心加密机制
@@ -115,8 +115,7 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 # 二、验证概述
 
 ## 验证目标
-
-验证 db-pwd-integrator 技能在 **10 个不同技术栈项目**上的集成效果。
+验证 db-pwd-integrator 技能在 **11 个不同技术栈项目**上的集成效果。
 
 **验证维度：**
 - ✅ 集成后代码编译通过
@@ -132,7 +131,6 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 </style>
 
 <div class="xsmall">
-
 | # | 项目 | 技术栈 | 集成方案 | 文件 | 变化 |
 |---|------|--------|---------|:----:|:----:|
 | 1 | druid | Druid | **方案1: PasswordCallback** | 2 | +42/-22 |
@@ -145,7 +143,7 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 | 8 | servlet-ann | Servlet注解 | **方案5: PasswordService** | 4 | +199/-32 |
 | 9 | struts | Struts 1.x | **方案5: PasswordService** | 3 | +32/-30 |
 | 10 | simple-jdbc | 纯JDBC | **方案5: PasswordService** | 2 | +44/-30 |
-</div>
+| 11 | **struts-zero-code** | **Struts 1.x** | **方案7: 零代码集成** | **2** | **+31/-6** |
 
 ---
 
@@ -155,11 +153,11 @@ String password = PasswordService.getDatabasePassword("@db_name@");
 ┌────────────────────────────────────────────┐
 │           验证结果统计                       │
 ├────────────────────────────────────────────┤
-│  项目总数:     10 个                        │
-│  集成成功:     10 个 (100%)                 │
-│  编译通过:     10 个 (100%)                 │
-│  标签创建:     20 个 (before/after 各 10)   │
-│  总代码变更:   +533 行 / -311 行             │
+│  项目总数:     11 个                        │
+│  集成成功:     11 个 (100%)                 │
+│  编译通过:     11 个 (100%)                 │
+│  标签创建:     22 个 (before/after 各 11)   │
+│  总代码变更:   +564 行 / -317 行             │
 │  平均改动:     每项目约 2-3 个文件           │
 └────────────────────────────────────────────┘
 ```
@@ -541,12 +539,71 @@ public class SimpleJdbcDemo {
 
 **集成方案:** db-pwd-spring (自动解密)
 
+## 项目 11: Struts Zero-Code
+
+**技术栈:** Struts 1.3.10 (ServletContext共享DataSource)
+
+**集成方案:** **方案7: ServletContext共享DataSource** - **零代码集成**
+
+**特殊说明:** 真正的零代码集成，Action代码完全不需要修改
+
+---
+
+# Struts Zero-Code - 代码对比
+
+```java
+// ===== BEFORE (UserListAction.java) =====
+public class UserListAction extends Action {
+    public ActionForward execute(...) {
+        // 从 ServletContext 获取 DataSource
+        DataSource dataSource = (DataSource) getServlet()
+            .getServletContext().getAttribute("dataSource");
+        
+        // 使用连接...
+    }
+}
+ 
+// ===== AFTER (UserListAction.java - 完全相同！) =====
+// Action代码完全不需要修改！
+```
+
+**集成的唯一修改:**
+```xml
+<!-- ===== BEFORE (web.xml) ===== -->
+<listener>
+    <listener-class>com.dbpwd.demo.struts.zerocode.DataSourceInitializer</listener-class>
+</listener>
+
+<!-- ===== AFTER (web.xml) ===== -->
+<listener>
+    <listener-class>com.dbpwd.web.DbPwdStrutsInitializer</listener-class>
+</listener>
+
+<context-param>
+    <param-name>dbpwd.databases</param-name>
+    <param-value>@struts_original_db@</param-value>
+</context-param>
+```
+
+**零代码集成的关键:**
+- ✅ Action代码 **完全不需要修改**
+- ✅ 使用相同的 `ServletContext.getAttribute("dataSource")`
+- ✅ 密码解密由 `DataSourceDecorator` 在 `getConnection()` 时自动完成
+
+**文件变更:**
+- `pom.xml`: +25 行 (添加 db-pwd-core, db-pwd-web, bcprov 依赖)
+- `web.xml`: +6/-1 行 (替换Listener, 添加context-param)
+
+---
+
+IMPORTANT: Make sure all statistics are updated consistently throughout the document.
+
 ---
 
 
 # 验证结论 - 关键发现
-| **集成成功率** | 100% (10/10) |
-| **编译通过率** | 100% (10/10) |
+| **集成成功率** | 100% (11/11) |
+| **编译通过率** | 100% (11/11) |
 - 技术栈识别正确
 - 自动选择最优集成方案
 
@@ -569,7 +626,7 @@ public class SimpleJdbcDemo {
 git diff validation-druid-before..validation-druid-after
 git diff validation-spring-boot-before..validation-spring-boot-after
 git diff validation-spring-xml-before..validation-spring-xml-after
-# ... 共 10 组 before/after 标签
+# ... 共 11 组 before/after 标签
 ```
 
 ---
@@ -577,7 +634,7 @@ git diff validation-spring-xml-before..validation-spring-xml-after
 # 验证结论 - 建议
 
 **技能优化方向：**
-# ... 共 10 组 before/after 标签
+# ... 共 11 组 before/after 标签
 2. 支持 Spring Boot 3.x (Jakarta EE)
 3. 增加集成后自动化测试
 
