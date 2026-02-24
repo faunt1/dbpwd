@@ -2,14 +2,16 @@
 
 > 本文档帮助用户根据应用类型选择正确的集成模式，并提供详细的代码修改指南。
 >
-> 最后更新: 2026-02-20
+> 最后更新: 2026-02-24
 
 ## 目录
 
 1. [快速选择指南](#快速选择指南)
-2. [集成模式详解](#集成模式详解)
-3. [代码修改详解](#代码修改详解)
-4. [常见问题](#常见问题)
+2. [集成机制原理](#集成机制原理)
+3. [新集成机制开发流程](#新集成机制开发流程)
+4. [集成模式详解](#集成模式详解)
+5. [代码修改详解](#代码修改详解)
+6. [常见问题](#常见问题)
 
 ---
 
@@ -28,6 +30,352 @@
 | MyBatis | 模式4: 自定义集成 | `PasswordService` | ⭐⭐ |
 | Servlet/Struts应用 | 模式6: Servlet ContextListener | `DatabasePasswordInitListener` | ⭐⭐ |
 | Servlet/Struts应用 (共享DataSource) | 模式7: ServletContext共享DataSource | `DbPwdStrutsInitializer` | ⭐ |
+
+## 集成机制原理
+
+### 核心思路
+
+密码集成的本质是**找到框架获取密码的"薄弱环节"**，利用框架提供的扩展点在密码被使用前完成解密。
+
+**两种基本思路**：
+
+1. **配置层面**：将配置文件读取密码替换或接管
+2. **代码层面**：
+   - 优选：替换整个对象（工厂类/装饰器）
+   - 次选：直接修改原始代码调用解密 API
+
+### 5 种集成机制
+
+| # | 机制 | 拦截点 | 典型实现 |
+|---|------|--------|----------|
+| 1 | 回调接口替换 | 框架调用获取密码时 | Druid `PasswordCallback` |
+| 2 | Bean 后置处理 | Bean 初始化完成后 | Spring `BeanPostProcessor` |
+| 3 | 工厂类替换 | DataSource 创建时 | MyBatis `DataSourceFactory` |
+| 4 | 配置源装饰 | 属性读取时 | Spring Boot `PropertySource` |
+| 5 | 装饰器模式 | `getConnection()` 调用时 | `DataSourceDecorator` |
+
+#### 机制 1：回调接口替换（Druid）
+
+```
+DruidDataSource.getConnection() 
+    → 调用 PasswordCallback.getPassword()  ← 拦截点
+    → 获取密码用于创建连接
+```
+
+继承 `DruidPasswordCallback`，重写 `getPassword()` 在此处解密占位符。
+
+#### 机制 2：Bean 后置处理（Spring）
+
+```
+Spring 容器创建 DataSource Bean
+    → BeanPostProcessor.postProcessAfterInitialization()  ← 拦截点
+```
+
+实现 `BeanPostProcessor`，在回调中通过反射获取/设置密码后解密。
+
+#### 机制 3：工厂类替换（MyBatis）
+
+```
+MyBatis 创建 SqlSessionFactory
+    → DataSourceFactory.getDataSource()  ← 拦截点
+```
+
+实现 `DataSourceFactory` 接口，在 `getDataSource()` 中解密密码后设置。
+
+#### 机制 4：配置源装饰（Spring Boot）
+
+```
+Spring Boot 启动 → Environment 加载配置
+    → 应用读取属性时 → 装饰器的 getProperty()  ← 拦截点
+```
+
+装饰 `PropertySource`，拦截属性读取，检测 password 相关属性后解密返回。
+
+#### 机制 5：装饰器模式（零代码集成）
+
+```
+应用启动 → Listener 创建 DataSource
+    → DataSourceDecorator.getConnection()  ← 拦截点（首次调用）
+```
+
+启动时用装饰器包装 DataSource，应用获取连接时首次自动解密。
+
+### 机制选择决策树
+
+```
+需要集成的应用是什么框架？
+│
+├─ Druid 连接池
+│   └─ 使用机制 1：PasswordCallback
+│
+├─ Spring + XML/注解配置
+│   └─ 使用机制 2：BeanPostProcessor
+│
+├─ Spring Boot
+│   ├─ 只需 DataSource → 机制 2：BeanPostProcessor
+│   └─ 需要其他加密配置 → 机制 4：PropertySource 装饰
+│
+├─ MyBatis
+│   └─ 使用机制 3：DataSourceFactory
+│
+└─ Struts/Servlet
+    ├─ Action 从 ServletContext 获取 DataSource
+    │   └─ 使用机制 5：装饰器（零代码）
+    │
+    └─ Action 自己创建 DataSource
+        └─ 使用 PasswordService API（需改少量代码）
+```
+
+**优先原则**：优先使用框架原生扩展点，只有在没有扩展点时才考虑修改代码。
+
+---
+
+## 新集成机制开发流程
+
+当需要为新框架开发集成方案时，按以下流程进行：
+
+### 流程概览
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  步骤1: 分析获取密码环节                                         │
+│  找出应用/框架 获取数据库密码的位置和方式                         │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  步骤2: 寻找可替换环节                                           │
+│  分析该框架是否提供扩展点（回调/装饰器/后置处理器/工厂接口）       │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  步骤3: 确定集成策略                                             │
+│  是否需要生成集成辅助对象？生成什么类型的辅助对象？                 │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  步骤4: 开发与测试                                               │
+│  实现集成辅助类，编写 Demo 验证有效性                            │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  步骤5: 更新 SKILL                                              │
+│  将新集成方案添加到 db-pwd-integrator Skill                      │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  步骤6: 自动化集成                                               │
+│  使用 SKILL 完成实际应用的集成                                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 步骤详解
+
+#### 步骤1: 分析获取密码环节
+
+**问题**：应用从哪里获取数据库密码？
+
+**分析方法**：
+1. 找到创建 DataSource 的代码位置
+2. 追踪 `setPassword()` 方法的调用链
+3. 确定密码的来源（配置文件、代码常量、环境变量等）
+
+**常见来源**：
+- 配置文件：`application.yml`、`db.properties`
+- 代码常量：`private static final String PASSWORD = "xxx"`
+- 环境变量：`System.getenv("DB_PASSWORD")`
+- 框架自动读取：Spring/Druid/MyBatis 框架内部读取
+
+#### 步骤2: 寻找可替换环节
+
+**问题**：框架是否提供扩展点？
+
+**扩展点类型**：
+| 扩展点类型 | 框架示例 | 说明 |
+|-----------|---------|------|
+| 回调接口 | Druid `PasswordCallback` | 框架在获取密码时调用回调 |
+| 装饰器 | `DataSourceDecorator` | 包装原始对象，拦截方法调用 |
+| 后置处理器 | Spring `BeanPostProcessor` | Bean 初始化后拦截 |
+| 工厂接口 | MyBatis `DataSourceFactory` | 替换工厂类创建对象 |
+| 配置源 | Spring Boot `PropertySource` | 装饰配置读取 |
+
+**决策树**：
+```
+框架是否提供扩展点？
+│
+├─ 是 → 使用扩展点机制（推荐）
+│   ├─ 回调接口 → 实现回调接口
+│   ├─ 装饰器 → 实现装饰器模式
+│   ├─ 后置处理器 → 实现 BeanPostProcessor
+│   ├─ 工厂接口 → 实现工厂接口
+│   └─ 配置源 → 装饰 PropertySource
+│
+└─ 否 → 考虑以下方案
+    ├─ 应用是否从统一入口获取 DataSource？
+    │   ├─ 是 → 使用装饰器 + ContextListener（零代码）
+    │   └─ 否 → 进入下一步
+    └─ 只能修改原始代码
+        → 使用 PasswordService API
+```
+
+#### 步骤3: 确定集成策略
+
+**问题**：需要生成什么样的集成辅助对象？
+
+**分析维度**：
+1. **替换目标**：是替换密码获取逻辑，还是替换整个 DataSource？
+2. **集成层次**：在框架层（推荐）还是应用层？
+3. **改动量**：能否实现零代码/低代码修改？
+
+**辅助对象类型**：
+| 类型 | 适用场景 | 示例 |
+|------|---------|------|
+| 回调类 | 框架提供回调接口 | `DbPwdDruidPasswordCallback` |
+| 装饰器类 | 需要透明替换 | `DataSourceDecorator` |
+| 后置处理器 | Spring 容器 | `DataSourcePasswordProcessor` |
+| 工厂类 | 框架使用工厂创建 | `DbPwdDataSourceFactory` |
+| 配置装饰器 | 属性读取时解密 | `DbPwdEncryptablePropertySource` |
+| 初始化器 | Web 应用启动时 | `DbPwdStrutsInitializer` |
+
+#### 步骤4: 开发与测试
+
+**开发步骤**：
+
+1. **创建集成模块**（如 `db-pwd-xxx`）
+   ```
+   db-pwd-xxx/
+   ├── pom.xml
+   └── src/main/java/com/dbpwd/xxx/
+       └── XxxIntegrationHelper.java
+   ```
+
+2. **实现集成辅助类**
+   - 根据选择的扩展点类型实现对应接口
+   - 内部调用 `PasswordService` 获取解密密码
+   - 处理各种边界情况（缓存、异常、日志）
+
+3. **创建 Demo 验证**
+   ```
+   demos/xxx-demo/
+   ├── original/    # 原始版本（集成前）
+   └── demo/       # 集成版本（集成后）
+   ```
+
+4. **测试验证**
+   - 单元测试：验证辅助类本身
+   - 集成测试：验证 Demo 能正常连接数据库
+   - 对比测试：确保集成前后行为一致
+
+5. **验证流程（带标签管理）**
+
+   为确保集成方案经过完整验证，采用标签管理：
+
+   ```
+   validation/                          # 验证目录
+   └── xxx-demo/                        # 某框架的验证项目
+       ├── validation-xxx-before/       # 集成前版本（打标签）
+       └── validation-xxx-after/       # 集成后版本（打标签）
+   ```
+
+   **验证步骤**：
+
+   | 阶段 | 操作 | 标签 |
+   |------|------|------|
+   | 1. 集成前 | 创建验证项目，验证原始应用能正常工作 | `validation-xxx-before` |
+   | 2. 集成前 | 提交代码并打标签 | `git tag validation-xxx-before` |
+   | 3. 使用 SKILL | 执行自动化集成 | - |
+   | 4. 集成后 | 验证集成后应用能正常工作 | - |
+   | 5. 集成后 | 提交代码并打标签 | `git tag validation-xxx-after` |
+
+   **标签命名规范**：
+   ```
+   validation-{框架名}-{集成方案}
+   
+   示例：
+   - validation-druid-passwordcallback
+   - validation-springboot-starter
+   - validation-mybatis-factory
+   - validation-servlet-zerocode
+   ```
+
+   **验证检查项**：
+   - [ ] 集成前：`mvn test` 通过，数据库连接正常
+   - [ ] 集成后：`mvn test` 通过，数据库连接正常
+   - [ ] 密码确认：密码文件中不存在明文密码
+   - [ ] 功能确认：原有业务功能不受影响
+
+**示例**：为新框架 `XxxDataSource` 开发集成
+
+```java
+// 1. 分析：XxxDataSource.setPassword() 在获取连接时被调用
+// 2. 寻找扩展点：发现 XxxDataSource 支持 PasswordCallback 接口
+// 3. 确定策略：实现 XxxPasswordCallback 回调类
+
+public class DbPwdXxxPasswordCallback extends XxxPasswordCallback {
+    @Override
+    public char[] getPassword() {
+        // 从原始 DataSource 获取占位符
+        String placeholder = dataSource.getPassword();
+        // 调用 PasswordService 解密
+        return PasswordService.getDatabasePassword(placeholder).toCharArray();
+    }
+}
+```
+
+#### 步骤5: 更新 SKILL
+
+将新集成方案添加到 `db-pwd-integrator` Skill：
+
+1. **更新决策树**：添加新框架的识别逻辑
+   ```
+   ELSE IF XxxDataSource:
+       → 方案N: db-pwd-xxx (XxxPasswordCallback)
+   ```
+
+2. **更新依赖表**：添加需要的依赖
+   ```
+   | 方案N: Xxx | db-pwd-core + db-pwd-xxx | 两个依赖都需要 |
+   ```
+
+3. **添加代码修改规则**：新框架的修改示例
+   ```
+   // 方案N: Xxx 配置
+   XxxDataSource dataSource = new XxxDataSource();
+   dataSource.setPassword("@my_db@");
+   dataSource.setPasswordCallback(new DbPwdXxxPasswordCallback());
+   ```
+
+4. **更新文档引用**：在 `references/integration-patterns.md` 中添加说明
+
+#### 步骤6: 自动化集成
+
+使用更新后的 SKILL 完成实际集成：
+
+```
+用户: 帮我集成 Xxx 框架的项目
+
+SKILL 响应:
+1. 扫描项目，识别为 Xxx 框架
+2. 匹配方案N: db-pwd-xxx
+3. 添加依赖：db-pwd-core + db-pwd-xxx
+4. 修改代码：设置 PasswordCallback
+5. 验证编译
+```
+
+### 开发 Checklist
+
+- [ ] 步骤1：分析获取密码环节，绘制调用链
+- [ ] 步骤2：确认框架提供的扩展点类型
+- [ ] 步骤3：确定集成辅助对象类型
+- [ ] 步骤4：实现集成辅助类
+- [ ] 步骤4：创建 Demo（original + demo）
+- [ ] 步骤4：创建 validation 验证项目
+- [ ] 步骤4：集成前验证并打 `validation-xxx-before` 标签
+- [ ] 步骤4：使用 SKILL 集成
+- [ ] 步骤4：集成后验证并打 `validation-xxx-after` 标签
+- [ ] 步骤5：更新 SKILL 决策树
+- [ ] 步骤5：更新 SKILL 依赖表
+- [ ] 步骤5：更新 SKILL 代码规则
+- [ ] 步骤6：使用 SKILL 完成集成
 
 ---
 
@@ -1286,4 +1634,4 @@ chmod 600 ~/.dbpwd/sm4.key ~/.dbpwd/db.pwd
 ---
 
 > 文档版本: 2.0
-> 最后更新: 2026-02-20
+> 最后更新: 2026-02-24
