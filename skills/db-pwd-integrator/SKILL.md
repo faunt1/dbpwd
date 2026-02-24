@@ -1,6 +1,6 @@
 ---
 name: db-pwd-integrator
-description: 自动扫描 Java 数据库应用并集成 db-pwd 密码加密功能，支持 Spring Boot/Spring/Druid/MyBatis/Servlet/纯JDBC 六种项目类型
+description: 自动扫描 Java 数据库应用并集成 db-pwd 密码加密功能，支持 Spring Boot/Spring/Druid/MyBatis/Servlet/纯JDBC/零代码集成 七种集成模式
 license: MIT
 compatibility: opencode
 keywords:
@@ -9,6 +9,8 @@ keywords:
   - 改造数据库密码管理
   - 密码加密集成
   - 集成 dbpwd
+  - 零代码集成
+  - Struts零代码
 ---
 
 # db-pwd-integrator
@@ -99,7 +101,9 @@ ELSE IF @Configuration + DataSource Bean:
 ELSE IF mybatis-config.xml OR *Mapper.xml:
     → 方案4: db-pwd-mybatis
 ELSE IF web.xml OR @WebServlet/@WebListener:
-    → 方案6: db-pwd-web
+    → 检查是否从 ServletContext.getAttribute("dataSource") 获取 DataSource
+    → IF 是: 方案6b: db-pwd-web 零代码集成（DbPwdStrutsInitializer，推荐）
+    → ELSE: 方案6: db-pwd-web
 ELSE IF DriverManager.getConnection:
     → 方案5: db-pwd-core (手动调用 PasswordService)
 ELSE:
@@ -302,7 +306,26 @@ public class DatabaseConfig {
 </listener>
 ```
 
-**规则8: 更新 .gitignore**
+**规则8: 零代码集成（方案6b - 推荐）**
+```xml
+<!-- 零代码集成的关键配置 -->
+<listener>
+    <listener-class>com.dbpwd.web.DbPwdStrutsInitializer</listener-class>
+</listener>
+
+<context-param>
+    <param-name>dbpwd.databases</param-name>
+    <param-value>@my_db@</param-value>
+</context-param>
+```
+
+**零代码集成特点：**
+- Action 代码完全不需要修改
+- 使用相同的 `context.getAttribute("dataSource")` 获取 DataSource
+- 区别：Listener 初始化时设置装饰后的 DataSource（自动解密）
+- 适用于：Struts/Servlet 应用，Action 已从 ServletContext 获取 DataSource
+
+**规则9: 更新 .gitignore**
 ```gitignore
 # db-pwd 密码管理
 .dbpwd/

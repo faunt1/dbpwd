@@ -6,14 +6,15 @@
 
 ## 项目概述
 
-**Database Password Manager** 是一个基于 SM4 国密算法的数据库密码管理系统，提供 6 种核心集成模式，覆盖主流 Java 技术栈。核心目标是确保生产环境数据库密码不在代码库和配置文件中明文出现。
+**Database Password Manager** 是一个基于 SM4 国密算法的数据库密码管理系统，提供 **7 种** 核心集成模式，覆盖主流 Java 技术栈。核心目标是确保生产环境数据库密码不在代码库和配置文件中明文出现。
 
 ### 核心特性
 
 - **SM4-GCM 认证加密**: 采用国密算法，支持认证加密防篡改
-- **6 种集成模式**: Druid/Spring Boot/Spring/MyBatis/Servlet/纯JDBC
+- **7 种集成模式**: Druid/Spring Boot/Spring/MyBatis/Servlet/纯JDBC/**零代码集成**
 - **应用无感知**: 文件路径由 PasswordService 内部固定为 `~/.dbpwd/`
 - **占位符格式**: 使用 `@db_name@` 格式，应用配置无需知道文件位置
+- **零代码集成**: 通过 ServletContext 共享 DataSource，Action 代码完全不需要修改
 
 ---
 
@@ -244,7 +245,7 @@ mvn tomcat7:run -pl db-pwd-servlet-demo
 
 ---
 
-## 6 种集成模式
+## 7 种集成模式
 
 | 模式 | 适用场景 | 核心机制 | 自动解密 |
 |------|---------|---------|----------|
@@ -254,6 +255,7 @@ mvn tomcat7:run -pl db-pwd-servlet-demo
 | 方案4: MyBatis DataSourceFactory | MyBatis | 工厂类扩展 | ✅ |
 | 方案5: StandalonePasswordDecryptor | 纯JDBC | API调用 | ❌ 手动 |
 | 方案6: Servlet InitListener | Servlet/Web | 容器监听器 | ✅ |
+| 方案7: 零代码集成 | Struts/Servlet | ServletContext共享 | ✅ **- 推荐** |
 
 ### Demo 应用对照表
 
@@ -270,6 +272,7 @@ mvn tomcat7:run -pl db-pwd-servlet-demo
 | db-pwd-servlet-demo | 方案6 | web.xml | `@servlet_demo_db@` |
 | db-pwd-servlet-demo-annotation | 方案6 | 注解配置 | `@servlet_annotation_db@` |
 | db-pwd-struts-demo | 方案6扩展 | Struts + Servlet | `@struts_demo_db@` |
+| db-pwd-struts-zero-code-demo(NEW) | 方案7: 零代码集成 | ServletContext共享 | `@struts_original_db@` |
 
 ---
 

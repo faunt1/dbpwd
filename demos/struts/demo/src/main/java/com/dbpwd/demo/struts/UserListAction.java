@@ -1,7 +1,7 @@
 package com.dbpwd.demo.struts;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.core.PasswordService;
+import com.dbpwd.web.WebPasswordUtil;
 import org.apache.struts.action.Action;
 import org.apache.struts.action.ActionForm;
 import org.apache.struts.action.ActionForward;
@@ -27,8 +27,8 @@ public class UserListAction extends Action {
     @Override
     public ActionForward execute(ActionMapping mapping, ActionForm form,
             HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
+        // 方案6: 通过 WebPasswordUtil 获取密码 (自动解密)
+        String plainPassword = WebPasswordUtil.getPlainPassword(request.getServletContext(), DB_PLACEHOLDER);
 
         DruidDataSource dataSource = new DruidDataSource();
         dataSource.setUrl(H2_URL);

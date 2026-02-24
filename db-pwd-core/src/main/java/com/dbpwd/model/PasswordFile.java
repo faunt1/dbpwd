@@ -1,6 +1,7 @@
 package com.dbpwd.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +23,7 @@ import java.util.Map;
  * @author Druid DB Password Manager
  * @version 3.0
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PasswordFile {
 
     private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;

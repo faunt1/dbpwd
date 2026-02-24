@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+
+    <display-name>Database Password Manager - Struts Zero-Code Integration Demo</display-name>
+
+    <description>
+        Struts 1.x zero-code integration demo using db-pwd framework.
+        Demonstrates password encryption with SM4-GCM without any code modification.
+    </description>
+
+    <!--
+        ========== 零代码集成 - 唯一的配置改动 ==========
+
+        添加 Database Password Manager 初始化监听器
+
+        功能：
+        1. 应用启动时自动执行
+        2. 创建并装饰 DataSource（密码自动解密）
+        3. 存储到 ServletContext.getAttribute("dataSource")
+        4. Action 可直接获取，无需任何代码修改
+
+        配置完成后，Action 代码完全不需要修改！
+    -->
+    <listener>
+        <listener-class>com.dbpwd.web.DbPwdStrutsInitializer</listener-class>
+    </listener>
+
+    <context-param>
+        <param-name>dbpwd.databases</param-name>
+        <param-value>@struts_original_db@</param-value>
+    </context-param>
+
+    <!-- Struts Action Servlet -->
+    <servlet>
+        <servlet-name>action</servlet-name>
+        <servlet-class>org.apache.struts.action.ActionServlet</servlet-class>
+        <init-param>
+            <param-name>config</param-name>
+            <param-value>/WEB-INF/struts-config.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>action</servlet-name>
+        <url-pattern>*.do</url-pattern>
+    </servlet-mapping>
+
+    <!-- Welcome files -->
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+</web-app>

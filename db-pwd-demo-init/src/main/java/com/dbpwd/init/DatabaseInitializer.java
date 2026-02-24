@@ -58,7 +58,8 @@ public class DatabaseInitializer {
         new DemoDatabase("mybatis_demo_db", "dbpwd_mybatis_demo", "MyBatis Demo Database"),
         new DemoDatabase("servlet_demo_db", "dbpwd_servlet_demo", "Servlet Demo Database"),
         new DemoDatabase("servlet_demo_annotation_db", "dbpwd_servlet_annotation_demo", "Servlet Annotation Demo Database"),
-        new DemoDatabase("struts_demo_db", "dbpwd_struts_demo", "Struts Demo Database")
+        new DemoDatabase("struts_demo_db", "dbpwd_struts_demo", "Struts Demo Database"),
+        new DemoDatabase("struts_original_db", "dbpwd_struts_original_demo", "Struts Original Demo Database")
     };
 
     private String sm4Key;

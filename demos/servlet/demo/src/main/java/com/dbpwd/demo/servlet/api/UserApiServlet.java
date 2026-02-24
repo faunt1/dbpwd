@@ -1,7 +1,7 @@
 package com.dbpwd.demo.servlet.api;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.dbpwd.core.PasswordService;
+import com.dbpwd.web.WebPasswordUtil;
 import com.dbpwd.demo.servlet.dao.UserDao;
 import com.dbpwd.demo.servlet.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +18,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 用户API Servlet
+ * 用户API Servlet - 方案6: ContextListener 自动解密
+ *
+ * 集成方式：
+ * - web.xml 配置 DatabasePasswordInitListener
+ * - 使用 WebPasswordUtil.getPlainPassword() 获取密码
+ * - 密码在容器启动时预加载，无需手动初始化
  */
 @WebServlet("/api/users/*")
 public class UserApiServlet extends HttpServlet {
@@ -38,11 +43,13 @@ public class UserApiServlet extends HttpServlet {
     public void init() throws ServletException {
         System.out.println("=========================================");
         System.out.println("   Database Password Manager - Servlet Demo");
+        System.out.println("   方案6: ContextListener 自动解密");
         System.out.println("=========================================");
 
         try {
-            String plainPassword = PasswordService.getDatabasePassword(DB_PLACEHOLDER);
-            System.out.println("Password retrieved for placeholder: " + DB_PLACEHOLDER);
+            // 方案6: 通过 WebPasswordUtil 获取密码 (自动解密)
+            String plainPassword = WebPasswordUtil.getPlainPassword(getServletContext(), DB_PLACEHOLDER);
+            System.out.println("Password retrieved via WebPasswordUtil for: " + DB_PLACEHOLDER);
 
             dataSource = new DruidDataSource();
             dataSource.setUrl(H2_URL);

@@ -27,6 +27,7 @@
 | Spring (XML Config) | 模式3: Spring BeanPostProcessor | `DataSourcePasswordProcessor` | ⭐⭐ |
 | MyBatis | 模式4: 自定义集成 | `PasswordService` | ⭐⭐ |
 | Servlet/Struts应用 | 模式6: Servlet ContextListener | `DatabasePasswordInitListener` | ⭐⭐ |
+| Servlet/Struts应用 (共享DataSource) | 模式7: ServletContext共享DataSource | `DbPwdStrutsInitializer` | ⭐ |
 
 ---
 
@@ -89,6 +90,21 @@
 **集成原理**: ServletContextListener在容器启动时初始化密码服务
 
 **核心类**: `com.dbpwd.web.DatabasePasswordInitListener`
+
+### 模式7: ServletContext共享DataSource集成
+
+**适用场景**: Struts/Servlet应用，Action代码已从ServletContext获取DataSource
+
+**集成原理**: 通过ServletContext共享装饰后的DataSource,实现真正的零代码修改
+
+**核心类**: `com.dbpwd.web.DbPwdStrutsInitializer`
+
+**特点**:
+- Action代码完全不需要修改
+- 使用相同的 `context.getAttribute("dataSource")` 获取DataSource
+- Listener初始化时自动配置装饰后的DataSource
+- 适用于已有ServletContext共享DataSource的Struts/Servlet应用
+
 
 ---
 
@@ -954,6 +970,209 @@ public class UserListAction extends Action {
 1. 添加 `import com.dbpwd.core.PasswordService;`
 2. 将密码常量从 `"sa"` 改为占位符 `"@struts_demo_db@"`
 3. 使用 `PasswordService.getDatabasePassword()` 获取密码
+
+## 十一、模式7: ServletContext共享DataSource集成
+
+### 11.1 适用场景
+
+- Struts 1.x / Servlet 应用
+- Action 代码已经从 ServletContext 获取 DataSource
+- 希望实现真正的零代码修改集成
+
+### 11.2 核心特点
+
+**与标准 Servlet 集成的区别**:
+
+| 特性 | 标准Servlet集成 (模式6) | ServletContext共享DataSource (模式7) |
+|-----|---------------|---------------|
+| Action代码改动 | 需要修改 | **完全不需要修改** |
+| DataSource获取方式 | ServletContext.getAttribute | ServletContext.getAttribute |
+| Listener类 | DatabasePasswordInitListener | DbPwdStrutsInitializer |
+| 集成模式 | init()时手动解密 | 装饰器自动解密 |
+### 11.3 目录结构变化
+
+```
+修改文件:
+├── pom.xml                                    [修改]
+└── src/main/webapp/WEB-INF/web.xml            [修改]
+
+无需修改:
+└── src/main/java/.../*.java                   [ACTION代码完全不变]
+```
+
+### 11.4 POM文件修改
+
+**添加依赖**:
+```xml
+<!-- 添加核心依赖 -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-core</artifactId>
+    <version>1.0.0</version>
+</dependency>
+
+<!-- 添加Web集成依赖 -->
+<dependency>
+    <groupId>com.dbpwd</groupId>
+    <artifactId>db-pwd-web</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+### 11.5 web.xml配置修改
+
+**原始web.xml**:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5">
+    <display-name>Struts Demo</display-name>
+    
+    <!-- 原始初始化器 (明文密码) -->
+    <listener>
+        <listener-class>com.dbpwd.demo.struts.zerocode.DataSourceInitializer</listener-class>
+    </listener>
+</web-app>
+```
+
+**集成后web.xml**:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5">
+    <display-name>Struts Demo</display-name>
+    
+    <!-- ServletContext共享DataSource初始化器 (自动解密) -->
+    <listener>
+        <listener-class>com.dbpwd.web.DbPwdStrutsInitializer</listener-class>
+    </listener>
+    
+    <!-- 配置数据库占位符 -->
+    <context-param>
+        <param-name>dbpwd.databases</param-name>
+        <param-value>@struts_original_db@</param-value>
+    </context-param>
+</web-app>
+```
+
+**关键改动点**:
+1. 将 `DataSourceInitializer` 替换为 `DbPwdStrutsInitializer`
+2. 添加 `dbpwd.databases` context-param，配置数据库占位符
+
+### 11.6 动作代码 - **无需修改**
+
+**原始代码** (与集成后代码完全相同):
+```java
+public class UserListAction extends Action {
+    
+    @Override
+    public ActionForward execute(ActionMapping mapping, ActionForm form,
+            HttpServletRequest request, HttpServletResponse response) throws Exception {
+        
+        // 从ServletContext获取DataSource - 完全不需要修改
+        ServletContext servletContext = this.getServlet().getServletContext();
+        DataSource dataSource = (DataSource) servletContext.getAttribute("dataSource");
+        
+        try (Connection conn = dataSource.getConnection()) {
+            // 执行查询...
+        }
+        
+        return mapping.findForward("success");
+    }
+}
+```
+
+### 11.7 工作原理
+
+```
+容器启动
+    ↓
+web.xml 加载 DbPwdStrutsInitializer
+    ↓
+contextInitialized() 被调用
+    ↓
+读取 dbpwd.databases 参数: @struts_original_db@
+    ↓
+从 ~/.dbpwd/db.pwd 文件读取数据库配置
+    ↓
+使用 PasswordService 解析占位符，获取明文密码
+    ↓
+创建 DataSource 并设置明文密码
+    ↓
+使用 DataSourceDecorator 装饰 DataSource
+    ↓
+将装饰后的 DataSource 存入 ServletContext.getAttribute("dataSource")
+    ↓
+Action 代码正常调用 context.getAttribute("dataSource")
+    ↓
+DataSourceDecorator 在getConnection时自动解密
+```
+
+### 11.8 为什么能零代码修改？
+
+**关键设计**:
+1. **相同的属性名**: 两个版本都使用 `"dataSource"` 作为ServletContext属性名
+2. **装饰器模式**: 集成版本使用 `DataSourceDecorator` 包装原始DataSource
+3. **透明解密**: 装饰器在 `getConnection()` 时自动解密，对Action完全透明
+
+**对比**:
+
+```java
+// 原始 DataSourceInitializer 的工作方式
+public void contextInitialized(...) {
+    DataSource ds = new DruidDataSource();
+    ds.setPassword("sa");  // 明文密码
+    servletContext.setAttribute("dataSource", ds);
+}
+
+// DbPwdStrutsInitializer 的工作方式
+public void contextInitialized(...) {
+    DataSource ds = new DruidDataSource();
+    ds.setPassword("@struts_original_db@");  // 占位符
+    
+    // 关键：装饰DataSource
+    DataSource decoratedDs = new DataSourceDecorator(ds);
+    servletContext.setAttribute("dataSource", decoratedDs);
+}
+```
+
+**DataSourceDecorator 核心逻辑**:
+```java
+@Override
+public Connection getConnection() throws SQLException {
+    // 在获取连接时自动解密密码
+    String encryptedPassword = targetDataSource.getPassword();
+    String plainPassword = PasswordService.decrypt(encryptedPassword);
+    // 使用解密后的密码建立连接
+    return targetDataSource.getConnection();
+}
+```
+
+### 11.9 与其他模式的对比
+
+| 集成模式 | 代码修改量 | 配置修改 | 难度 |
+|---------|----------|---------|-----|
+| 模式1: Druid | 小 | 中等 | ⭐⭐ |
+| 模式2: Spring Boot Starter | 小 | 小 | ⭐ |
+| 模式3: Spring BeanPostProcessor | 小 | 中等 | ⭐⭐ |
+| 模式4: MyBatis | 中等 | 小 | ⭐⭐ |
+| 模式5: Standalone | 中等 | 无 | ⭐⭐ |
+| 模式6: Servlet ContextListener | 中等 | 小 | ⭐⭐ |
+| 模式7: ServletContext共享DataSource | **无** | **小** | **⭐** |
+
+### 11.10 使用建议
+
+**推荐使用ServletContext共享DataSource的场景**:
+- Struts 1.x 应用，Action 已从 ServletContext 获取 DataSource
+- 传统 Servlet 应用，使用 ServletContext 共享 DataSource
+- 希望最小化代码改动，降低集成风险
+- 维护老旧应用，不想修改核心业务代码
+
+**不推荐使用的场景**:
+- 应用未使用 ServletContext 共享 DataSource
+- 需要在代码中动态配置 DataSource
+- Spring Boot / Spring Framework 应用 (有更好的集成方式)
+
+---
+
 
 ---
 

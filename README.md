@@ -1,6 +1,6 @@
 # Database Password Manager
 
-基于 SM4 国密算法的数据库密码管理系统，提供 6 种集成模式，覆盖主流 Java 技术栈。
+基于 SM4 国密算法的数据库密码管理系统，提供 7 种集成模式，覆盖主流 Java 技术栈。
 
 ## 背景与需求
 
@@ -27,7 +27,7 @@
 ## 核心特性
 
 - **SM4-GCM 认证加密**: 采用国密算法，支持认证加密防篡改
-- **6 种集成模式**: Druid/Spring Boot/Spring/MyBatis/Servlet/纯JDBC
+ **7 种集成模式**: Druid/Spring Boot/Spring/MyBatis/Servlet/纯JDBC/**ServletContext共享DataSource**
 - **应用无感知**: 文件路径由 PasswordService 内部固定为 `~/.dbpwd/`
 - **占位符格式**: 使用 `@db_name@` 格式，应用配置无需知道文件位置
 - **H2 FILE 验证**: 使用 H2 文件数据库支持真正的密码验证
@@ -66,6 +66,7 @@ java -jar db-pwd-spring-boot-demo/target/db-pwd-spring-boot-demo-1.0.0.jar
 | 方案4: MyBatis DataSourceFactory | MyBatis | XML配置 | ✅ |
 | 方案5: StandalonePasswordDecryptor | 纯JDBC | API调用 | ❌ 手动 |
 | 方案6: Servlet InitListener | Servlet/Web | web.xml | ✅ |
+| 方案7: ServletContext共享DataSource | Struts/Servlet (零代码) | web.xml | ✅ |
 
 ## 占位符格式
 
