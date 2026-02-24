@@ -24,6 +24,36 @@
 - **占位符格式**: 应用配置中使用 `@db_name@` 格式，由系统自动解密
 - **固定路径**: 密码文件路径固定为 `~/.dbpwd/`，应用无需配置
 
+## 设计演进链路
+
+本项目的本质是一条**能力逐层抽象、方案逐层沉淀**的演进之路：
+
+```
+【第一层】基础能力
+  └─ 加解密能力: SM4-GCM 加密/解密
+           ▼
+【第二层】文件操作能力
+  ├─ 密钥文件: sm4.key
+  └─ 密码文件: db.pwd
+           ▼
+【第三层】集成模式抽象
+  ├─ 场景1: Druid → PasswordCallback
+  ├─ 场景2: Spring Boot → Starter
+  ├─ 场景3: Spring → BeanPostProcessor
+  ├─ 场景4: MyBatis → DataSourceFactory
+  ├─ 场景5: 纯 JDBC → API调用
+  ├─ 场景6: Servlet → ContextListener
+  └─ 场景7: ServletContext共享 → 零代码集成
+           ▼
+【第四层】辅助工具链
+  ├─ CLI 工具
+  ├─ SKILL 自动化集成
+  └─ Demo 验证
+```
+
+**演进逻辑**: 从加解密 → 文件管理 → 场景集成 → 自动化
+
+
 ## 核心特性
 
 - **SM4-GCM 认证加密**: 采用国密算法，支持认证加密防篡改
