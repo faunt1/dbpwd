@@ -29,6 +29,7 @@
         <module>servlet-annotation</module>
         <module>struts</module>
         <module>struts-zero-code</module>
+        <module>multi-module-druid</module>
     </modules>
 
 </project>
