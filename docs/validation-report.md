@@ -75,7 +75,244 @@ section.small th, section.small td { padding: 3px 6px; }
 └─────────────────────────────────────────────────────────┘
 ```
 
+<!-- class: small -->
+
+# 技能原理 - Skill 目录结构
+
+```
+skills/
+└── db-pwd-integrator/
+    ├── SKILL.md                    # 主技能文件 (539行)
+    └── references/
+        ├── code-examples.md        # 代码修改示例 (505行)
+        ├── integration-patterns.md  # 集成模式详解
+        └── troubleshooting.md       # 问题排查指南
+```
+
+**文件职责：**
+- `SKILL.md`: 核心逻辑、工作流程、用户交互模板
+- `code-examples.md`: 6种集成模式的代码修改对照
+- `integration-patterns.md`: 各技术栈的集成细节
+- `troubleshooting.md`: 常见问题与解决方案
+
 ---
+
+# 技能原理 - 核心代码结构
+
+## Phase 1: 项目扫描
+
+```python
+# 扫描项目结构
+glob("**/pom.xml")                    # 查找 Maven 项目
+glob("**/build.gradle")               # 查找 Gradle 项目  
+glob("**/application*.yml")           # 查找配置文件
+grep("DataSource|@SpringBootApplication|@Configuration", include="*.java")
+```
+
+**多模块项目处理：**
+- 父 pom (packaging=pom): 跳过
+- 有数据库依赖的模块: 标记为需要集成
+- 无数据库依赖的 common/util: 建议跳过
+
+---
+
+# 技能原理 - 类型识别决策树
+
+```
+IF @SpringBootApplication OR spring-boot-starter-parent:
+    → 方案2c: db-pwd-spring-boot-starter (推荐)
+    
+ELSE IF DruidDataSource:
+    → 方案1: db-pwd-druid (PasswordCallback)
+    → 注意: 不要使用 PasswordService.getDatabasePassword()
+    
+ELSE IF @Configuration + DataSource Bean:
+    → 方案3: db-pwd-spring (BeanPostProcessor)
+    
+ELSE IF mybatis-config.xml OR *Mapper.xml:
+    → 方案4: db-pwd-mybatis
+    
+ELSE IF web.xml OR @WebServlet/@WebListener:
+    → 检查 ServletContext.getAttribute("dataSource")
+    → IF 是: 方案6b: 零代码集成 (推荐)
+    
+ELSE IF DriverManager.getConnection:
+    → 方案5: db-pwd-core (手动调用 API)
+```
+
+**重要： Druid 项目必须使用 PasswordCallback (方案1)**
+
+---
+
+<!-- class: small -->
+
+# 技能原理 - 关键代码示例
+
+## 规则1: Java 代码替换
+
+```java
+// BEFORE
+private static final String DB_PASSWORD = "sa";
+
+// AFTER
+import com.dbpwd.core.PasswordService;
+private static final String DB_PLACEHOLDER = "@my_db@";
+```
+
+## 规则2: 配置文件替换
+
+```yaml
+# BEFORE
+spring.datasource.password: sa
+
+# AFTER
+spring.datasource.password: "@my_db@"
+```
+
+## 规则3: Druid 专用 (方案1)
+
+```java
+// ❌ 错误做法 (方案5)
+String password = PasswordService.getDatabasePassword("@my_db@");
+dataSource.setPassword(password);
+
+// ✅ 正确做法 (方案1 - 必须)
+dataSource.setPassword("@my_db@");  // 占位符
+DbPwdDruidPasswordCallback callback = new DbPwdDruidPasswordCallback();
+callback.setDataSource(dataSource);
+dataSource.setPasswordCallback(callback);
+```
+
+---
+
+# 技能原理 - 零代码集成
+
+**方案6b: ServletContext 共享 DataSource**
+
+```xml
+<!-- web.xml 配置 -->
+<listener>
+    <listener-class>com.dbpwd.web.DbPwdStrutsInitializer</listener-class>
+</listener>
+
+<context-param>
+    <param-name>dbpwd.databases</param-name>
+    <param-value>@my_db@</param-value>
+</context-param>
+```
+
+**特点：**
+- ✅ Action 代码**完全不需要修改**
+- ✅ 使用相同的 `context.getAttribute("dataSource")`
+- ✅ 密码解密在 `getConnection()` 时自动完成
+- ✅ 适用于 Struts/Servlet 应用
+
+---
+
+# 技能原理 - 依赖添加规则
+
+| 方案 | 需要的依赖 |
+|------|----------|
+| 方案1: Druid | db-pwd-core + db-pwd-druid |
+| **方案2c: Spring Boot** | **db-pwd-spring-boot-starter (仅此一个)** |
+| 方案3: Spring | db-pwd-core + db-pwd-spring |
+| 方案4: MyBatis | db-pwd-core |
+| 方案5: 纯 JDBC | db-pwd-core |
+| 方案6: Servlet | db-pwd-core + db-pwd-web |
+
+**注意：** Spring Boot Starter 仅需一个依赖，会自动传递 db-pwd-core
+
+---
+
+<!-- class: small -->
+
+# 技能原理 - 用户交互模板
+
+## 场景 A: 识别成功
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📊 项目分析结果
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**检测到项目类型**: Spring Boot 2.7.18
+**推荐集成方案**: 方案2c - Starter自动配置
+**集成模块**: db-pwd-spring-boot-starter
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📝 修改计划
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+需要修改的文件：
+┌───────────────────────────────────────────────────────────────┐
+│ 文件                                    │ 修改内容            │
+├───────────────────────────────────────────────────────────────┤
+│ pom.xml                                │ 添加依赖            │
+│ application.yml                        │ 密码改为占位符      │
+│ .gitignore                             │ 添加敏感文件        │
+└───────────────────────────────────────────────────────────────┘
+
+是否继续执行集成？[Y/n]
+```
+
+---
+
+# 技能原理 - 验证与输出
+
+## Phase 5: 验证
+
+```bash
+# 编译验证
+mvn clean compile -DskipTests
+
+# 检查项目
+lsp_diagnostics
+```
+
+## 输出格式
+
+```
+✅ 集成完成！
+
+📋 修改摘要：
+- 修改文件数: N
+- 添加依赖数: M
+
+📝 后续操作：
+1. java -jar db-pwd-cli.jar --demo --generate-key
+2. java -jar db-pwd-cli.jar --add --id my_db --url <url> ...
+3. mvn test
+
+🔒 安全提醒：
+- 设置文件权限: chmod 600 ~/.dbpwd/sm4.key
+- 切勿将密钥文件提交到版本控制
+```
+
+---
+
+
+
+# 技能原理 - 总结
+
+## Skill 核心要点
+
+| 阶段 | 关键动作 |
+|------|---------|
+| Phase 1 | 扫描项目结构，识别多模块 |
+| Phase 2 | 按优先级识别技术栈 |
+| Phase 3 | 展示分析结果，获取用户确认 |
+| Phase 4 | 添加依赖，替换密码为占位符 |
+| Phase 5 | 编译验证，输出报告 |
+
+**设计原则：**
+- 最小改动：仅修改必要的配置文件
+- 用户确认：每步都需用户确认
+- 安全优先：不提交密钥文件
+- 兼容并蓄：支持 7 种集成模式
+
+---
+
+# 二、验证概述
 
 # 技能原理 - 7 种集成模式
 | 模式 | 适用场景 | 集成方式 | 自动解密 |
