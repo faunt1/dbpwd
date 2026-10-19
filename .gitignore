@@ -1,6 +1,6 @@
-target/
+﻿target/
 dependency-reduced-pom.xml
-.claude/settings.local.json
+.claude/
 .vscode/settings.json
 ~/.dbpwd/db.pwd
 ~/.dbpwd/sm4.key
